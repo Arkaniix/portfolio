@@ -6,12 +6,13 @@ Site statique : aucune étape de build.
 - `fonts/` : Anybody, Schibsted Grotesk, La Belle Aurore (licence SIL OFL, fichiers LICENSE à côté)
 - `favicon.svg`, `apple-touch-icon.png` : icônes
 - `og.png` : image d'aperçu pour les partages (LinkedIn, messageries)
-- `_headers` : en-têtes de sécurité et de cache, lus par Cloudflare Pages
+- `_headers` : en-têtes de sécurité et de cache, lus par Cloudflare
 
-## Déploiement sur Cloudflare Pages
+## Déploiement
 
-Réglages du projet : framework « None », commande de build vide, dossier de sortie `/`.
+Hébergé sur Cloudflare (Worker à fichiers statiques, relié à ce dépôt) : chaque commit sur `main`
+est redéployé automatiquement. Aucune commande de build, répertoire racine `/`.
 
 L'adresse publique est écrite à trois endroits de `index.html` (`canonical`, `og:url`, `og:image`),
-réglée sur `https://etiennemonat.pages.dev`. Si l'adresse change (autre nom de projet, domaine à toi),
+actuellement `https://etiennemonat.etiennemonat.workers.dev`. Si elle change (domaine à toi),
 remplace-la à ces trois endroits.
