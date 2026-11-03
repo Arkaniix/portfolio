@@ -1,0 +1,46 @@
+---
+// Gabarit commun à toutes les pages : <head>, polices, styles partagés.
+// L'adresse publique vient de `site` (astro.config.mjs) : canonical, og:url et og:image en découlent.
+import siteCss from "../styles/site.css?url";
+
+interface Props {
+  title: string;
+  description: string;
+  themeColor?: string;
+  ogImage?: string;
+}
+const { title, description, themeColor = "#2B45FF", ogImage = "/og.png" } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+---
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{title}</title>
+<meta name="description" content={description}>
+<meta name="author" content="Etienne Monat">
+<meta name="theme-color" content={themeColor}>
+<link rel="canonical" href={canonical}>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/anybody.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Etienne Monat">
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:url" content={canonical}>
+<meta property="og:image" content={ogImageUrl}>
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href={siteCss}>
+<slot name="head" />
+</head>
+<body>
+<slot />
+</body>
+</html>

@@ -1,84 +1,12 @@
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Etienne Monat, développeur full-stack</title>
-<meta name="description" content="Développeur full-stack basé dans la Loire, disponible immédiatement. Videntis, Deal Hunter et recon : trois projets conçus et codés seul, de l’interface à la mise en production.">
-<meta name="author" content="Etienne Monat">
-<meta name="theme-color" content="#2B45FF">
-<link rel="canonical" href="https://etiennemonat.etiennemonat.workers.dev/">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preload" href="/fonts/anybody.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
-<meta property="og:type" content="website">
-<meta property="og:locale" content="fr_FR">
-<meta property="og:site_name" content="Etienne Monat">
-<meta property="og:title" content="Etienne Monat, développeur full-stack">
-<meta property="og:description" content="Développeur full-stack basé dans la Loire, disponible immédiatement. Videntis, Deal Hunter et recon : trois projets conçus et codés seul, de l’interface à la mise en production.">
-<meta property="og:url" content="https://etiennemonat.etiennemonat.workers.dev/">
-<meta property="og:image" content="https://etiennemonat.etiennemonat.workers.dev/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<style>
-/* Polices hébergées avec le site (licence SIL OFL, voir /fonts) */
-@font-face{ font-family:"Anybody"; src:url("/fonts/anybody.woff2") format("woff2"); font-weight:100 900; font-stretch:50% 150%; font-style:normal; font-display:swap; }
-@font-face{ font-family:"Schibsted Grotesk"; src:url("/fonts/schibsted-grotesk.woff2") format("woff2"); font-weight:400 900; font-style:normal; font-display:swap; }
-@font-face{ font-family:"La Belle Aurore"; src:url("/fonts/la-belle-aurore.woff2") format("woff2"); font-weight:400; font-style:normal; font-display:swap; }
-html, body{ margin:0; }
-:root{
-  /* Mise en page : cinq diapositives sur une scène collante (texte à gauche, animation à droite) : moi, trois projets, contact. Puis méthode et parcours. Thème unique et coloré, assumé. */
-  --paper:#F3F4F6;
-  --ink:#111216;
-  --ink-2:#4A4E57;
-  --rule:#D3D6DC;
-  --blue:#2B45FF;
-  --yellow:#FFD93B;
-  --pink:#FF4F9A;
-  --pink-ink:#D81B6A;
-  --green:#3DDC97;
-  --white:#FFFFFF;
-  --display:"Anybody", "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font:"Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono:ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --ease:cubic-bezier(.2,.8,.2,1);
-  color-scheme:light;
-}
-*,*::before,*::after{ box-sizing:border-box; }
-body{
-  background:var(--paper);
-  color:var(--ink);
-  font-family:var(--font);
-  font-size:16px;
-  line-height:1.55;
-  -webkit-font-smoothing:antialiased;
-  padding-left:max(16px, env(safe-area-inset-left, 0px));
-  padding-right:max(16px, env(safe-area-inset-right, 0px));
-  overflow-x:clip;
-}
-a{ color:inherit; }
-:focus-visible{ outline:3px solid var(--pink-ink); outline-offset:3px; }
-.container{ max-width:1180px; margin-inline:auto; }
+---
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
-/* ---------- En-tête ---------- */
-.top{
-  position:fixed; top:0; left:0; right:0; z-index:30;
-  padding-top:env(safe-area-inset-top, 0px);
-  padding-left:max(16px, env(safe-area-inset-left, 0px));
-  padding-right:max(16px, env(safe-area-inset-right, 0px));
-  color:var(--hfg, #FFFFFF);
-  border-bottom:1px solid transparent;
-  transition:color .4s ease, background-color .3s ease, border-color .3s ease;
-}
-.top.solid{ background:var(--paper); border-bottom-color:var(--rule); color:var(--ink); }
-.top .container{ height:64px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.brand{ font-family:var(--display); font-variation-settings:"wdth" 80, "wght" 820; font-size:21px; text-decoration:none; white-space:nowrap; background:none; border:0; color:inherit; cursor:pointer; padding:10px 0; }
-.top nav{ display:flex; gap:clamp(14px, 3vw, 28px); }
-.top nav button, .top nav a{ appearance:none; background:none; border:0; color:inherit; font:inherit; font-size:15px; font-weight:650; text-decoration:none; padding:10px 0; cursor:pointer; }
-.top nav button:hover, .top nav a:hover{ text-decoration:underline; text-underline-offset:5px; text-decoration-thickness:2px; }
-
+const description = "Développeur full-stack basé dans la Loire, disponible immédiatement. Videntis, Deal Hunter et recon : trois projets conçus et codés seul, de l’interface à la mise en production.";
+---
+<Base title="Etienne Monat, développeur full-stack" description={description}>
+<style is:inline slot="head">
 /* ---------- La scène ---------- */
 .story{
   position:relative;
@@ -629,7 +557,6 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   .path li:hover .lg{ transform:rotate(-5deg) scale(1.06); }
   .path li:hover .yr{ color:var(--blue); }
 }
-footer{ font-size:13px; color:var(--ink-2); }
 
 @media (max-width: 860px){
   .stage-in{ grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr) auto; }
@@ -665,26 +592,13 @@ footer{ font-size:13px; color:var(--ink-2); }
   .pc{ padding:11px 13px 12px; }
   .pc strong{ font-size:16px; }
   .pw{ font-size:14px; }
-  .top nav .opt{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){
   .pipe li{ opacity:1; transform:none; }
   .path li{ opacity:1; transform:none; }
-  *,*::before,*::after{ animation:none !important; transition-duration:.01ms !important; }
 }
 </style>
-</head>
-<body>
-<header class="top" id="top">
-  <div class="container">
-    <button class="brand" type="button" data-goto="0">Etienne Monat</button>
-    <nav aria-label="Navigation principale">
-      <button type="button" data-goto="1">Projets</button>
-      <a class="opt" href="#parcours">Parcours</a>
-      <button type="button" data-goto="4">Contact</button>
-    </nav>
-  </div>
-</header>
+<SiteHeader home />
 
 <section class="story" id="story" aria-label="Présentation et projets">
   <div class="stage" id="stage" data-s="0">
@@ -836,10 +750,10 @@ footer{ font-size:13px; color:var(--ink-2); }
     </div>
   </section>
 
-  <footer>Etienne Monat, 2026. etiennemonat@outlook.fr. Les annonces, prix et identités montrés dans les animations sont inventés pour la démonstration.</footer>
+  <SiteFooter />
 </main>
 
-<script>
+<script is:inline>
 (function () {
   "use strict";
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2080,5 +1994,4 @@ footer{ font-size:13px; color:var(--ink-2); }
   });
 })();
 </script>
-</body>
-</html>
+</Base>

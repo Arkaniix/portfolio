@@ -6,13 +6,19 @@ Langue du site et des échanges : français. Etienne veut des retours directs et
 
 ## État actuel
 
-- Une seule page en ligne : `index.html` (HTML, CSS et JS dans le même fichier, sans dépendance ni build).
+- Site Astro statique (décision prise en novembre 2026) : `src/pages/` (une page par fichier), `src/layouts/Base.astro`
+  (`<head>` commun), `src/components/` (en-tête, pied de page), `src/styles/site.css` (polices, couleurs, base, en-tête, pied).
+- L'accueil (`src/pages/index.astro`) est l'ancien `index.html` repris tel quel : ses styles en `<style is:inline>`, son script
+  en `<script is:inline>`. Ne pas le « moderniser » sans raison : il a été vérifié identique au pixel près à l'ancienne version.
+- `compressHTML: false` dans `astro.config.mjs` est obligatoire : la compression par défaut d'Astro 7 retire des espaces
+  entre éléments et casse la mise en page de l'accueil.
 - En ligne sur https://etiennemonat.etiennemonat.workers.dev (Cloudflare, Worker à fichiers statiques relié à ce dépôt).
-  Chaque commit sur `main` est redéployé automatiquement (commande `npx wrangler deploy`, racine `/`, pas de build).
-- L'adresse publique est écrite dans `index.html` (`canonical`, `og:url`, `og:image`). À changer si un nom de domaine est ajouté.
-- `_headers` : en-têtes de sécurité (CSP minimale, HSTS, nosniff…) et cache long des polices.
-- Polices hébergées dans `fonts/` (licence OFL) : Anybody (variable wdth 50–150, wght 100–900), Schibsted Grotesk (wght 400–900), La Belle Aurore (manuscrite).
-- `og.png` (1200×630), `favicon.svg`, `apple-touch-icon.png`.
+  Chaque commit sur `main` est redéployé, les autres branches ont une adresse d'aperçu. `wrangler.jsonc` lance le build
+  (`npm run build`) et ne publie que `dist/` : les fichiers du dépôt (CLAUDE.md, README…) ne sont plus servis.
+- L'adresse publique est écrite une seule fois, dans `astro.config.mjs` (`site`) ; `canonical`, `og:url` et `og:image` en découlent.
+- `public/_headers` : en-têtes de sécurité (CSP minimale, HSTS, nosniff…) et cache long des polices et de `/_astro/`.
+- Polices hébergées dans `public/fonts/` (licence OFL) : Anybody (variable wdth 50–150, wght 100–900), Schibsted Grotesk (wght 400–900), La Belle Aurore (manuscrite).
+- `public/og.png` (1200×630), `favicon.svg`, `apple-touch-icon.png`.
 
 ## Direction artistique (à respecter sur toutes les pages)
 
@@ -37,8 +43,11 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 - Vérifier chaque changement sur grand écran (1440×900, 1280×720) et sur téléphone (390×844, 375×667) avec Playwright,
   en capturant plusieurs instants de l'animation. Vérifier aussi l'absence d'erreur console.
   Etienne repère vite les bugs visuels : débordements, chevauchements, éléments qui passent au mauvais plan.
+- Pour comparer deux versions au pixel près : `page.clock.install()` puis `page.clock.pauseAt()` (sinon l'horloge simulée
+  avance en temps réel), `runFor()` pour chaque instant, transitions CSS coupées (elles tournent sur l'horloge réelle),
+  `Math.random` remplacé par un générateur à graine, et une courte attente réelle après chaque `scrollTo`.
 
-## Architecture de `index.html`
+## Architecture de l'accueil (`src/pages/index.astro`)
 
 - Récit en 5 diapositives sur une scène collante (`.story` / `.stage`) : 1 Moi, 2 Videntis, 3 Deal Hunter, 4 recon, 5 Contact.
   Texte à gauche (`.caps`), animation à droite (`#viz`, éléments positionnés en absolu).
@@ -52,7 +61,9 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 ## Projets présentés (contenu factuel)
 
 - **Videntis** : SaaS B2B d'intelligence tarifaire pour le matériel informatique d'occasion, conçu, codé et opéré seul.
-  Ramène les annonces (Leboncoin, Vinted, eBay) au bon modèle et en tire un prix de référence. Python, FastAPI, PostgreSQL, React, Stripe, Claude Haiku. Pas encore en production.
+  Ramène les annonces (Leboncoin, Vinted, eBay) au bon modèle et en tire un prix de référence. Python, FastAPI, PostgreSQL, React, Stripe, Claude Haiku.
+  Prêt mais pas encore en production (novembre 2026). Site public : videntis-corp.fr (Lens, Estimator, verdicts FONCER / NÉGOCIER / TENTER / PASSER,
+  formules Free, Standard, Pro). Ne jamais montrer les collecteurs côté serveur (proxys, contournement des protections anti-robots).
 - **Deal Hunter** : module de Videntis. Filtres déterministes, puis diagnostic de chaque annonce par Claude Haiku, puis alerte Discord si le prix passe nettement sous la référence.
 - **recon** : outil OSINT local (FastAPI, httpx, React Flow, xterm.js) qui relie les résultats de plusieurs sources dans un graphe.
 - **Méthode** : spécifications, agents (Claude Code côté serveur, Lovable côté interface), relecture de chaque diff, tests golden master, déploiement unique qui refuse un dépôt sale.
@@ -69,12 +80,9 @@ Décisions déjà prises :
 - recon : jamais de requête sur une vraie personne dans une démo publique, identité fictive uniquement.
 - Videntis et Deal Hunter : pas de collecte en direct sur Leboncoin ou Vinted depuis une démo publique, jeux de données enregistrés.
 
-À trancher au début : passer à plusieurs pages demande de partager l'en-tête, les styles et le pied de page.
-Recommandation : Astro (pages statiques, mise en page partagée, démos en îlots JavaScript), sortie `dist/`, avec un
-`wrangler.jsonc` qui sert `dist/` et une commande de build dans Cloudflare. Alternative sans build : plusieurs fichiers HTML
-et un `assets/site.css` commun. Garder l'accueil identique visuellement lors de la migration.
+- Structure tranchée : Astro (voir « État actuel »). Travail sur une branche, fusion dans `main` seulement après validation d'Etienne.
 
 ## En attente côté Etienne
 
-- Nom de domaine (par exemple `etiennemonat.fr`), puis mise à jour des trois lignes d'adresse dans `index.html`.
+- Nom de domaine (par exemple `etiennemonat.fr`), puis mise à jour de `site` dans `astro.config.mjs`.
 - Lien GitHub et bouton « Télécharger mon CV » (PDF à fournir par Etienne).
