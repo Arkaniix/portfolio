@@ -8,5 +8,8 @@
   "build": { "command": "npm run build" },
   "assets": {
     "directory": "./dist"
-  }
+  },
+  // Aperçus de branche (Worker Previews) : bloc obligatoire, vide car les aperçus n'ont besoin
+  // d'aucun réglage propre (pas de variables, secrets ni liaisons).
+  "previews": {}
 }
