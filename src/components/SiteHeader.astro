@@ -16,7 +16,7 @@ const { home = false } = Astro.props;
   </div>
 </header>
 ) : (
-<header class="top solid" id="top">
+<header class="top sub" id="top">
   <div class="container">
     <a class="brand" href="/">Etienne Monat</a>
     <nav aria-label="Navigation principale">
@@ -26,4 +26,13 @@ const { home = false } = Astro.props;
     </nav>
   </div>
 </header>
+<script is:inline>
+  // Pages projet : en-tête transparent sur la bande de couleur, fond papier dès qu'on défile.
+  (function () {
+    var top = document.getElementById("top");
+    function upd() { top.classList.toggle("solid", window.scrollY > 8); }
+    window.addEventListener("scroll", upd, { passive: true });
+    upd();
+  })();
+</script>
 )}
