@@ -60,6 +60,9 @@ footer{ font-size:13px; color:var(--ink-2); }
 @media (max-width: 520px){
   .top nav .opt{ display:none; }
 }
+/* Mouvement réduit : état final directement. Pas de « transition-duration:.01ms » : la propriété
+   transition-property vaut « all » par défaut, chaque propriété deviendrait animée et les mesures
+   faites en JS (taille du nom de l'accueil, frises) liraient l'ancienne valeur. */
 @media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{ animation:none !important; transition-duration:.01ms !important; }
+  *,*::before,*::after{ animation:none !important; transition:none !important; }
 }
