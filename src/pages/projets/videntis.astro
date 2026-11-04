@@ -357,17 +357,52 @@ const g0 = HERO_JS[0].g;
 
   <!-- ========== Suite ========== -->
   <section class="band b-green" aria-labelledby="h-next">
-    <div class="wrap next-grid">
-      <div>
-        <h2 class="v-h2" id="h-next">Prêt, pas encore lancé.</h2>
-        <p class="intro">Tout est en place, paiement compris. Ce qui manque n’est pas technique&nbsp;: les prix viennent des utilisateurs de Lens. Je construis d’abord une communauté autour de l’achat-revente de matériel, sur les réseaux.</p>
+    <div class="wrap">
+      <h2 class="v-h2" id="h-next">Prêt, pas encore lancé.</h2>
+      <p class="intro">Tout fonctionne, paiement compris. Ce qui manque, ce sont des utilisateurs&nbsp;: ce sont eux qui font tourner la boucle qui garde les prix frais.</p>
+
+      <figure class="nx-box nx-loopbox" id="nx-loop">
+        <figcaption class="nx-k">La boucle qui manque</figcaption>
+        <div class="loop">
+        <ol class="loop-l">
+          <li class="ln ln-1"><span class="ln-n">1</span><b>Lens lit l’annonce</b><span>L’extension reconnaît le modèle et relève le prix demandé.</span></li>
+          <li class="ln ln-2"><span class="ln-n">2</span><b>Le serveur revérifie</b><span>Il relit le titre lui-même, écarte lots, PC complets et prix aberrants.</span></li>
+          <li class="ln ln-3"><span class="ln-n">3</span><b>Un prix de plus</b><span>Compté moins qu’une vente confirmée. L’utilisateur gagne un crédit, le titre n’est pas gardé.</span></li>
+          <li class="ln ln-4"><span class="ln-n">4</span><b>Des prix plus frais</b><span>Plus de modèles couverts, des prix récents&nbsp;: la confiance monte, l’outil attire.</span></li>
+        </ol>
+        <span class="la la-1" aria-hidden="true">→</span><span class="la la-2" aria-hidden="true">→</span><span class="la la-3" aria-hidden="true">→</span><span class="la la-4" aria-hidden="true"><i>→</i><em>et la boucle repart</em></span>
+        </div>
+        <p class="nx-foot">Sans utilisateurs, la boucle ne tourne pas. Il manque du monde, pas du code.</p>
+      </figure>
+
+      <div class="nx-grid">
+        <figure class="nx-box" id="nx-meter">
+          <figcaption class="nx-k">La confiance, jamais 100&nbsp;%</figcaption>
+          <div class="mt" aria-hidden="true">
+            <div class="mt-scale"><i class="z z-lo"></i><i class="z z-mid"></i><i class="z z-hi"></i><i class="z z-cap"></i></div>
+            <div class="mt-ticks"><span style="left:10%">10</span><span style="left:50%">50</span><span style="left:75%">75</span><span style="left:95%">95</span></div>
+            <div class="mt-needle" id="mt-needle" style="--v:70"><b id="mt-val">70&nbsp;%</b></div>
+          </div>
+          <p class="mt-lvl"><span><i class="sw z-lo"></i>basse</span><span><i class="sw z-mid"></i>moyenne</span><span><i class="sw z-hi"></i>haute</span><span><i class="sw z-cap"></i>jamais au-delà de 95&nbsp;%</span></p>
+          <ul class="mt-f">
+            <li data-d="0"><span>Point de départ</span><em>sur 100</em><b>35</b></li>
+            <li data-d="24"><span>Ventes confirmées</span><em>de −18 à +32</em><b>+24</b></li>
+            <li data-d="8"><span>Fraîcheur</span><em>de −22 à +8</em><b>+8</b></li>
+            <li data-d="3"><span>Qualité des données</span><em>de −10 à +8</em><b>+3</b></li>
+          </ul>
+          <p class="mt-ex">Exemple&nbsp;: 30 ventes connues, la dernière il y a 2 jours → <b>70&nbsp;%, moyenne</b>.</p>
+          <p class="mt-down"><span class="stamp mini st-go">Foncer</span><span class="dn-arrow" aria-hidden="true">→</span><span class="stamp mini st-neg">Négocier</span> Confiance basse&nbsp;: le verdict descend d’un cran.</p>
+        </figure>
+        <div class="nx-road">
+          <p class="nx-k">Et maintenant</p>
+          <ol class="road">
+            <li class="rd rd-done"><span class="rd-k">Fait</span><p>Lens, estimateur, catalogue, inventaire, paiement Stripe.</p></li>
+            <li class="rd rd-now"><span class="rd-k">Maintenant</span><p>Réunir une communauté&nbsp;: je filme mes achats-reventes en vidéos courtes (TikTok, Instagram).</p></li>
+            <li class="rd"><span class="rd-k">Ensuite</span><p>Alertes de prix avec Deal Hunter, en cours.</p></li>
+            <li class="rd"><span class="rd-k">En réserve</span><p>Diagnostic de panne par IA (prêt, éteint) et simulateur de réparation (prévu).</p></li>
+          </ol>
+        </div>
       </div>
-      <ul class="limits">
-        <li><b>Limite</b> Peu de ventes sur un modèle&nbsp;: confiance plus basse, verdict plus prudent.</li>
-        <li><b>En cours</b> Alertes de prix, avec Deal Hunter.</li>
-        <li><b>Prêt, éteint</b> Diagnostic de panne par IA.</li>
-        <li><b>Prévu</b> Simulateur de réparation.</li>
-      </ul>
     </div>
   </section>
 
@@ -474,6 +509,53 @@ const g0 = HERO_JS[0].g;
         }, { threshold: [0, .25] }).observe(hs);
       }
     }
+
+    // ---------- Suite : la boucle tourne, la jauge de confiance se construit ----------
+    // Les deux se rejouent depuis le début à chaque arrivée ; hors écran, elles reviennent au départ.
+    // Sans observateur ou en mouvement réduit : état final, statique.
+    (function () {
+      var loopBox = document.getElementById("nx-loop"), meterBox = document.getElementById("nx-meter");
+      var nodes = loopBox.querySelectorAll(".ln"), arrows = loopBox.querySelectorAll(".la");
+      var needle = document.getElementById("mt-needle"), val = document.getElementById("mt-val");
+      var rows = meterBox.querySelectorAll(".mt-f li");
+      if (reduce || !("IntersectionObserver" in window)) return;
+      function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+
+      var lt = null, step = 0;
+      function loopTick() {                          // nœud k, puis la flèche qui mène au suivant
+        var k = Math.floor(step / 2) % nodes.length;
+        each(nodes, function (n, i) { n.classList.toggle("on", i === k); });
+        each(arrows, function (a, i) { a.classList.toggle("on", step % 2 === 1 && i === k); });
+        step = (step + 1) % (nodes.length * 2);
+      }
+      function loopStart() { loopStop(); step = 0; loopTick(); lt = setInterval(loopTick, 750); }
+      function loopStop() { clearInterval(lt); lt = null; each(nodes, function (n) { n.classList.remove("on"); }); each(arrows, function (a) { a.classList.remove("on"); }); }
+
+      var mTimers = [], total = 0;
+      function setNeedle(v, instant) {
+        if (instant) { needle.style.transition = "none"; }
+        needle.style.setProperty("--v", v); val.textContent = v + " %";
+        if (instant) { void needle.offsetWidth; needle.style.transition = ""; }
+      }
+      function meterReset() { mTimers.forEach(clearTimeout); mTimers = []; each(rows, function (r) { r.classList.remove("on"); }); setNeedle(35, true); }
+      function meterPlay() {
+        meterReset(); total = 0;
+        each(rows, function (r, i) {
+          mTimers.push(setTimeout(function () { total += +r.getAttribute("data-d") || 0; r.classList.add("on"); setNeedle(35 + total); }, 300 + i * 750));
+        });
+      }
+      meterReset();                                  // départ silencieux : la section est loin sous la ligne de flottaison
+      function watch(el, start, stop) {
+        var armed = true;
+        new IntersectionObserver(function (es) {
+          var e = es[0];
+          if (!e.isIntersecting) { if (!armed) { stop(); armed = true; } return; }
+          if (armed && e.intersectionRatio >= .35) { armed = false; start(); }
+        }, { threshold: [0, .35] }).observe(el);
+      }
+      watch(loopBox, loopStart, loopStop);
+      watch(meterBox, meterPlay, meterReset);
+    })();
 
     // ---------- Survol des fonctions : sur mobile, le toucher rejoue l'animation ----------
     Array.prototype.forEach.call(document.querySelectorAll(".feat, .fam"), function (el) {
