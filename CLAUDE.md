@@ -43,6 +43,9 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 - Vérifier chaque changement sur grand écran (1440×900, 1280×720) et sur téléphone (390×844, 375×667) avec Playwright,
   en capturant plusieurs instants de l'animation. Vérifier aussi l'absence d'erreur console.
   Etienne repère vite les bugs visuels : débordements, chevauchements, éléments qui passent au mauvais plan.
+- Etienne navigue avec un bloqueur de pub (Opera GX). Jamais de classe ou d'id du type `ad`, `ad-*`, `ads`, `banner`, `sponsor`, `promo` :
+  les listes (EasyList, Liste FR, uBlock) masquent ces éléments. Une annonce de démo s'appelle `lot-*`.
+  Après tout ajout de balisage, passer les règles cosmétiques génériques de ces listes sur la page (`querySelectorAll` de chaque sélecteur `##…`).
 - Pour comparer deux versions au pixel près : `page.clock.install()` puis `page.clock.pauseAt()` (sinon l'horloge simulée
   avance en temps réel), `runFor()` pour chaque instant, transitions CSS coupées (elles tournent sur l'horloge réelle),
   `Math.random` remplacé par un générateur à graine, et une courte attente réelle après chaque `scrollTo`.
