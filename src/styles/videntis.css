@@ -30,7 +30,8 @@
   font-variation-settings:"wdth" 72, "wght" 820; text-wrap:balance;
 }
 .intro{ margin:0 0 clamp(26px, 3.6vw, 40px); font-size:clamp(17px, 1.6vw, 19px); line-height:1.5; max-width:36em; }
-.kicker{ margin:0 0 16px; font-size:14px; font-weight:750; }
+/* Les jambages hauts du titre (interligne .8) débordent d'environ un dixième de sa taille : la marge le compense. */
+.kicker{ margin:0 0 calc(clamp(88px, 15vw, 196px) * .1 + 18px); font-size:14px; font-weight:750; }
 .mono, code{ font-family:var(--mono); }
 code{ font-size:.92em; }
 .draw{ display:block; width:100%; height:auto; overflow:visible; }
