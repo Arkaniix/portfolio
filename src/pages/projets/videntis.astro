@@ -1,15 +1,17 @@
 ---
-// Page projet Videntis — maquette v2 (étape de validation du design).
-// La démo est figée sur un état réaliste ; la logique sera branchée après validation.
+// Page projet Videntis — maquette v3 : démo fonctionnelle, en-tête animé, survols animés.
 import Base from "../../layouts/Base.astro";
 import SiteHeader from "../../components/SiteHeader.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import MethodPipe from "../../components/MethodPipe.astro";
+import VidentisDemo from "../../components/VidentisDemo.astro";
 import Draw from "../../components/Draw.astro";
 import { Image } from "astro:assets";
 import capVerdict from "../../assets/videntis/cap-verdict.png";
 import capMarche from "../../assets/videntis/cap-marche.png";
 import capScore from "../../assets/videntis/cap-score.png";
+import capPlans from "../../assets/videntis/cap-plans.png";
+import capRepair from "../../assets/videntis/cap-repair.png";
 import "../../styles/videntis.css";
 
 const description =
@@ -33,21 +35,6 @@ const FEATURES = [
   { k: "repair", t: "Repair Guide", tag: "37 pannes", d: "Causes probables, étapes de diagnostic et réparations chiffrées." },
   { k: "community", t: "Communauté", tag: "Votes et missions", d: "Les utilisateurs confirment la nature des annonces, à la manière de Waze." },
 ];
-
-// Observations de la démo : inventées, calées sur des quartiles réalistes (P25 410 €, médiane 457 €, P75 480 €).
-const OBS = [290, 335, 360, 375, 390, 395, 400, 405, 410, 415, 420, 430, 440, 445, 450, 455, 457, 460, 462, 465, 470, 472, 475, 478, 480, 485, 495, 510, 520, 540, 560, 590, 625];
-const LO = 280, HI = 640, STEP = 20;
-const bins = Array.from({ length: (HI - LO) / STEP }, (_, i) => OBS.filter((p) => p >= LO + i * STEP && p < LO + (i + 1) * STEP).length);
-const maxBin = Math.max(...bins);
-const X = (p: number) => ((p - LO) / (HI - LO)) * 100;
-const SAMPLES = [
-  { t: "rtx3080ti 12go comme neuf !!!", p: 420, on: true },
-  { t: "Geforce RTX 3080 gaming OC 10Go", p: 390 },
-  { t: "carte graphique 3080 ti founders", p: 455 },
-  { t: "Boîte vide RTX 3080 Ti", p: 15 },
-  { t: "Recherche RTX 3080 Ti", p: 380 },
-  { t: "RX 6800 XT nitro+ facture", p: 340 },
-];
 ---
 <Base title="Videntis, le juste prix du matériel d’occasion" description={description} themeColor="#FFD93B">
 <SiteHeader />
@@ -70,30 +57,34 @@ const SAMPLES = [
           <li>Python</li><li>FastAPI</li><li>PostgreSQL</li><li>React</li><li>TypeScript</li><li>Stripe</li><li>Claude Haiku</li><li>Docker</li>
         </ul>
       </div>
-      <div class="stamp-scene" aria-hidden="true">
+      <div class="stamp-scene" id="hs" aria-hidden="true">
         <div class="ad-wrap">
           <article class="ad">
             <div class="ad-photo"><Draw name="gpu" /><span>annonce inventée</span></div>
-            <p class="ad-title">rtx3080ti 12go comme neuf !!!</p>
-            <p class="ad-price">420 €</p>
-            <p class="ad-meta">Bon état · Leboncoin · il y a 4 min</p>
+            <p class="ad-title" id="hs-title"><span class="tkn m">rtx3080ti</span> <span class="tkn g">12go</span> <span class="tkn n">comme</span> <span class="tkn n">neuf</span> <span class="tkn x">!!!</span></p>
+            <p class="ad-price" id="hs-price">420 €</p>
+            <p class="ad-meta" id="hs-meta">Bon état · Leboncoin · il y a 4 min</p>
+            <p class="ad-model" id="hs-model">= GeForce RTX 3080 Ti</p>
           </article>
-          <div class="stamp st-neg hit">Négocier</div>
+          <div class="stamp hit st-neg" id="hs-stamp">Négocier</div>
         </div>
-        <ul class="rack">
-          <li class="stamp mini st-go">Foncer</li>
-          <li class="stamp mini st-neg">Négocier</li>
-          <li class="stamp mini st-try">Tenter</li>
-          <li class="stamp mini st-pass">Passer</li>
-        </ul>
+        <div class="rack-row">
+          <ul class="rack">
+            <li class="stamp mini st-go" data-v="go">Foncer</li>
+            <li class="stamp mini st-neg lit" data-v="neg">Négocier</li>
+            <li class="stamp mini st-try" data-v="try">Tenter</li>
+            <li class="stamp mini st-pass" data-v="pass">Passer</li>
+          </ul>
+          <button type="button" class="replay" id="hs-next" aria-hidden="false">Autre annonce <span aria-hidden="true">↻</span></button>
+        </div>
       </div>
     </div>
     <div class="wrap">
       <ul class="facts">
-        <li><b>690</b><span>modèles</span></li>
-        <li><b>7&nbsp;918</b><span>façons de les écrire</span></li>
-        <li><b>46&nbsp;211</b><span>prix observés</span></li>
-        <li><b>1&nbsp;100+</b><span>tests</span></li>
+        <li><b>690</b><span>modèles reconnus</span><em>cartes graphiques, processeurs, cartes mères…</em></li>
+        <li><b>7&nbsp;918</b><span>écritures ramenées au bon modèle</span><em>« rtx3080ti », « 3080 ti founders »…</em></li>
+        <li><b>46&nbsp;211</b><span>prix de vente observés</span><em>sans garder une seule annonce</em></li>
+        <li><b>1&nbsp;100+</b><span>tests automatisés</span><em>sur l’API et l’extension</em></li>
       </ul>
     </div>
   </section>
@@ -104,12 +95,12 @@ const SAMPLES = [
       <h2 class="v-h2" id="h-fn">Huit outils, une question&nbsp;: à quel prix&nbsp;?</h2>
       <ul class="families" aria-label="Les six familles du catalogue">
         {FAMILIES.map((f) => (
-          <li class="fam"><Draw name={f.k} /><b>{f.n}</b><span>{f.t}</span></li>
+          <li class="fam" tabindex="0"><Draw name={f.k} /><b>{f.n}</b><span>{f.t}</span></li>
         ))}
       </ul>
       <ul class="features">
         {FEATURES.map((f) => (
-          <li class="feat"><div class="feat-art"><Draw name={f.k} /></div><p class="feat-tag">{f.tag}</p><h3>{f.t}</h3><p>{f.d}</p></li>
+          <li class={"feat f-" + f.k} tabindex="0"><div class="feat-art"><Draw name={f.k} /></div><p class="feat-tag">{f.tag}</p><h3>{f.t}</h3><p>{f.d}</p></li>
         ))}
       </ul>
       <p class="also"><b>Et aussi</b> trois formules et des recharges de crédits · un support avec pièces jointes · export et suppression des données (RGPD)</p>
@@ -120,66 +111,8 @@ const SAMPLES = [
   <section class="band b-blue" id="demo" aria-labelledby="h-demo">
     <div class="wrap">
       <h2 class="v-h2" id="h-demo">Une annonce, un verdict.</h2>
-      <p class="intro">Le vrai chemin de Videntis en quatre étapes. Vrai code pour la lecture du titre et le verdict, données inventées.</p>
-      <div class="machine">
-        <div class="m-input">
-          <ul class="chips">
-            {SAMPLES.map((s) => (
-              <li><button type="button" class={"chip" + (s.on ? " on" : "")}><span class="c-t">{s.t}</span><span class="c-p">{s.p} €</span></button></li>
-            ))}
-          </ul>
-          <div class="m-form">
-            <label class="f f-title"><span>ou tapez un titre</span><input type="text" value="rtx3080ti 12go comme neuf !!!" /></label>
-            <label class="f"><span>Prix</span><input type="text" inputmode="numeric" value="420 €" /></label>
-            <label class="f"><span>État</span><select><option>Bon</option><option>Comme neuf</option><option>Acceptable</option></select></label>
-            <label class="f"><span>Plateforme</span><select><option>Leboncoin</option><option>Vinted</option><option>eBay</option></select></label>
-          </div>
-        </div>
-        <ol class="stations">
-          <li class="stn">
-            <header><i>1</i><h3>Lire le titre</h3><span class="tag t-real">vrai code</span></header>
-            <p class="mono norm"><s>!!!</s> <span class="tk tk-m">rtx3080ti</span> <span class="tk tk-g">12go</span> <span class="tk tk-n">comme</span> <span class="tk tk-n">neuf</span></p>
-            <div class="match">
-              <p class="mc ok-m"><b>GeForce RTX 3080 Ti</b><em>égalité exacte</em></p>
-              <p class="mc ko-m"><s>GeForce RTX 3080</s><em>autre modèle</em></p>
-            </div>
-          </li>
-          <li class="stn">
-            <header><i>2</i><h3>Vraie vente&nbsp;?</h3><span class="tag t-rec">IA enregistrée</span></header>
-            <ul class="intents">
-              <li class="on">vente</li><li>recherche</li><li>échange</li><li>boîte seule</li><li>pour pièces</li><li>lot</li><li>prix symbolique</li>
-            </ul>
-            <p class="ok">✓ Compte dans les prix</p>
-          </li>
-          <li class="stn">
-            <header><i>3</i><h3>Prix du marché</h3><span class="tag t-fake">données inventées</span></header>
-            <figure class="hist" role="img" aria-label="33 prix observés entre 290 et 625 euros, médiane 457 euros, prix demandé 420 euros.">
-              <div class="bars">
-                {bins.map((n, i) => (
-                  <span class={"bar" + (LO + i * STEP + STEP / 2 >= 410 && LO + i * STEP + STEP / 2 <= 480 ? " iq" : "")} style={`height:${(n / maxBin) * 100}%`}></span>
-                ))}
-              </div>
-              <span class="mark m-ask" style={`left:${X(420)}%`}><em>420 €</em></span>
-              <span class="mark m-med" style={`left:${X(457)}%`}><em>457 €</em></span>
-              <div class="axis"><span>280 €</span><span>640 €</span></div>
-            </figure>
-            <p class="big-n"><b>457 €</b> fair price <span>· confiance 77 %</span></p>
-          </li>
-          <li class="stn st-verdict">
-            <header><i>4</i><h3>Verdict</h3><span class="tag t-real">vrai code</span></header>
-            <div class="gauge" aria-hidden="true">
-              <span class="g-z z1"></span><span class="g-z z2"></span><span class="g-z z3"></span>
-              <span class="g-m" style="left:22%"><em>8,8 %</em></span><span class="g-m g-m2" style="left:58.75%"><em>23,5 %</em></span>
-            </div>
-            <p class="gt" aria-hidden="true"><span style="left:50%">20 %</span><span style="left:75%">30 %</span></p>
-            <p class="gk"><span class="k1">marge à 420 €</span><span class="k2">après négociation, 370 €</span></p>
-            <div class="verdict-row">
-              <div class="stamp st-neg big">Négocier</div>
-              <p class="offer">Offre<b>370 €</b></p>
-            </div>
-          </li>
-        </ol>
-      </div>
+      <p class="intro">Choisissez une annonce ou écrivez la vôtre. Elle suit le vrai chemin de Videntis, avec le code du produit&nbsp;; seuls les prix de revente sont inventés.</p>
+      <VidentisDemo />
     </div>
   </section>
 
@@ -187,25 +120,37 @@ const SAMPLES = [
   <section class="band b-paper" aria-labelledby="h-shots">
     <div class="wrap">
       <h2 class="v-h2" id="h-shots">Le vrai produit.</h2>
-      <p class="intro">La même annonce dans l’application, le 3 novembre 2026.</p>
+      <p class="intro">Captures de l’application, le 3 novembre 2026. Touchez une image pour l’agrandir.</p>
       <div class="shots">
         <figure class="shot s-main">
           <button type="button" class="zoom" aria-label="Agrandir la capture de l’Estimateur">
             <Image src={capVerdict} alt="L’Estimateur de Videntis : verdict Négocier pour une RTX 3080 Ti à 420 euros, 37 euros de marge nette, offre agressive conseillée à 376 euros." widths={[800, 1200, 1800, 2340]} sizes="(max-width: 1212px) 100vw, 1180px" />
           </button>
-          <figcaption>L’Estimateur&nbsp;: verdict, marge nette et escalier d’offres.</figcaption>
+          <figcaption>L’Estimateur sur une RTX 3080 Ti à 420&nbsp;€&nbsp;: verdict, marge nette et escalier d’offres.</figcaption>
         </figure>
         <figure class="shot">
           <button type="button" class="zoom" aria-label="Agrandir la capture du positionnement de prix">
             <Image src={capMarche} alt="Positionnement du prix : histogramme de 33 ventes, le prix demandé de 420 euros est moins cher que 70 % du marché." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
           </button>
-          <figcaption>Le prix parmi les ventes observées.</figcaption>
+          <figcaption>Le prix demandé parmi les ventes observées.</figcaption>
         </figure>
         <figure class="shot">
           <button type="button" class="zoom" aria-label="Agrandir la capture de la construction du score">
             <Image src={capScore} alt="Construction du score : base 70, liquidité moins 5, ajustement de confiance plus 1, total 66 sur 100, confiance globale 77 %." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
           </button>
-          <figcaption>Le score, signal par signal.</figcaption>
+          <figcaption>Le score, expliqué signal par signal.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="zoom" aria-label="Agrandir la capture des formules">
+            <Image src={capPlans} alt="Les trois formules : Free gratuit, Standard 11,99 euros par mois, Pro 24,99 euros par mois, avec crédits mensuels, crédits Lens, historique de marché et inventaire." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
+          </button>
+          <figcaption>Trois formules, payées par Stripe.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="zoom" aria-label="Agrandir la capture du Repair Guide">
+            <Image src={capRepair} alt="Repair Guide, ventilateurs hors service : sévérité, difficulté, taux de réussite, causes probables en pourcentage et étapes de diagnostic." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
+          </button>
+          <figcaption>Repair Guide&nbsp;: une panne, ses causes probables et le diagnostic pas à pas.</figcaption>
         </figure>
       </div>
     </div>
@@ -256,60 +201,105 @@ const SAMPLES = [
   <!-- ========== Choix ========== -->
   <section class="band b-pink" aria-labelledby="h-choix">
     <div class="wrap">
-      <h2 class="v-h2" id="h-choix">Six choix, et ce que j’ai écarté.</h2>
+      <h2 class="v-h2" id="h-choix">Six questions, six choix.</h2>
       <div class="choices">
-        <article class="card"><h3>Des règles pour lire les titres</h3><p>Même titre, même modèle. Testable, instantané, gratuit.</p><p class="cut"><span>Écarté</span> <s>une IA par annonce</s></p></article>
-        <article class="card"><h3>L’IA trie, elle ne chiffre pas</h3><p>Claude Haiku dit si l’annonce est une vraie vente, pour 0,001&nbsp;$ environ.</p><p class="cut"><span>Écarté</span> <s>un prix estimé par l’IA</s></p></article>
-        <article class="card"><h3>Un verdict sur la marge réelle</h3><p>Prix de revente net de frais, avant puis après négociation.</p><p class="cut"><span>Écarté</span> <s>ignorer frais et négociation</s></p></article>
-        <article class="card"><h3>Crédit à la facture payée</h3><p>Un seul événement Stripe crédite. Rejoué, il ne crédite pas deux fois.</p><p class="cut"><span>Écarté</span> <s>créditer à la fin du formulaire</s></p></article>
-        <article class="card"><h3>Rien d’envoyé hors formule</h3><p>Les données s’ajoutent selon la formule, jamais retirées après coup.</p><p class="cut"><span>Écarté</span> <s>masquer dans l’interface</s></p></article>
-        <article class="card"><h3>Aucune annonce stockée</h3><p>Modèle et prix seulement, jamais titre, adresse ou vendeur (art. L.341-1).</p><p class="cut"><span>Écarté</span> <s>garder les annonces brutes</s></p></article>
+        <article class="card">
+          <p class="q">Comment reconnaître le modèle dans un titre&nbsp;?</p>
+          <h3>Avec des règles et un catalogue de 7&nbsp;918 écritures</h3>
+          <p>Le même titre donne toujours le même modèle&nbsp;: on peut le tester, et ça tourne dans le navigateur sans rien coûter.</p>
+          <p class="cut"><span>Écarté</span> demander à une IA pour chaque annonce&nbsp;: plus lent, payant, et pas toujours la même réponse.</p>
+        </article>
+        <article class="card">
+          <p class="q">Comment écarter les fausses annonces&nbsp;?</p>
+          <h3>Des règles d’abord, puis Claude Haiku</h3>
+          <p>Recherches, boîtes vides, pièces en panne&nbsp;: les règles trient les cas nets, l’IA relit le reste pour environ 0,001&nbsp;$ l’annonce.</p>
+          <p class="cut"><span>Écarté</span> laisser l’IA estimer les prix&nbsp;: ils doivent venir de ventes réelles.</p>
+        </article>
+        <article class="card">
+          <p class="q">Quand une annonce est-elle une bonne affaire&nbsp;?</p>
+          <h3>Quand la marge de revente le permet</h3>
+          <p>On compare le prix demandé au prix de revente, frais déduits, avant puis après la négociation habituelle de la plateforme.</p>
+          <p class="cut"><span>Écarté</span> comparer seulement le prix à la moyenne.</p>
+        </article>
+        <article class="card">
+          <p class="q">Quand créditer un abonné&nbsp;?</p>
+          <h3>Seulement quand Stripe confirme le paiement</h3>
+          <p>Un seul signal crédite, la facture payée, au premier mois comme aux renouvellements. Reçu deux fois, il ne crédite qu’une fois.</p>
+          <p class="cut"><span>Écarté</span> créditer dès la fin du formulaire, avant d’être sûr d’être payé.</p>
+        </article>
+        <article class="card">
+          <p class="q">Comment protéger les données des formules payantes&nbsp;?</p>
+          <h3>Le serveur ne les envoie qu’aux comptes qui y ont droit</h3>
+          <p>Une donnée cachée à l’écran reste lisible dans le navigateur. Une donnée jamais envoyée, non.</p>
+          <p class="cut"><span>Écarté</span> tout envoyer et masquer dans l’interface.</p>
+        </article>
+        <article class="card">
+          <p class="q">Que garder des annonces&nbsp;?</p>
+          <h3>Le modèle et le prix, rien d’autre</h3>
+          <p>Jamais le titre, la photo, l’adresse ou le vendeur&nbsp;: la loi protège les bases de données des sites d’annonces (art. L.341-1). Un prix enregistré n’est jamais modifié.</p>
+          <p class="cut"><span>Écarté</span> copier les annonces telles quelles.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- ========== Difficultés ========== -->
+  <!-- ========== Ce qui a cassé ========== -->
   <section class="band b-ink" aria-labelledby="h-bugs">
     <div class="wrap">
-      <h2 class="v-h2" id="h-bugs">Ce qui a cassé.</h2>
+      <h2 class="v-h2" id="h-bugs">Ce qui a cassé, et comment je l’ai réparé.</h2>
       <div class="incidents">
         <article class="inc">
           <p class="i-id">Lens · bug signalé</p>
           <h3>Le faux « Ti »</h3>
-          <div class="dia dia-ti" aria-hidden="true">
-            <span class="tok">rtx3080</span><span class="arrow">⊂</span><span class="tok bad">rtx3080<u>ti</u></span><span class="verd ko">✗ plus long ≠ juste</span>
-            <span class="tok">rtx3080</span><span class="arrow">=</span><span class="tok good">rtx3080</span><span class="verd okk">✓ égalité exacte</span>
+          <div class="dia" aria-hidden="true">
+            <p class="dia-l">Titre lu&nbsp;: <code>MSI RTX 3080 gaming Z trio</code></p>
+            <p class="dia-r"><span class="when">Avant</span><span class="tok bad">RTX 3080 Ti</span><span class="verd ko">✗ le nom le plus long gagnait</span></p>
+            <p class="dia-r"><span class="when">Après</span><span class="tok good">RTX 3080</span><span class="verd okk">✓ « Ti » absent du titre, refusé</span></p>
           </div>
-          <p><b>Correctif</b> égalité exacte d’abord, et tout suffixe absent du titre est rejeté. Tests sur les paires piège.</p>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>Des RTX 3080 étaient rangées avec les 3080 Ti, plus chères&nbsp;: les prix des deux modèles étaient faussés.</dd></div>
+            <div><dt>La cause</dt><dd>La règle prenait le nom du catalogue le plus long qui ressemblait au titre. « RTX 3080 Ti » contient « RTX 3080 » et il est plus long&nbsp;: il gagnait.</dd></div>
+            <div><dt>La solution</dt><dd>Un modèle dont le suffixe (Ti, Super, XT) n’est pas dans le titre est refusé. Des tests vérifient les paires piège.</dd></div>
+          </dl>
         </article>
         <article class="inc">
-          <p class="i-id">Paiement · repéré en relecture</p>
+          <p class="i-id">Paiement · repéré en relisant le code</p>
           <h3>Le double crédit</h3>
-          <div class="dia dia-lock" aria-hidden="true">
-            <span class="ev">événement</span><span class="ev">même événement</span>
-            <span class="lock">verrou</span>
-            <span class="once">+1 crédit, une fois</span>
+          <div class="dia" aria-hidden="true">
+            <p class="dia-r"><span class="when">Avis</span><span class="tok">pas encore traité&nbsp;?</span><span class="verd okk">oui → +1 crédit</span></p>
+            <p class="dia-r"><span class="when">Doublon</span><span class="tok lockd">attend le verrou</span><span class="verd okk">déjà traité → rien</span></p>
           </div>
-          <p><b>Correctif</b> l’unicité en base n’empêche pas deux traitements simultanés&nbsp;: un verrou PostgreSQL par événement.</p>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>Stripe envoie parfois deux fois le même avis de paiement, au même instant. L’abonné aurait reçu ses crédits deux fois.</dd></div>
+            <div><dt>La cause</dt><dd>La base refusait bien d’enregistrer deux fois l’avis, mais trop tard&nbsp;: les deux traitements avaient déjà vu « pas encore traité » et crédité.</dd></div>
+            <div><dt>La solution</dt><dd>Un verrou par avis&nbsp;: le second attend la fin du premier, voit que c’est fait, et ne crédite pas.</dd></div>
+          </dl>
         </article>
         <article class="inc">
           <p class="i-id">Lens · données</p>
           <h3>L’annonce d’avant</h3>
-          <div class="dia dia-id" aria-hidden="true">
-            <span class="idl">adresse</span><span class="idv">…/2841</span>
-            <span class="idl">données de la page</span><span class="idv bad">2790</span>
-            <span class="neq">≠ → lire la page elle-même</span>
+          <div class="dia" aria-hidden="true">
+            <p class="dia-r"><span class="when">Adresse</span><span class="tok">annonce n° 2841</span><span></span></p>
+            <p class="dia-r"><span class="when">Données</span><span class="tok bad">annonce n° 2790</span><span class="verd okk">≠ → lire l’écran</span></p>
           </div>
-          <p><b>Correctif</b> le site change de page sans recharger&nbsp;: Lens compare les deux identifiants avant de lire.</p>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>En passant d’une annonce à l’autre sur Leboncoin, Lens enregistrait parfois le prix de l’annonce précédente.</dd></div>
+            <div><dt>La cause</dt><dd>Le site change de page sans la recharger. Les données cachées dans la page restaient celles de la première annonce.</dd></div>
+            <div><dt>La solution</dt><dd>Lens compare le numéro de l’adresse à celui des données. S’ils diffèrent, il lit ce qui est affiché.</dd></div>
+          </dl>
         </article>
         <article class="inc">
           <p class="i-id">Sécurité · incident, août 2026</p>
-          <h3>Deux secrets à l’écran</h3>
+          <h3>Deux clés à l’écran</h3>
           <div class="dia dia-term" aria-hidden="true">
             <code>$ docker compose config</code>
             <code>  API_KEY: <mark>••••••••••••</mark></code>
           </div>
-          <p><b>Correctif</b> clés révoquées et remplacées, commandes qui affichent l’environnement interdites, audit avant chaque envoi sur GitHub.</p>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>Pendant une session de travail, une commande a affiché deux clés secrètes en clair dans le terminal.</dd></div>
+            <div><dt>La cause</dt><dd>Cette commande affiche toute la configuration en remplaçant chaque variable par sa valeur, secrets compris.</dd></div>
+            <div><dt>La solution</dt><dd>Clés révoquées et remplacées. Ces commandes sont interdites sans filtre, et le contenu des fichiers est contrôlé avant chaque envoi sur GitHub.</dd></div>
+          </dl>
         </article>
       </div>
     </div>
@@ -344,7 +334,56 @@ const SAMPLES = [
 
 <script is:inline>
   (function () {
-    // Agrandir une capture
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // ---------- En-tête : une annonce arrive, son titre est lu, le tampon tombe ----------
+    var SC = [
+      { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: "420 €", meta: "Bon état · Leboncoin · il y a 4 min", model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier" },
+      { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: "255 €", meta: "Bon état · Leboncoin · il y a 12 min", model: "GeForce RTX 3080", v: "go", label: "Foncer" },
+      { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: "560 €", meta: "Bon état · Vinted · il y a 1 h", model: "GeForce RTX 4070 Super", v: "try", label: "Tenter" },
+      { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: "450 €", meta: "Bon état · eBay · il y a 2 h", model: "Radeon RX 6800 XT", v: "pass", label: "Passer" }
+    ];
+    var CLS = { go: "st-go", neg: "st-neg", try: "st-try", pass: "st-pass" };
+    var hs = document.getElementById("hs"), hT = document.getElementById("hs-title"), hStamp = document.getElementById("hs-stamp");
+    var rack = hs.querySelectorAll(".rack li"), sc = 0, hsTimers = [];
+    function setScene(s) {
+      hT.innerHTML = s.t.map(function (w) { return "<span class=\"tkn " + w[1] + "\">" + w[0] + "</span>"; }).join(" ");
+      document.getElementById("hs-price").textContent = s.p;
+      document.getElementById("hs-meta").textContent = s.meta;
+      document.getElementById("hs-model").textContent = "= " + s.model;
+      hStamp.className = "stamp hit " + CLS[s.v]; hStamp.textContent = s.label;
+      Array.prototype.forEach.call(rack, function (li) { li.classList.toggle("lit", li.getAttribute("data-v") === s.v); });
+    }
+    function play() {
+      hsTimers.forEach(clearTimeout); hsTimers = [];
+      var toks = hT.querySelectorAll(".tkn");
+      if (reduce) { hs.className = "stamp-scene done"; Array.prototype.forEach.call(toks, function (t) { t.classList.add("lit"); }); return; }
+      hs.className = "stamp-scene pre";
+      Array.prototype.forEach.call(rack, function (li) { li.dataset.on = li.classList.contains("lit") ? "1" : ""; li.classList.remove("lit"); });
+      void hs.offsetWidth;
+      hsTimers.push(setTimeout(function () { hs.className = "stamp-scene in"; }, 60));
+      Array.prototype.forEach.call(toks, function (t, i) { hsTimers.push(setTimeout(function () { t.classList.add("lit"); }, 700 + i * 150)); });
+      var tEnd = 700 + toks.length * 150;
+      hsTimers.push(setTimeout(function () { hs.classList.add("model"); }, tEnd + 150));
+      hsTimers.push(setTimeout(function () { hs.classList.add("slam"); }, tEnd + 700));
+      hsTimers.push(setTimeout(function () {
+        hs.classList.add("done");
+        Array.prototype.forEach.call(rack, function (li) { if (li.dataset.on) li.classList.add("lit"); });
+      }, tEnd + 1050));
+    }
+    document.getElementById("hs-next").addEventListener("click", function () { sc = (sc + 1) % SC.length; setScene(SC[sc]); play(); });
+    setScene(SC[0]);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(play); else play();
+
+    // ---------- Survol des fonctions : sur mobile, le toucher rejoue l'animation ----------
+    Array.prototype.forEach.call(document.querySelectorAll(".feat, .fam"), function (el) {
+      el.addEventListener("click", function () {
+        el.classList.remove("play"); void el.offsetWidth; el.classList.add("play");
+        clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove("play"); }, 1600);
+      });
+    });
+
+    // ---------- Agrandir une capture ----------
     var lb = document.getElementById("lightbox"), lbImg = lb.querySelector("img");
     Array.prototype.forEach.call(document.querySelectorAll(".zoom"), function (b) {
       b.addEventListener("click", function () {
@@ -355,44 +394,41 @@ const SAMPLES = [
     });
     lb.addEventListener("click", function (e) { if (e.target === lb || e.target.classList.contains("lb-close")) lb.close(); });
 
-    // Le plan : liaisons dessinées entre les blocs, détail du bloc choisi
+    // ---------- Le plan : liaisons dessinées, détail du bloc choisi ----------
     var TXT = {
       lens: ["Lens", "Lit l’annonce dans le navigateur, la ramène au bon modèle sur place et affiche le verdict par-dessus."],
       app: ["Application", "Tableau de bord, estimateur, catalogue, inventaire, guides. Écrite avec Lovable, relue diff par diff."],
       api: ["API", "Reçoit les prix observés, vérifie les droits de chaque formule, sert l’application."],
       est: ["Estimateur", "Choisit la meilleure référence (même état, même plateforme si assez de ventes) et calcule marge et verdict."],
       db: ["PostgreSQL", "Les prix observés ne sont jamais modifiés. Aucun titre, adresse ou vendeur stocké."],
-      ai: ["Claude Haiku", "Dit si chaque annonce est une vraie vente. Seules les vraies ventes comptent dans les prix."],
+      ai: ["Claude Haiku", "Relit chaque annonce pour confirmer que c’est une vraie vente. Seules les vraies ventes comptent dans les prix."],
       stripe: ["Stripe", "Trois formules et des recharges. Seule la facture payée crédite."],
       mail: ["Brevo", "Vérification de l’adresse, mot de passe oublié, paiements, support."]
     };
     var LINKS = [["n-lens", "n-api", "prix observés"], ["n-app", "n-api", "requêtes"], ["n-api", "n-est", ""], ["n-est", "n-db", ""], ["n-api", "n-ai", "tri"], ["n-stripe", "n-api", "paiements"], ["n-api", "n-mail", "e-mails"]];
     var plan = document.getElementById("plan"), wires = plan.querySelector(".wires"), det = document.getElementById("plan-detail");
-    function anchor(el, toward) {
-      var r = el.getBoundingClientRect(), p = plan.getBoundingClientRect();
-      var cx = r.left - p.left + r.width / 2, cy = r.top - p.top + r.height / 2;
-      if (Math.abs(toward.x - cx) > r.width / 2) return { x: toward.x > cx ? cx + r.width / 2 : cx - r.width / 2, y: cy };
-      return { x: cx, y: toward.y > cy ? cy + r.height / 2 : cy - r.height / 2 };
-    }
-    function center(el) { var r = el.getBoundingClientRect(), p = plan.getBoundingClientRect(); return { x: r.left - p.left + r.width / 2, y: r.top - p.top + r.height / 2 }; }
-    function draw() {
-      var p = plan.getBoundingClientRect(), html = "";
-      wires.setAttribute("viewBox", "0 0 " + p.width + " " + p.height);
-      wires.setAttribute("width", p.width); wires.setAttribute("height", p.height);
-      if (getComputedStyle(wires).display === "none") return;
-      LINKS.forEach(function (l) {
-        var a = document.getElementById(l[0]), b = document.getElementById(l[1]);
-        var A = anchor(a, center(b)), B = anchor(b, center(a));
-        var mx = (A.x + B.x) / 2;
-        var d = Math.abs(A.y - B.y) < 2 || Math.abs(A.x - B.x) < 2 ? "M" + A.x + " " + A.y + "L" + B.x + " " + B.y : "M" + A.x + " " + A.y + "C" + mx + " " + A.y + " " + mx + " " + B.y + " " + B.x + " " + B.y;
-        html += "<path d=\"" + d + "\" class=\"w\" data-a=\"" + l[0] + "\" data-b=\"" + l[1] + "\"/>";
-        if (l[2]) html += "<text x=\"" + mx + "\" y=\"" + ((A.y + B.y) / 2 - 7) + "\" text-anchor=\"middle\">" + l[2] + "</text>";
-      });
-      wires.innerHTML = html;
-      hi();
+    function box(el) { var r = el.getBoundingClientRect(), p = plan.getBoundingClientRect(); return { l: r.left - p.left, t: r.top - p.top, w: r.width, h: r.height }; }
+    function anchor(b, to) {
+      var cx = b.l + b.w / 2, cy = b.t + b.h / 2;
+      if (Math.abs(to.x - cx) > b.w / 2) return { x: to.x > cx ? b.l + b.w : b.l, y: cy };
+      return { x: cx, y: to.y > cy ? b.t + b.h : b.t };
     }
     var curK = "n-lens";
     function hi() { Array.prototype.forEach.call(wires.querySelectorAll(".w"), function (w) { w.classList.toggle("hot", w.getAttribute("data-a") === curK || w.getAttribute("data-b") === curK); }); }
+    function draw() {
+      var p = plan.getBoundingClientRect(), html = "";
+      wires.setAttribute("viewBox", "0 0 " + p.width + " " + p.height);
+      if (getComputedStyle(wires).display === "none") return;
+      LINKS.forEach(function (l) {
+        var A0 = box(document.getElementById(l[0])), B0 = box(document.getElementById(l[1]));
+        var A = anchor(A0, { x: B0.l + B0.w / 2, y: B0.t + B0.h / 2 }), B = anchor(B0, { x: A0.l + A0.w / 2, y: A0.t + A0.h / 2 });
+        var mx = (A.x + B.x) / 2;
+        var d = Math.abs(A.x - B.x) < 2 ? "M" + A.x + " " + A.y + "L" + B.x + " " + B.y : "M" + A.x + " " + A.y + "C" + mx + " " + A.y + " " + mx + " " + B.y + " " + B.x + " " + B.y;
+        html += "<path d=\"" + d + "\" class=\"w\" data-a=\"" + l[0] + "\" data-b=\"" + l[1] + "\"/>";
+        if (l[2]) html += "<text x=\"" + mx + "\" y=\"" + ((A.y + B.y) / 2 - 8) + "\" text-anchor=\"middle\">" + l[2] + "</text>";
+      });
+      wires.innerHTML = html; hi();
+    }
     Array.prototype.forEach.call(plan.querySelectorAll(".nd"), function (n) {
       function show() {
         Array.prototype.forEach.call(plan.querySelectorAll(".nd"), function (o) { o.classList.toggle("on", o === n); });

@@ -1,0 +1,175 @@
+---
+// Démo Videntis : une annonce traverse les quatre étapes du produit, avec le code porté (videntis-engine.js).
+// Catalogue GPU allégé et règles d'intention : données publiques de l'API. Prix : jeu inventé.
+import Draw from "./Draw.astro";
+import catalog from "../data/videntis/gpu-catalog.json";
+import rules from "../data/videntis/intent-rules.json";
+import market from "../data/videntis/demo-market.json";
+import engineSrc from "../scripts/videntis-engine.js?raw";
+
+const SAMPLES = [
+  { title: "rtx3080ti 12go comme neuf !!!", price: 420, platform: "leboncoin" },
+  { title: "MSI RTX 3080 gaming Z trio 10Go", price: 255, platform: "leboncoin" },
+  { title: "RTX 4070 Super dual OC, facture", price: 560, platform: "vinted" },
+  { title: "RX 6800 XT 16Go ex-minage", price: 450, platform: "ebay" },
+  { title: "Recherche RTX 3080 Ti, Saint-Étienne", price: 380, platform: "leboncoin" },
+  { title: "Boîte vide RTX 3080 Ti", price: 15, platform: "leboncoin" },
+];
+const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted", ebay: "eBay" };
+const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES });
+---
+<div class="dm" id="dm">
+  <div class="dm-pick">
+    <p class="dm-k">1. Choisissez une annonce <span>inventée</span></p>
+    <div class="dm-samples">
+      {SAMPLES.map((s, i) => (
+        <button type="button" class={"smp" + (i === 0 ? " on" : "")} data-i={i}>
+          <span class="smp-t">{s.title}</span><span class="smp-m">{s.price} € · {PL[s.platform]}</span>
+        </button>
+      ))}
+    </div>
+    <form class="dm-form" id="dm-form" autocomplete="off">
+      <p class="dm-k">ou écrivez la vôtre</p>
+      <label class="f f-title"><span>Titre de l’annonce</span><input id="dm-title" type="text" maxlength="120" value={SAMPLES[0].title} /></label>
+      <div class="dm-row">
+        <label class="f"><span>Prix (€)</span><input id="dm-price" type="number" min="1" max="99999" step="1" value={SAMPLES[0].price} /></label>
+        <label class="f"><span>Plateforme</span><select id="dm-plat"><option value="leboncoin">Leboncoin</option><option value="vinted">Vinted</option><option value="ebay">eBay</option></select></label>
+      </div>
+      <button class="dm-go" type="submit">Analyser l’annonce</button>
+    </form>
+  </div>
+
+  <div class="dm-run">
+    <article class="dm-ad" aria-live="polite">
+      <div class="dm-photo"><Draw name="gpu" /><span>annonce inventée</span></div>
+      <div class="dm-ad-txt"><p class="dm-ad-t" id="dm-ad-t"></p><p class="dm-ad-p"><b id="dm-ad-p"></b><span id="dm-ad-pl"></span></p></div>
+    </article>
+    <ol class="dm-steps">
+      <li class="ds" id="ds1"><header><i>1</i><h3>Quel modèle&nbsp;?</h3><span class="tag t-real">vrai code de Lens</span></header><div class="ds-b"></div></li>
+      <li class="ds" id="ds2"><header><i>2</i><h3>Vraie vente&nbsp;?</h3><span class="tag t-real">vraies règles de Lens</span></header><div class="ds-b"></div></li>
+      <li class="ds" id="ds3"><header><i>3</i><h3>Combien ça se revend&nbsp;?</h3><span class="tag t-fake">prix inventés</span></header><div class="ds-b"></div></li>
+      <li class="ds" id="ds4"><header><i>4</i><h3>Le verdict</h3><span class="tag t-real">vrai code de l’API</span></header><div class="ds-b"></div></li>
+    </ol>
+  </div>
+</div>
+<p class="dm-note">En production, Claude Haiku relit ensuite chaque annonce côté serveur pour confirmer le tri. Ici, seules les règles tournent, dans votre navigateur.</p>
+
+<script type="application/json" id="dm-data" set:html={data}></script>
+<Fragment set:html={"<script>" + engineSrc + "</script>"} />
+<script is:inline>
+(function () {
+  "use strict";
+  var E = window.VidentisEngine, raw = JSON.parse(document.getElementById("dm-data").textContent);
+  var data = { catalog: raw.catalog, rules: E.compileRules(raw.rules), market: raw.market };
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function (id) { return document.getElementById(id); };
+  var steps = [1, 2, 3, 4].map(function (k) { return $("ds" + k); });
+  var VERD = { BUY: ["Foncer", "st-go"], NEGOTIATE: ["Négocier", "st-neg"], LOWBALL: ["Tenter", "st-try"], AVOID: ["Passer", "st-pass"] };
+  var timers = [];
+
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function pct(x) { return (x * 100).toFixed(1).replace(".", ",") + " %"; }
+  function eur(x) { return Math.round(x).toLocaleString("fr-FR") + " €"; }
+  function suffixOf(name) { var m = /\b(Ti Super|Super|Ti|XTX|XT)$/i.exec(name); return m ? m[1] : ""; }
+
+  function step1(r) {
+    if (!r.match) return "<p class=\"ans no\">Modèle non reconnu</p><p class=\"ds-d\">La démo ne contient que les 139 cartes graphiques du catalogue. Essayez un titre avec « RTX », « GTX » ou « RX ».</p>";
+    var rule = { closest: "le modèle le plus proche du catalogue, suffixe vérifié", exact: "égalité exacte avec le catalogue", alias: "une écriture connue du catalogue", exact_name: "le nom exact du catalogue" }[r.matchInfo.rule] || "";
+    var h = "<p class=\"ans\">" + esc(r.match.componentName) + "</p>";
+    if (r.matchInfo.token) h += "<p class=\"ds-d\">Lu dans le titre&nbsp;: <code>" + esc(r.matchInfo.token) + "</code></p>";
+    h += "<p class=\"ds-d\">Règle&nbsp;: " + rule + ".</p>";
+    if (r.matchInfo.rejected.length) {
+      var rej = r.matchInfo.rejected[0];
+      h += "<p class=\"rej\"><s>" + esc(rej) + "</s> écarté&nbsp;: le titre ne dit pas « " + esc(suffixOf(rej)) + " ».</p>";
+    }
+    return h;
+  }
+  function step2(r) {
+    var it = r.intent;
+    if (it.intent === "sale" && it.counts) return "<p class=\"ans ok\">✓ Vente normale</p><p class=\"ds-d\">Aucune règle d’exclusion ne s’applique&nbsp;: le prix compte dans le marché.</p>";
+    var where = it.extract ? "<p class=\"ds-d\">Repéré dans le " + it.where + "&nbsp;: <mark>« " + esc(it.extract) + " »</mark></p>" : "";
+    if (it.counts && it.intent === "broken") return "<p class=\"ans warn\">" + esc(it.label) + "</p>" + where + "<p class=\"ds-d\">Comptée à part, avec les pièces en panne. La démo ne couvre que le bon état.</p>";
+    if (it.counts) return "<p class=\"ans warn\">✓ Vente, mention « " + esc(it.label) + " »</p>" + where + "<p class=\"ds-d\">Le prix compte, avec cette mention.</p>";
+    return "<p class=\"ans no\">✗ " + esc(it.label) + "</p>" + where + "<p class=\"ds-d\">Pas une vraie vente&nbsp;: écartée, son prix ne compte pas.</p>";
+  }
+  function hist(m, price) {
+    var lo = Math.floor(Math.min(m.obs[0], price) / 20) * 20 - 20, hi = Math.ceil(Math.max(m.obs[m.obs.length - 1], price) / 20) * 20 + 20;
+    var nb = Math.round((hi - lo) / 20), bins = new Array(nb).fill(0);
+    m.obs.forEach(function (p) { bins[Math.min(nb - 1, Math.floor((p - lo) / 20))]++; });
+    var mx = Math.max.apply(null, bins), X = function (p) { return ((p - lo) / (hi - lo)) * 100; };
+    var q1 = m.obs[Math.floor(m.n * .25)], q3 = m.obs[Math.floor(m.n * .75)];
+    var h = "<figure class=\"hist\" role=\"img\" aria-label=\"" + m.n + " ventes, médiane " + m.median + " euros\"><div class=\"bars\">";
+    bins.forEach(function (n, i) { var c = lo + i * 20 + 10; h += "<span class=\"bar" + (c >= q1 && c <= q3 ? " iq" : "") + "\" style=\"height:" + (n / mx * 100) + "%\"></span>"; });
+    h += "</div><span class=\"mark m-ask\" style=\"left:" + X(price) + "%\"><em>" + eur(price) + "</em></span>";
+    h += "<span class=\"mark m-med\" style=\"left:" + X(m.median) + "%\"><em>" + eur(m.median) + "</em></span>";
+    h += "<div class=\"axis\"><span>" + eur(lo) + "</span><span>" + eur(hi) + "</span></div></figure>";
+    return { html: h, q1: q1, q3: q3 };
+  }
+  function step3(r) {
+    if (!r.match) return "<p class=\"ds-d off\">Sans modèle, pas de prix de référence.</p>";
+    if (!r.intent.counts || r.intent.intent === "broken") return "<p class=\"ds-d off\">Annonce écartée&nbsp;: pas de prix de référence à comparer.</p>";
+    if (!r.market) return "<p class=\"ds-d off\">Pas de prix pour ce modèle dans le jeu de la démo (9 modèles). Essayez une RTX 3060 Ti, 3070, 3080, 3080 Ti, 3090, 4070, 4070 Super, RX 6700 XT ou 6800 XT.</p>";
+    var m = r.market, H = hist(m, r.input.price);
+    var conf = { high: "haute", medium: "moyenne", low: "basse" }[m.conf];
+    return "<p class=\"ans big\">" + eur(m.resaleNet) + "</p><p class=\"ds-d\">Revente nette la plus haute&nbsp;: " + m.best.label + (m.best.fees ? " (" + m.best.fees + " % de frais)" : ", sans frais") + ".</p>" + H.html +
+      "<p class=\"ds-d\">" + m.n + " ventes · moitié centrale " + eur(H.q1) + " – " + eur(H.q3) + " · confiance " + conf + "</p>";
+  }
+  function gauge(v) {
+    var X = function (x) { return Math.max(0, Math.min(100, (x + 0.3) / 0.8 * 100)); };
+    return "<div class=\"gauge\" aria-hidden=\"true\"><span class=\"g-z z1\" style=\"flex-basis:" + X(0.2) + "%\"></span><span class=\"g-z z2\" style=\"flex-basis:" + (X(0.3) - X(0.2)) + "%\"></span><span class=\"g-z z3\"></span>" +
+      "<span class=\"g-m\" style=\"left:" + X(v.mAsk) + "%\"><em>" + pct(v.mAsk) + "</em></span><span class=\"g-m g-m2\" style=\"left:" + X(v.mNeg) + "%\"><em>" + pct(v.mNeg) + "</em></span></div>" +
+      "<p class=\"gt\" aria-hidden=\"true\"><span style=\"left:" + X(0.2) + "%\">20 %</span><span style=\"left:" + X(0.3) + "%\">30 %</span></p>" +
+      "<p class=\"gk\"><span class=\"k1\">marge au prix demandé</span><span class=\"k2\">après négociation</span></p>";
+  }
+  function step4(r) {
+    if (!r.verdict) return "<p class=\"ds-d off\">Pas de verdict&nbsp;: il faut un modèle, une vraie vente et des prix de référence.</p>";
+    var v = r.verdict, m = r.market, P = r.input.price, pl = E.PLATFORMS[r.input.platform];
+    var s = {
+      BUY: "À " + eur(P) + ", la marge est de " + pct(v.mAsk) + "&nbsp;: au-dessus de 30 %, on fonce.",
+      NEGOTIATE: "À " + eur(P) + ", la marge n’est que de " + pct(v.mAsk) + ". Après la négociation habituelle sur " + pl.label + " (−" + pl.neg + " %, " + eur(v.pNeg) + "), elle passe à " + pct(v.mNeg) + "&nbsp;: au-dessus de 20 %, on négocie.",
+      LOWBALL: "Même négociée (" + eur(v.pNeg) + "), la marge reste sous 20 %. Mais " + pct(v.discMax) + " de remise suffiraient pour l’acheter " + eur(m.achatMax) + "&nbsp;: on tente une offre au culot.",
+      AVOID: "Pour 20 % de marge, il faudrait l’acheter " + eur(m.achatMax) + " au plus, soit " + pct(v.discMax) + " sous le prix demandé&nbsp;: trop loin, on passe."
+    }[v.code];
+    var low = m.conf === "low" ? "<p class=\"ds-d\">Peu de ventes&nbsp;: verdict abaissé d’un cran par prudence.</p>" : "";
+    return "<div class=\"verdict-row\"><div class=\"stamp big " + VERD[v.code][1] + "\">" + VERD[v.code][0] + "</div><p class=\"offer\">Prix max<b>" + eur(m.achatMax) + "</b></p></div>" + gauge(v) + "<p class=\"ds-d why\">" + s + "</p>" + low;
+  }
+
+  function run(input) {
+    timers.forEach(clearTimeout); timers = [];
+    var r = E.analyse(input, data);
+    $("dm-ad-t").textContent = input.title; $("dm-ad-p").textContent = eur(input.price); $("dm-ad-pl").textContent = E.PLATFORMS[input.platform].label;
+    var html = [step1(r), step2(r), step3(r), step4(r)];
+    steps.forEach(function (st, i) {
+      var b = st.querySelector(".ds-b");
+      if (reduce) { b.innerHTML = html[i]; st.className = "ds done"; return; }
+      st.className = "ds wait"; b.innerHTML = "";
+      timers.push(setTimeout(function () { st.className = "ds run"; }, 120 + i * 520));
+      timers.push(setTimeout(function () { b.innerHTML = html[i]; st.className = "ds done"; }, 420 + i * 520));
+    });
+  }
+  function current() {
+    return { title: $("dm-title").value.trim() || "(titre vide)", price: Math.max(1, Math.round(+$("dm-price").value || 1)), platform: $("dm-plat").value, description: "" };
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".smp"), function (b) {
+    b.addEventListener("click", function () {
+      var s = raw.samples[+b.getAttribute("data-i")];
+      Array.prototype.forEach.call(document.querySelectorAll(".smp"), function (o) { o.classList.toggle("on", o === b); });
+      $("dm-title").value = s.title; $("dm-price").value = s.price; $("dm-plat").value = s.platform;
+      run(s);
+    });
+  });
+  $("dm-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    Array.prototype.forEach.call(document.querySelectorAll(".smp"), function (o) { o.classList.remove("on"); });
+    run(current());
+  });
+  // Premier passage quand la démo entre à l'écran
+  var started = false, dm = $("dm");
+  function go() { if (!started) { started = true; run(raw.samples[0]); } }
+  steps.forEach(function (st, i) { st.querySelector(".ds-b").innerHTML = [step1, step2, step3, step4][i](E.analyse(raw.samples[0], data)); st.className = "ds done"; });
+  $("dm-ad-t").textContent = raw.samples[0].title; $("dm-ad-p").textContent = eur(raw.samples[0].price); $("dm-ad-pl").textContent = "Leboncoin";
+  if ("IntersectionObserver" in window && !reduce) {
+    new IntersectionObserver(function (es, ob) { if (es[0].isIntersecting) { go(); ob.disconnect(); } }, { threshold: .35 }).observe(dm);
+  }
+})();
+</script>
