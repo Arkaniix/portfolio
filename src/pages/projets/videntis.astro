@@ -254,39 +254,39 @@ const g0 = HERO_JS[0].g;
       <h2 class="v-h2" id="h-choix">Six questions, six choix.</h2>
       <div class="choices">
         <article class="card">
-          <p class="q">Comment reconnaître le modèle dans un titre&nbsp;?</p>
-          <h3>Avec des règles et un catalogue de 7&nbsp;918 écritures</h3>
-          <p>Le même titre donne toujours le même modèle&nbsp;: on peut le tester, et ça tourne dans le navigateur sans rien coûter.</p>
+          <header class="qh"><span class="qn" aria-hidden="true">1</span><h3 class="q">Comment reconnaître le modèle dans un titre&nbsp;?</h3></header>
+          <p class="a">Avec des règles et un catalogue de 7&nbsp;918 écritures</p>
+          <p class="why">Le même titre donne toujours le même modèle&nbsp;: on peut le tester, et ça tourne dans le navigateur sans rien coûter.</p>
           <p class="cut"><span>Écarté</span> demander à une IA pour chaque annonce&nbsp;: plus lent, payant, et pas toujours la même réponse.</p>
         </article>
         <article class="card">
-          <p class="q">Comment écarter les fausses annonces&nbsp;?</p>
-          <h3>Des règles d’abord, puis Claude Haiku</h3>
-          <p>Recherches, boîtes vides, pièces en panne&nbsp;: les règles trient les cas nets, l’IA relit le reste pour environ 0,001&nbsp;$ l’annonce.</p>
+          <header class="qh"><span class="qn" aria-hidden="true">2</span><h3 class="q">Comment écarter les fausses annonces&nbsp;?</h3></header>
+          <p class="a">Des règles d’abord, puis Claude Haiku</p>
+          <p class="why">Recherches, boîtes vides, pièces en panne&nbsp;: les règles trient les cas nets, l’IA relit le reste pour environ 0,001&nbsp;$ l’annonce.</p>
           <p class="cut"><span>Écarté</span> laisser l’IA estimer les prix&nbsp;: ils doivent venir de ventes réelles.</p>
         </article>
         <article class="card">
-          <p class="q">Quand une annonce est-elle une bonne affaire&nbsp;?</p>
-          <h3>Quand la marge de revente le permet</h3>
-          <p>On compare le prix demandé au prix de revente, frais déduits, avant puis après la négociation habituelle de la plateforme.</p>
+          <header class="qh"><span class="qn" aria-hidden="true">3</span><h3 class="q">Quand une annonce <span class="nw">est-elle</span> une bonne affaire&nbsp;?</h3></header>
+          <p class="a">Quand la marge de revente le permet</p>
+          <p class="why">On compare le prix demandé au prix de revente, frais déduits, avant puis après la négociation habituelle de la plateforme.</p>
           <p class="cut"><span>Écarté</span> comparer seulement le prix à la moyenne.</p>
         </article>
         <article class="card">
-          <p class="q">Quand créditer un abonné&nbsp;?</p>
-          <h3>Seulement quand Stripe confirme le paiement</h3>
-          <p>Un seul signal crédite, la facture payée, au premier mois comme aux renouvellements. Reçu deux fois, il ne crédite qu’une fois.</p>
+          <header class="qh"><span class="qn" aria-hidden="true">4</span><h3 class="q">Quand créditer un abonné&nbsp;?</h3></header>
+          <p class="a">Seulement quand Stripe confirme le paiement</p>
+          <p class="why">Un seul signal crédite, la facture payée, au premier mois comme aux renouvellements. Reçu deux fois, il ne crédite qu’une fois.</p>
           <p class="cut"><span>Écarté</span> créditer dès la fin du formulaire, avant d’être sûr d’être payé.</p>
         </article>
         <article class="card">
-          <p class="q">Comment protéger les données des formules payantes&nbsp;?</p>
-          <h3>Le serveur ne les envoie qu’aux comptes qui y ont droit</h3>
-          <p>Une donnée cachée à l’écran reste lisible dans le navigateur. Une donnée jamais envoyée, non.</p>
+          <header class="qh"><span class="qn" aria-hidden="true">5</span><h3 class="q">Comment protéger les données payantes&nbsp;?</h3></header>
+          <p class="a">Le serveur ne les envoie qu’aux comptes qui y ont droit</p>
+          <p class="why">Une donnée cachée à l’écran reste lisible dans le navigateur. Une donnée jamais envoyée, non.</p>
           <p class="cut"><span>Écarté</span> tout envoyer et masquer dans l’interface.</p>
         </article>
         <article class="card">
-          <p class="q">Que garder des annonces&nbsp;?</p>
-          <h3>Le modèle et le prix, rien d’autre</h3>
-          <p>Jamais le titre, la photo, l’adresse ou le vendeur&nbsp;: la loi protège les bases de données des sites d’annonces (art. L.341-1). Un prix enregistré n’est jamais modifié.</p>
+          <header class="qh"><span class="qn" aria-hidden="true">6</span><h3 class="q">Que garder des annonces&nbsp;?</h3></header>
+          <p class="a">Le modèle et le prix, rien d’autre</p>
+          <p class="why">Jamais le titre, la photo, l’adresse ou le vendeur&nbsp;: la loi protège les bases de données des sites d’annonces (art. L.341-1). Un prix enregistré n’est jamais modifié.</p>
           <p class="cut"><span>Écarté</span> copier les annonces telles quelles.</p>
         </article>
       </div>
