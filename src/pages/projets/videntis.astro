@@ -355,14 +355,15 @@ const FEATURES = [
       Array.prototype.forEach.call(rack, function (li) { li.classList.toggle("lit", li.getAttribute("data-v") === s.v); });
     }
     // Une annonce se joue en entier (≈ 3 s), reste affichée, puis la suivante arrive.
-    // La boucle ne tourne que lorsque l'en-tête est à l'écran ; elle repart à chaque arrivée.
-    var HOLD = 2600, inView = false, running = false;
-    function stop() { hsTimers.forEach(clearTimeout); hsTimers = []; running = false; }
+    // La boucle démarre seule au chargement et ne dépend d'aucun observateur : certains
+    // cadres d'aperçu ne signalent jamais la visibilité. L'observateur sert seulement à
+    // rejouer l'annonce depuis le début quand l'en-tête revient à l'écran.
+    var HOLD = 2600;
+    function stop() { hsTimers.forEach(clearTimeout); hsTimers = []; }
     function play() {
       stop();
       var toks = hT.querySelectorAll(".tkn");
       if (reduce) { hs.className = "stamp-scene done"; Array.prototype.forEach.call(toks, function (t) { t.classList.add("lit"); }); return; }
-      running = true;
       hs.className = "stamp-scene pre";
       Array.prototype.forEach.call(rack, function (li) { li.dataset.on = li.classList.contains("lit") ? "1" : ""; li.classList.remove("lit"); });
       void hs.offsetWidth;
@@ -377,18 +378,21 @@ const FEATURES = [
       }, tEnd + 1050));
       hsTimers.push(setTimeout(function () { next(); }, tEnd + 1050 + HOLD));
     }
-    function next() { sc = (sc + 1) % SC.length; setScene(SC[sc]); if (inView && !document.hidden) play(); else stop(); }
-    function arrive() { if (!running && inView && !document.hidden) play(); }
-    document.getElementById("hs-next").addEventListener("click", function () { inView = true; next(); });
+    function next() { sc = (sc + 1) % SC.length; setScene(SC[sc]); play(); }
+    document.getElementById("hs-next").addEventListener("click", next);
     setScene(SC[0]);
     if (!reduce) {
+      hs.className = "stamp-scene pre";            // pas d'état final visible avant le départ
+      hsTimers.push(setTimeout(play, 350));
       if ("IntersectionObserver" in window) {
+        var wasVisible = null;
         new IntersectionObserver(function (es) {
-          inView = es[0].isIntersecting;
-          if (inView) setTimeout(arrive, 250); else stop();
-        }, { threshold: .4 }).observe(hs);
-      } else { inView = true; setTimeout(arrive, 250); }
-      document.addEventListener("visibilitychange", function () { if (document.hidden) stop(); else setTimeout(arrive, 250); });
+          var v = es[0].isIntersecting;
+          if (v && wasVisible === false) play();   // retour à l'écran : l'annonce se rejoue en entier
+          wasVisible = v;
+        }, { threshold: .25 }).observe(hs);
+      }
+      document.addEventListener("visibilitychange", function () { if (!document.hidden) play(); });
     }
 
     // ---------- Survol des fonctions : sur mobile, le toucher rejoue l'animation ----------
