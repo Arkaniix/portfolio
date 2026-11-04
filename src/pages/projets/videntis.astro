@@ -354,10 +354,15 @@ const FEATURES = [
       hStamp.className = "stamp hit " + CLS[s.v]; hStamp.textContent = s.label;
       Array.prototype.forEach.call(rack, function (li) { li.classList.toggle("lit", li.getAttribute("data-v") === s.v); });
     }
+    // Une annonce se joue en entier (≈ 3 s), reste affichée, puis la suivante arrive.
+    // La boucle ne tourne que lorsque l'en-tête est à l'écran ; elle repart à chaque arrivée.
+    var HOLD = 2600, inView = false, running = false;
+    function stop() { hsTimers.forEach(clearTimeout); hsTimers = []; running = false; }
     function play() {
-      hsTimers.forEach(clearTimeout); hsTimers = [];
+      stop();
       var toks = hT.querySelectorAll(".tkn");
       if (reduce) { hs.className = "stamp-scene done"; Array.prototype.forEach.call(toks, function (t) { t.classList.add("lit"); }); return; }
+      running = true;
       hs.className = "stamp-scene pre";
       Array.prototype.forEach.call(rack, function (li) { li.dataset.on = li.classList.contains("lit") ? "1" : ""; li.classList.remove("lit"); });
       void hs.offsetWidth;
@@ -370,10 +375,21 @@ const FEATURES = [
         hs.classList.add("done");
         Array.prototype.forEach.call(rack, function (li) { if (li.dataset.on) li.classList.add("lit"); });
       }, tEnd + 1050));
+      hsTimers.push(setTimeout(function () { next(); }, tEnd + 1050 + HOLD));
     }
-    document.getElementById("hs-next").addEventListener("click", function () { sc = (sc + 1) % SC.length; setScene(SC[sc]); play(); });
+    function next() { sc = (sc + 1) % SC.length; setScene(SC[sc]); if (inView && !document.hidden) play(); else stop(); }
+    function arrive() { if (!running && inView && !document.hidden) play(); }
+    document.getElementById("hs-next").addEventListener("click", function () { inView = true; next(); });
     setScene(SC[0]);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(play); else play();
+    if (!reduce) {
+      if ("IntersectionObserver" in window) {
+        new IntersectionObserver(function (es) {
+          inView = es[0].isIntersecting;
+          if (inView) setTimeout(arrive, 250); else stop();
+        }, { threshold: .4 }).observe(hs);
+      } else { inView = true; setTimeout(arrive, 250); }
+      document.addEventListener("visibilitychange", function () { if (document.hidden) stop(); else setTimeout(arrive, 250); });
+    }
 
     // ---------- Survol des fonctions : sur mobile, le toucher rejoue l'animation ----------
     Array.prototype.forEach.call(document.querySelectorAll(".feat, .fam"), function (el) {
