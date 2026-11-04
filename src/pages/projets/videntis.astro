@@ -35,6 +35,49 @@ const FEATURES = [
   { k: "repair", t: "Repair Guide", tag: "37 pannes", d: "Causes probables, étapes de diagnostic et réparations chiffrées." },
   { k: "community", t: "Communauté", tag: "Votes et missions", d: "Les utilisateurs confirment la nature des annonces, à la manière de Waze." },
 ];
+
+// ---------- En-tête : quatre annonces inventées, une par verdict ----------
+// Chiffres tirés du moteur de la démo (demo-market.json, inventé) : revente nette, marge, offre maximale.
+const C = { I: "#111216", W: "#FFFFFF", B: "#2B45FF", P: "#FF4F9A", G: "#3DDC97", Y: "#FFD93B", R: "#D3D6DC", I2: "#4A4E57" };
+type Art = { fans: number; len: number; body: string; fan: string; blade: string; stripe: string; dust?: boolean };
+const HERO = [
+  { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: 420, meta: "Comme neuf · Leboncoin · il y a 4 min",
+    model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier", ref: 457, pc: "+9 %", why: "+24 % après négo", rot: 2.5, bg: "sheet",
+    art: { fans: 2, len: 136, body: C.W, fan: C.B, blade: C.W, stripe: C.I } },
+  { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: 255, meta: "Bon état · Leboncoin · il y a 12 min",
+    model: "GeForce RTX 3080", v: "go", label: "Foncer", ref: 340, pc: "+33 %", why: "à prendre tel quel", rot: -2, bg: "wood",
+    art: { fans: 3, len: 154, body: C.I, fan: C.P, blade: C.W, stripe: C.P } },
+  { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: 560, meta: "Très bon état · Vinted · il y a 1 h",
+    model: "GeForce RTX 4070 Super", v: "try", label: "Tenter", ref: 500, pc: "−11 %", why: "offre max 417 €", rot: 1.5, bg: "mat",
+    art: { fans: 2, len: 112, body: C.W, fan: C.G, blade: C.I, stripe: C.Y } },
+  { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: 450, meta: "État correct · eBay · il y a 2 h",
+    model: "Radeon RX 6800 XT", v: "pass", label: "Passer", ref: 360, pc: "−20 %", why: "il faudrait −33 %", rot: -1.5, bg: "floor",
+    art: { fans: 3, len: 148, body: C.R, fan: C.I2, blade: C.W, stripe: C.I, dust: true } },
+];
+// Jauge : barre encre jusqu'au prix demandé, repère à la revente, écart vert (marge) ou rose (trop cher).
+const geo = (p: number, ref: number) => {
+  const max = Math.max(p, ref) * 1.15, P = p / max, Rr = ref / max;
+  return { p: +P.toFixed(3), r: +Rr.toFixed(3), a: +Math.min(P, Rr).toFixed(3), w: +Math.abs(P - Rr).toFixed(3), up: ref > p };
+};
+const heroFan = (cx: number, cy: number, r: number, fill: string, blade: string) =>
+  `<g class="an-fan"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${C.I}" stroke-width="2"/>` +
+  [0, 72, 144, 216, 288].map((a) => `<path d="M${cx} ${cy}q${r * .55} ${-r * .15} ${r * .78} ${r * .32}" fill="none" stroke="${blade}" stroke-width="2.4" stroke-linecap="round" transform="rotate(${a} ${cx} ${cy})"/>`).join("") +
+  `<circle cx="${cx}" cy="${cy}" r="${r * .26}" fill="${C.W}" stroke="${C.I}" stroke-width="2"/></g>`;
+const gpuArt = (o: Art) => {
+  const x = Math.round((176 - o.len - 10) / 2), y = 20, h = 56, step = o.len / o.fans, r = Math.min(20, step * .4);
+  let s = `<rect x="${x}" y="${y}" width="${o.len}" height="${h}" rx="8" fill="${o.body}" stroke="${C.I}" stroke-width="2"/>`;
+  s += `<path d="M${x + 10} ${y + 5}h${o.len - 20}" stroke="${o.stripe}" stroke-width="3" stroke-linecap="round"/>`;
+  for (let i = 0; i < o.fans; i++) s += heroFan(+(x + step * (i + .5)).toFixed(1), y + h / 2 + 2, r, o.fan, o.blade);
+  s += `<rect x="${x + o.len}" y="14" width="10" height="68" rx="2" fill="${C.R}" stroke="${C.I}" stroke-width="2"/>`;
+  const pw = Math.min(80, Math.round(o.len * .52));
+  s += `<rect x="${x + 26}" y="${y + h}" width="${pw}" height="9" fill="${C.Y}" stroke="${C.I}" stroke-width="2"/>`;
+  s += `<path d="${Array.from({ length: Math.floor(pw / 6) }, (_, i) => `M${x + 31 + i * 6} ${y + h + 1}v7`).join("")}" stroke="${C.I}" stroke-width="1.2"/>`;
+  if (o.dust) s += [[18, 30], [44, 66], [70, 26], [96, 70], [118, 34], [140, 62], [60, 46], [128, 50]]
+    .map(([dx, dy], i) => `<circle cx="${x + dx}" cy="${dy}" r="${i % 3 ? 1.6 : 2.4}" fill="${C.I2}" opacity=".55"/>`).join("");
+  return s;
+};
+const HERO_JS = HERO.map(({ art, ...s }) => ({ ...s, g: geo(s.p, s.ref) }));
+const g0 = HERO_JS[0].g;
 ---
 <Base title="Videntis, le juste prix du matériel d’occasion" description={description} themeColor="#FFD93B">
 <SiteHeader />
@@ -59,12 +102,19 @@ const FEATURES = [
       </div>
       <div class="stamp-scene" id="hs" aria-hidden="true">
         <div class="lot-wrap">
-          <article class="lot">
-            <div class="lot-photo"><Draw name="gpu" /><span>annonce inventée</span></div>
-            <p class="lot-title" id="hs-title"><span class="tkn m">rtx3080ti</span> <span class="tkn g">12go</span> <span class="tkn n">comme</span> <span class="tkn n">neuf</span> <span class="tkn x">!!!</span></p>
-            <p class="lot-price" id="hs-price">420 €</p>
-            <p class="lot-meta" id="hs-meta">Bon état · Leboncoin · il y a 4 min</p>
-            <p class="lot-model" id="hs-model">= GeForce RTX 3080 Ti</p>
+          <article class="lot" style={`--rot:${HERO[0].rot}deg`}>
+            <div class="lot-photo" data-bg={HERO[0].bg}>
+              {HERO.map((s, i) => <svg class={"draw gpu-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={gpuArt(s.art)} />)}
+              <span>annonce inventée</span>
+            </div>
+            <p class="lot-title" id="hs-title">{HERO[0].t.map(([w, k], i) => <Fragment>{i > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
+            <p class="lot-price" id="hs-price">{HERO[0].p} €</p>
+            <p class="lot-meta" id="hs-meta">{HERO[0].meta}</p>
+            <p class="lot-model" id="hs-model">= {HERO[0].model}</p>
+            <div class="lot-gauge" id="hs-gauge" style={`--p:${g0.p};--r:${g0.r};--a:${g0.a};--w:${g0.w}`}>
+              <div class="g-track"><i class="g-bar"></i><i class={"g-gap" + (g0.up ? "" : " dn")}></i><i class="g-ref"></i></div>
+              <p class="g-note">revente <b id="hs-ref">{HERO[0].ref} €</b> <span class={"pc" + (g0.up ? "" : " dn")} id="hs-pc">{HERO[0].pc}</span> <span class="why" id="hs-why">{HERO[0].why}</span></p>
+            </div>
           </article>
           <div class="stamp hit st-neg" id="hs-stamp">Négocier</div>
         </div>
@@ -332,67 +382,97 @@ const FEATURES = [
 
 <dialog class="lightbox" id="lightbox"><button type="button" class="lb-close" aria-label="Fermer">×</button><img alt="" /></dialog>
 
+<script type="application/json" id="hs-data" set:html={JSON.stringify(HERO_JS)}></script>
 <script is:inline>
   (function () {
     var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // ---------- En-tête : une annonce arrive, son titre est lu, le tampon tombe ----------
-    var SC = [
-      { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: "420 €", meta: "Bon état · Leboncoin · il y a 4 min", model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier" },
-      { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: "255 €", meta: "Bon état · Leboncoin · il y a 12 min", model: "GeForce RTX 3080", v: "go", label: "Foncer" },
-      { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: "560 €", meta: "Bon état · Vinted · il y a 1 h", model: "GeForce RTX 4070 Super", v: "try", label: "Tenter" },
-      { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: "450 €", meta: "Bon état · eBay · il y a 2 h", model: "Radeon RX 6800 XT", v: "pass", label: "Passer" }
-    ];
+    // Chaque annonce : elle tombe, son titre est lu, le modèle et la jauge de prix apparaissent,
+    // le tampon tombe. Elle reste affichée, puis sort de côté avec son tampon avant que la suivante
+    // ne tombe : le contenu ne change jamais sous les yeux.
+    var SC = JSON.parse(document.getElementById("hs-data").textContent);
     var CLS = { go: "st-go", neg: "st-neg", try: "st-try", pass: "st-pass" };
-    var hs = document.getElementById("hs"), hT = document.getElementById("hs-title"), hStamp = document.getElementById("hs-stamp");
+    var hs = document.getElementById("hs"), lot = hs.querySelector(".lot"), photo = hs.querySelector(".lot-photo");
+    var arts = photo.querySelectorAll(".gpu-v"), gauge = document.getElementById("hs-gauge");
+    var hT = document.getElementById("hs-title"), hStamp = document.getElementById("hs-stamp");
     var rack = hs.querySelectorAll(".rack li"), sc = 0, hsTimers = [];
-    function setScene(s) {
+    function $(id) { return document.getElementById(id); }
+    function fill(i) {                                // contenu de la carte seulement
+      var s = SC[i];
       hT.innerHTML = s.t.map(function (w) { return "<span class=\"tkn " + w[1] + "\">" + w[0] + "</span>"; }).join(" ");
-      document.getElementById("hs-price").textContent = s.p;
-      document.getElementById("hs-meta").textContent = s.meta;
-      document.getElementById("hs-model").textContent = "= " + s.model;
-      hStamp.className = "stamp hit " + CLS[s.v]; hStamp.textContent = s.label;
-      Array.prototype.forEach.call(rack, function (li) { li.classList.toggle("lit", li.getAttribute("data-v") === s.v); });
+      $("hs-price").textContent = s.p + " €";
+      $("hs-meta").textContent = s.meta;
+      $("hs-model").textContent = "= " + s.model;
+      $("hs-ref").textContent = s.ref + " €";
+      $("hs-pc").textContent = s.pc; $("hs-pc").className = "pc" + (s.g.up ? "" : " dn");
+      $("hs-why").textContent = s.why;
     }
-    // Une annonce se joue en entier (≈ 3 s), reste affichée, puis la suivante arrive.
-    // La boucle démarre seule au chargement et ne dépend d'aucun observateur : certains
-    // cadres d'aperçu ne signalent jamais la visibilité. L'observateur sert seulement à
-    // rejouer l'annonce depuis le début quand l'en-tête revient à l'écran.
-    var HOLD = 2600;
+    function setScene(i) {
+      var s = SC[i];
+      fill(i);
+      lot.style.setProperty("--rot", s.rot + "deg");
+      photo.setAttribute("data-bg", s.bg);
+      Array.prototype.forEach.call(arts, function (a, k) { a.classList.toggle("on", k === i); });
+      ["p", "r", "a", "w"].forEach(function (k) { gauge.style.setProperty("--" + k, s.g[k]); });
+      gauge.querySelector(".g-gap").className = "g-gap" + (s.g.up ? "" : " dn");
+      hStamp.className = "stamp hit " + CLS[s.v]; hStamp.textContent = s.label;
+    }
+    function rackOn(on) { Array.prototype.forEach.call(rack, function (li) { li.classList.toggle("lit", on && li.getAttribute("data-v") === SC[sc].v); }); }
+    // Toutes les cartes ont la hauteur de la plus haute : rien ne saute sous la carte d'une annonce à l'autre.
+    function sizeCard() {
+      lot.style.minHeight = "";
+      var h = 0;
+      for (var i = 0; i < SC.length; i++) { fill(i); h = Math.max(h, lot.offsetHeight); }
+      fill(sc);
+      if (hs.classList.contains("in") || hs.classList.contains("done")) Array.prototype.forEach.call(hT.querySelectorAll(".tkn"), function (t) { t.classList.add("lit"); });
+      lot.style.minHeight = h + "px";
+    }
+
+    var HOLD = 3000, EXIT = 480;
     function stop() { hsTimers.forEach(clearTimeout); hsTimers = []; }
-    function play() {
+    function reset() {                                // retour instantané au départ, carte invisible
+      hs.className = "stamp-scene pre notr"; rackOn(false);
+      void hs.offsetWidth; hs.classList.remove("notr");
+    }
+    function play() {                                 // joue l'annonce courante depuis le début
       stop();
       var toks = hT.querySelectorAll(".tkn");
-      if (reduce) { hs.className = "stamp-scene done"; Array.prototype.forEach.call(toks, function (t) { t.classList.add("lit"); }); return; }
-      hs.className = "stamp-scene pre";
-      Array.prototype.forEach.call(rack, function (li) { li.dataset.on = li.classList.contains("lit") ? "1" : ""; li.classList.remove("lit"); });
-      void hs.offsetWidth;
+      if (reduce) { hs.className = "stamp-scene done"; Array.prototype.forEach.call(toks, function (t) { t.classList.add("lit"); }); rackOn(true); return; }
+      reset();
       hsTimers.push(setTimeout(function () { hs.className = "stamp-scene in"; }, 60));
       Array.prototype.forEach.call(toks, function (t, i) { hsTimers.push(setTimeout(function () { t.classList.add("lit"); }, 700 + i * 150)); });
       var tEnd = 700 + toks.length * 150;
       hsTimers.push(setTimeout(function () { hs.classList.add("model"); }, tEnd + 150));
-      hsTimers.push(setTimeout(function () { hs.classList.add("slam"); }, tEnd + 700));
-      hsTimers.push(setTimeout(function () {
-        hs.classList.add("done");
-        Array.prototype.forEach.call(rack, function (li) { if (li.dataset.on) li.classList.add("lit"); });
-      }, tEnd + 1050));
-      hsTimers.push(setTimeout(function () { next(); }, tEnd + 1050 + HOLD));
+      hsTimers.push(setTimeout(function () { hs.classList.add("slam"); }, tEnd + 950));
+      hsTimers.push(setTimeout(function () { hs.classList.add("done"); rackOn(true); }, tEnd + 1300));
+      hsTimers.push(setTimeout(next, tEnd + 1300 + HOLD));
     }
-    function next() { sc = (sc + 1) % SC.length; setScene(SC[sc]); play(); }
-    document.getElementById("hs-next").addEventListener("click", next);
-    setScene(SC[0]);
+    function next() {                                 // la carte tamponnée sort, la suivante tombe
+      stop();
+      var go = function () { sc = (sc + 1) % SC.length; setScene(sc); play(); };
+      if (reduce) return go();
+      hs.classList.add("out"); rackOn(false);
+      hsTimers.push(setTimeout(go, EXIT));
+    }
+    var armed = true;                                 // l'annonce se rejouera depuis le début à la prochaine arrivée
+    $("hs-next").addEventListener("click", function () { armed = false; next(); });
+    setScene(0);
+    sizeCard();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(sizeCard);
+    var rsz; addEventListener("resize", function () { clearTimeout(rsz); rsz = setTimeout(sizeCard, 150); });
     if (!reduce) {
-      hs.className = "stamp-scene pre";            // pas d'état final visible avant le départ
+      reset();                                        // pas d'état final visible avant le départ
       hsTimers.push(setTimeout(play, 350));
+      // La boucle ne dépend pas de l'observateur. Il remet l'annonce au départ quand l'en-tête
+      // a complètement quitté l'écran, et la rejoue en entier quand il en montre au moins un quart.
       if ("IntersectionObserver" in window) {
-        var wasVisible = null;
         new IntersectionObserver(function (es) {
-          var v = es[0].isIntersecting;
-          if (v && wasVisible === false) play();   // retour à l'écran : l'annonce se rejoue en entier
-          wasVisible = v;
-        }, { threshold: .25 }).observe(hs);
+          var e = es[0];
+          if (!e.isIntersecting) { if (!armed) { stop(); reset(); armed = true; } return; }
+          if (armed && e.intersectionRatio >= .25) { armed = false; play(); }
+        }, { threshold: [0, .25] }).observe(hs);
       }
-      document.addEventListener("visibilitychange", function () { if (!document.hidden) play(); });
     }
 
     // ---------- Survol des fonctions : sur mobile, le toucher rejoue l'animation ----------
