@@ -57,8 +57,11 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 - Machine à états temporelle : le défilement choisit la diapositive (`want`), puis `enter()` la démarre et `render()` la joue
   dans le temps (`clock`, durées `DUR`). Fondu des éléments qui disparaissent (`snap`), fondu enchaîné en cas de retour arrière ou de saut (`leaving`).
 - Aides : `place(el, x, y, scale, rot, opacity)`, `ease`, `backOut`, `seg`, `lerp`, `clamp`. Mise en page recalculée dans `layout()` (variable `small` sous 560 px).
-- Sections après le récit : « Ma méthode » (frise animée de 5 étapes avec vignettes, `pipeFrame`) et « Parcours »
-  (frise tracée au défilement, logos qui prennent leurs couleurs, `pathFrame`).
+- Section après le récit : « Parcours » (frise tracée au défilement, logos qui prennent leurs couleurs, `pathFrame`).
+  « Ma méthode » a quitté l'accueil pour la page Videntis (composant `MethodPipe.astro`). Les règles `.live` restées dans
+  le style de l'accueil s'appliquent aussi aux points `.dot.live` de la diapositive Videntis : ne pas les supprimer.
+- La diapositive Videntis porte un lien « Voir le projet » (`.plink`) à côté du titre, avec des marges verticales négatives
+  pour ne pas grandir la ligne : sur téléphone, la hauteur des textes fixe la place laissée à l'animation de toutes les diapositives.
 - Boucle unique `frame()` en requestAnimationFrame.
 
 ## Projets présentés (contenu factuel)
