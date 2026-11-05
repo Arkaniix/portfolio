@@ -1,0 +1,708 @@
+---
+// Page projet Deal Hunter : le bot Discord qui triait les nouvelles annonces dans six salons.
+// Faits tirés du dépôt Arkaniix/deal-hunter et des réglages relevés dans le salon ; annonces et prix de démo inventés.
+import Base from "../../layouts/Base.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import DealHunterDemo from "../../components/DealHunterDemo.astro";
+import { PIC, SALON_ART, OUT_ART, triple } from "../../lib/dh-art";
+import { SAMPLES, PIPELINE, ME, OTHER, CHANNEL_INFO } from "../../data/deal-hunter/samples";
+import market from "../../data/deal-hunter/demo-market.json";
+import catalog from "../../data/videntis/gpu-catalog.json";
+import "../../scripts/deal-hunter-engine.js";
+import "../../styles/projet.css";
+import "../../styles/deal-hunter.css";
+
+const E = (globalThis as any).DealHunterEngine;
+const data = { index: E.buildModelIndex(catalog as { name: string }[]), market: market.gpu, cpu: market.cpu };
+const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted" };
+const CHN: Record<string, string> = { lbc: "Leboncoin", vinted: "Vinted", ebay: "eBay" };
+const eur = (x: number) => Math.round(x).toLocaleString("fr-FR") + "\u00a0€";
+const seur = (x: number) => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(Math.round(x)).toLocaleString("fr-FR") + "\u00a0€";
+
+const description =
+  "Deal Hunter, le bot Discord qui triait les nouvelles annonces de matériel PC : six salons, profit net de revente, analyse par Claude Haiku au clic. Démo interactive, architecture, choix et difficultés résolues.";
+
+// ---------- En-tête : sept annonces passent par le vrai moteur, chacune finit dans sa case ----------
+const bySid = Object.fromEntries(SAMPLES.map((s) => [s.id, s]));
+const heroSeq: [string, number?][] = [["s1"], ["s2"], ["s3"], ["s4"], ["s5"], ["s7"], ["s1", 189]];
+const hst = { seen: {}, sent: {} };
+const HERO = heroSeq.map(([sid, price]) => {
+  const s = bySid[sid];
+  const ad = { ad_id: s.id, title: s.title, price_eur: price ?? s.price, platform: s.platform, description: s.description || "", condition: s.condition || null };
+  const r = E.processAd(ad, data, hst, PIPELINE, [ME]);
+  const ex = r.steps[0] && !r.steps[0].ok ? r.steps[0] : null;
+  const model = r.steps[1] && r.steps[1].ok ? r.steps[1] : null;
+  const risk = r.steps.find((x: any) => x.k === "risk");
+  const tokWords = model ? E.normalize(model.token).split(" ") : [];
+  const hsWords = risk && risk.hs && risk.hs.is_hs ? E.normalize(risk.hs.signals.join(" ")).replace(/[^a-z0-9 ]/g, " ") : "";
+  const words = s.title.split(" ").map((w) => {
+    const n = E.normalize(w).replace(/[^a-z0-9]/g, "");
+    let k = "n";
+    if (ex && ex.hit && E.normalize(ex.hit).split(/[\s-]+/).some((h: string) => h && n.indexOf(h.replace(/[^a-z0-9]/g, "")) === 0)) k = "x";
+    else if (n && tokWords.some((t: string) => t === n || (n.length > 2 && n.indexOf(t) === 0 && t.length > 2) || n === t.replace(/\s/g, ""))) k = "m";
+    else if (n && hsWords && hsWords.indexOf(n) !== -1 && n.length > 2) k = "r";
+    return [w, k];
+  });
+  const ev = r.ev;
+  const lines = ex ? [["Écartée", ex.why]] : [
+    ["Modèle", model.name || model.token],
+    ["Revente", eur(ev.realistic_sell_price)],
+    ["Profit", seur(ev.best_profit) + " via " + CHN[ev.best_channel]],
+    ...(ev.price_drop ? [["Prix", eur(ev.price_drop.old_price) + " → " + eur(ev.price_drop.new_price)]] : []),
+    ...(ev.is_hs ? [["Signal", "pour pièces"]] : ev.is_scam_suspect ? [["Signal", "prix à " + (ev.ratio).toFixed(2).replace(".", ",") + " de la revente"]] : []),
+  ];
+  return {
+    t: words, p: ad.price_eur, meta: PL[s.platform] + (s.city ? " · " + s.city : "") + " · " + s.ago, pic: s.pic, bg: PIC[s.pic].bg,
+    lines, slot: r.stop ? "out" : r.channel, ping: !!(r.who && r.who.some((w: any) => w.pinged)),
+  };
+});
+const H0 = HERO[0];
+const SLOTS = ["deals_fire", "deals_price_drop", "deals_hs", "deals_suspect", "deals_not_rentable", "deals_other"];
+const heroPics = [...new Set(HERO.map((h) => h.pic))];
+
+// ---------- Six salons ----------
+const SALONS = [
+  { k: "deals_fire", art: "fire", rule: "Profit net d’au moins 50 €", sub: "Seuil réglable dans #bot-settings, 25 € par défaut." },
+  { k: "deals_price_drop", art: "drop", rule: "Prix baissé d’au moins 5 %", sub: "Sur une annonce déjà vue dans les 7 derniers jours." },
+  { k: "deals_hs", art: "hs", rule: "Pour pièces, en panne, écran noir…", sub: "Gardée, avec une analyse de réparateur." },
+  { k: "deals_suspect", art: "suspect", rule: "Prix à la moitié de la revente ou moins", sub: "Ou deux signaux à la fois : langue étrangère et plus de 600 € de revente sur Vinted." },
+  { k: "deals_not_rentable", art: "flat", rule: "Profit négatif", sub: "Posté quand même, dans son salon." },
+  { k: "deals_other", art: "other", rule: "Tout le reste", sub: "Profit entre 0 et 50 €, ou pas de référence." },
+];
+const OUTS = [
+  { k: "lot", t: "Lots et packs" }, { k: "box", t: "Boîtes vides" }, { k: "laptop", t: "PC portables" }, { k: "swap", t: "Échanges" },
+  { k: "mug", t: "Goodies" }, { k: "fan", t: "Ventilateurs, câbles" }, { k: "glasses", t: "Lunettes «\u00a0RX\u00a0»" }, { k: "old", t: "Vieilles générations" },
+];
+
+// ---------- Le vrai bot : message et analyse de l'annonce n° 1 ----------
+const R1 = E.processAd({ ad_id: "s1", title: SAMPLES[0].title, price_eur: SAMPLES[0].price, platform: "leboncoin", description: SAMPLES[0].description }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
+const ev1 = R1.ev;
+
+// ---------- Qui est prévenu ? ----------
+const WHO_DEALS = ["s1", "s2", "s4", "s5"];
+
+// ---------- Le plan ----------
+const PLAN: Record<string, [string, string]> = {
+  src: ["Nouvelles annonces", "Le matériel PC fraîchement publié sur Leboncoin et Vinted. Le bot se met en pause dès que plus personne n’est en chasse."],
+  excl: ["Écartées d’office", "Prix au-dessus du maximum (500 €), lots, boîtes vides, portables, échanges, goodies, accessoires, lunettes. Sur Vinted, le même tri en allemand, italien, espagnol, néerlandais et portugais."],
+  model: ["Quel modèle ?", "Cartes graphiques par motif (RTX 20 et plus, RX 5000 et plus, Arc), processeurs (Intel 8e génération et plus, Ryzen 3000 et plus), mémoire et SSD. Alimentations et cartes mères par les alias du catalogue Videntis."],
+  seen: ["Déjà vue ?", "Une annonce vue ne repasse que si son prix baisse d’au moins 5 %. Une empreinte titre et prix rattrape le même objet sous un autre numéro."],
+  profit: ["Profit", "Ventes confirmées de Videntis, corrigées de 15 à 25 % selon le prix et plafonnées à 90 % du neuf. Puis frais et port des trois canaux de revente : le meilleur l’emporte."],
+  risk: ["Pour pièces ? Arnaque ?", "Mots de panne en français et en anglais, négations comprises (« sans défaut »), état « pour pièces » de Leboncoin. Prix trop bas, langue étrangère, gros montant sur Vinted."],
+  route: ["Six salons", "Chaque annonce reconnue est postée dans un salon. Les mentions dépendent du panneau de chaque chasseur."],
+  ref: ["Référence Videntis", "La base PostgreSQL de Videntis, en lecture seule, rechargée toutes les 30 minutes. Un modèle sans 3 ventes confirmées sur 90 jours n’a pas de référence."],
+  mem: ["Mémoire locale", "SQLite : annonces vues (7 jours), messages postés (90 jours), signalements. Les empreintes tiennent 2 heures, même après un redémarrage."],
+  forge: ["Règles Forge", "Les règles de chaque chasseur, écrites dans la console Videntis et lues en lecture seule. En mode envoi, si une règle correspond, le message part dans son salon (#deals-forge) à la place du tri."],
+  haiku: ["Claude Haiku", "Au clic sur « Analyser », avec la photo de l’annonce. Consigne de revendeur, ou de réparateur dans #deals-hs. 20 appels par heure, 50 par jour, 5 par personne et par heure."],
+  report: ["Signalements", "« Signaler » fige le contexte du message (verdict, profit, signaux). Les causes qui reviennent deviennent des exclusions."],
+  panels: ["Panneaux", "Un panneau global dans #bot-settings, un par chasseur dans son salon. Chaque clic est enregistré sur disque et s’applique tout de suite."],
+};
+---
+<Base title="Deal Hunter, le bot qui trie les bonnes affaires" description={description} themeColor="#FF4F9A">
+<SiteHeader />
+
+<main class="v dh">
+
+  <!-- ========== En-tête ========== -->
+  <section class="band b-pink v-hero" aria-labelledby="dh-title">
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <p class="kicker">Projet 2 · Bot Discord, module de Videntis · 2026</p>
+        <h1 id="dh-title" class="v-h1">Deal Hunter</h1>
+        <p class="lead">Les bonnes affaires partent en quelques minutes. Deal Hunter lisait les nouvelles annonces de matériel PC sur Leboncoin et Vinted, calculait ce qu’elle rapporterait à la revente et la rangeait dans le bon salon Discord. Un clic sur «&nbsp;Analyser&nbsp;», et Claude Haiku donnait son avis.</p>
+        <p class="status"><span class="dot off" aria-hidden="true"></span>À l’arrêt aujourd’hui. Le code et ses 901 tests restent.</p>
+        <div class="cta">
+          <a class="vbtn primary" href="#demo">Essayer la démo</a>
+          <a class="vbtn" href="#plan">Voir le plan</a>
+        </div>
+        <ul class="stack" aria-label="Technologies">
+          <li>Python</li><li>asyncio</li><li>discord.py</li><li>SQLite</li><li>PostgreSQL</li><li>Claude Haiku</li><li>pytest</li>
+        </ul>
+      </div>
+      <div class="srt pre" id="srt" aria-hidden="true">
+        <div class="srt-stage">
+          <article class="dh-card">
+            <div class="dh-card-pic" data-bg={H0.bg}>
+              {heroPics.map((k) => <svg class={"draw pv" + (k === H0.pic ? " on" : "")} data-k={k} viewBox="0 0 176 100" set:html={PIC[k].svg} />)}
+              <span>annonce inventée</span>
+            </div>
+            <p class="dh-card-t" id="srt-t">{H0.t.map(([w, k], i) => <Fragment>{i > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
+            <p class="dh-card-p"><b id="srt-p">{H0.p} €</b><span id="srt-m">{H0.meta}</span></p>
+          </article>
+          <dl class="srt-read" id="srt-read">
+            {H0.lines.map(([a, b]) => <div><dt>{a}</dt><dd>{b}</dd></div>)}
+          </dl>
+          <span class="srt-chip" id="srt-chip"></span>
+        </div>
+        <ul class="srt-slots" id="srt-slots">
+          {SLOTS.map((k) => (
+            <li class={"slot c-" + CHANNEL_INFO[k].c} data-s={k}><b><i>#&nbsp;</i>{CHANNEL_INFO[k].name}</b><em>0</em><span class="ping">@moi</span></li>
+          ))}
+          <li class="slot bin" data-s="out"><b>Écartées, sans message</b><em>0</em></li>
+        </ul>
+        <button type="button" class="replay" id="srt-next">Annonce suivante <span aria-hidden="true">↻</span></button>
+      </div>
+    </div>
+    <div class="wrap">
+      <ul class="facts">
+        <li><b>7</b><span>familles reconnues</span><em>cartes graphiques, processeurs, mémoire, SSD, alimentations, cartes mères, PC complets</em></li>
+        <li><b>6</b><span>salons de tri</span><em>de « bonnes affaires » à « pas rentables »</em></li>
+        <li><b>3</b><span>reventes comparées</span><em>Leboncoin, Vinted et eBay, frais et port déduits</em></li>
+        <li><b>901</b><span>tests automatisés</span><em>filtres, calculs, doublons, panneaux, règles</em></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ========== Six salons ========== -->
+  <section class="band b-paper" aria-labelledby="h-salons">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-salons">Six salons, une règle chacun.</h2>
+      <p class="intro">Chaque annonce reconnue est postée quelque part. Seules celles qui passent vos seuils vous mentionnent.</p>
+      <ul class="salons">
+        {SALONS.map((s) => (
+          <li class={"salon c-" + CHANNEL_INFO[s.k].c} tabindex="0">
+            <div class="salon-art"><svg class="draw" viewBox="0 0 120 80" aria-hidden="true" set:html={SALON_ART[s.art]} /></div>
+            <p class="salon-ch"># {CHANNEL_INFO[s.k].name}</p>
+            <h3>{CHANNEL_INFO[s.k].label}</h3>
+            <p class="salon-r">{s.rule}</p>
+            <p class="salon-s">{s.sub}</p>
+          </li>
+        ))}
+      </ul>
+      <div class="prio">
+        <p class="prio-k">Quand plusieurs règles collent, l’ordre tranche</p>
+        <ol>
+          <li class="c-hs">Pour pièces</li><li class="c-suspect">Suspecte</li><li class="c-drop">Baisse de prix</li><li class="c-fire">Profit</li>
+        </ol>
+      </div>
+      <h3 class="sub-h2">Écarté avant tout calcul</h3>
+      <ul class="outs">
+        {OUTS.map((o) => (
+          <li class="out" tabindex="0"><svg class="draw" viewBox="0 0 64 64" aria-hidden="true" set:html={OUT_ART[o.k]} /><span>{o.t}</span></li>
+        ))}
+      </ul>
+      <p class="outs-n">Et tout ce qui dépasse 500 €, le prix maximum réglé dans #bot-settings. Vieilles générations : GTX, Radeon avant les RX 5000, Intel avant la 8e génération, Ryzen avant les 3000.</p>
+    </div>
+  </section>
+
+  <!-- ========== Démo ========== -->
+  <section class="band b-blue" id="demo" aria-labelledby="h-demo">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-demo">Une annonce, un salon.</h2>
+      <p class="intro">Choisissez une annonce ou écrivez la vôtre. Elle suit le chemin du bot, étape par étape, jusqu’à son salon. Puis cliquez sur «&nbsp;Analyser&nbsp;».</p>
+      <DealHunterDemo />
+    </div>
+  </section>
+
+  <!-- ========== Le vrai bot, redessiné ========== -->
+  <section class="band b-paper" aria-labelledby="h-bot">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-bot">Le vrai bot, redessiné.</h2>
+      <p class="intro">D’après mes captures du salon&nbsp;: mêmes champs, mêmes boutons, mêmes réglages. L’annonce est inventée, les couleurs sont celles du site.</p>
+      <div class="anat" id="anat">
+        <div class="win">
+          <div class="win-side" aria-hidden="true">
+            <p class="win-srv">Serveur de chasse</p>
+            {["deals-fire", "deals-price-drop", "deals-hs", "deals-suspect", "deals-not-rentable", "deals-other", "deals-forge", "bot-settings", "bot-logs", "settings-etienne"].map((c) => (
+              <p class={"win-ch" + (c === "deals-fire" ? " on" : "")}># {c}</p>
+            ))}
+          </div>
+          <div class="win-main">
+            <p class="win-top"># deals-fire</p>
+            <div class="msg">
+              <span class="msg-av" aria-hidden="true">DH</span>
+              <div class="msg-b">
+                <p class="msg-h"><b>Deal Hunter</b><span class="botp">bot</span><em>aujourd’hui à 14:31</em></p>
+                <p class="msg-at" data-n="2">@moi<i class="n">2</i></p>
+                <div class="emb k-vgood">
+                  <div class="emb-top">
+                    <div class="emb-txt">
+                      <p class="emb-t" data-n="1"><span class="newp">nouveau</span>{ev1.verdict.v} · {ev1.matched_model.name}<i class="n">1</i></p>
+                      <p class="emb-d">{SAMPLES[0].title}<span class="emb-desc">{SAMPLES[0].description}</span></p>
+                    </div>
+                    <span class="emb-th" data-bg={PIC["gpu-fe"].bg}><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC["gpu-fe"].svg} /></span>
+                  </div>
+                  <dl class="emb-f">
+                    <div><dt>Prix</dt><dd><b>{eur(SAMPLES[0].price)}</b></dd></div>
+                    <div><dt>Revente estimée</dt><dd>~{eur(ev1.realistic_sell_price)}</dd></div>
+                    <div data-n="3"><dt>Profit net</dt><dd><b>{seur(ev1.best_profit)}</b> via {ev1.best_channel.toUpperCase()}<i class="n">3</i></dd></div>
+                    <div><dt>Localisation</dt><dd>{SAMPLES[0].city}</dd></div>
+                    <div><dt>Plateforme</dt><dd>Leboncoin</dd></div>
+                    <div data-n="5"><dt>Observations</dt><dd>{ev1.observation_count} ✓ fiable<i class="n">5</i></dd></div>
+                    <div class="w" data-n="4"><dt>Détail profits</dt><dd>{["lbc", "vinted", "ebay"].map((c) => c.toUpperCase() + " : " + seur(ev1.profits_by_channel[c].profit)).join(" | ")}<i class="n">4</i></dd></div>
+                    <div><dt>Publiée</dt><dd>il y a 3 min</dd></div>
+                  </dl>
+                  <p class="emb-foot">Deal Hunter · LBC</p>
+                </div>
+                <div class="msg-btns">
+                  <span class="mb mb-buy">Acheter ↗</span>
+                  <span class="mb mb-ai" data-n="6">Analyser<i class="n">6</i></span>
+                  <span class="mb mb-rep" data-n="7">Signaler<i class="n">7</i></span>
+                </div>
+              </div>
+            </div>
+            <div class="msg msg-ai">
+              <span class="msg-av" aria-hidden="true">DH</span>
+              <div class="msg-b">
+                <p class="msg-re">↳ réponse à Deal Hunter</p>
+                <div class="emb k-ai" data-n="6">
+                  <p class="emb-t">Analyse du deal</p>
+                  {SAMPLES[0].ai!.map((s) => (<Fragment><p class="ai-h">{s.h}</p>{s.l.map((l) => <p class="ai-l">{l}</p>)}</Fragment>))}
+                  <p class="emb-foot">Analyse par Claude Haiku (texte + image) · usage personnel</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ol class="legend" id="legend">
+          <li data-n="1"><i>1</i><div><b>Verdict et modèle</b><span>Paliers de profit&nbsp;: 100, 80, 50 et 20&nbsp;€. Pastille «&nbsp;nouveau&nbsp;» si l’annonce a moins de 10&nbsp;minutes.</span></div></li>
+          <li data-n="2"><i>2</i><div><b>La mention</b><span>Seulement si l’annonce passe les seuils de votre panneau. Sinon, le message arrive en silence.</span></div></li>
+          <li data-n="3"><i>3</i><div><b>Profit net</b><span>Sur le meilleur canal de revente, frais et port déduits.</span></div></li>
+          <li data-n="4"><i>4</i><div><b>Les trois reventes</b><span>Leboncoin en main propre, Vinted et eBay avec leurs frais et 8&nbsp;€ de port.</span></div></li>
+          <li data-n="5"><i>5</i><div><b>Observations</b><span>Ventes connues pour ce modèle. «&nbsp;Fiable&nbsp;» à partir de 30, «&nbsp;faible&nbsp;» sous 15.</span></div></li>
+          <li data-n="6"><i>6</i><div><b>Analyser</b><span>Claude Haiku, au clic, avec la photo. La réponse arrive dans le salon, sous le message.</span></div></li>
+          <li data-n="7"><i>7</i><div><b>Signaler</b><span>Une fausse alerte rejoint la liste de #bot-settings, avec le contexte du message figé.</span></div></li>
+          <li data-n="8"><i>8</i><div><b>Le panneau global</b><span>Interrupteur par site, prix maximum absolu, seuil des bonnes affaires, signalements en cours.</span></div></li>
+        </ol>
+        <div class="win win-set" data-n="8">
+          <div class="win-main">
+            <p class="win-top"># bot-settings<i class="n">8</i></p>
+            <div class="emb k-set">
+              <p class="emb-t">Pipeline Deal Hunter · interrupteurs et routage</p>
+              <p class="emb-d">Le bot tourne tant qu’au moins un chasseur est ON.</p>
+              <dl class="emb-f set">
+                <div><dt>Plateformes</dt><dd><span class="tg on">Leboncoin</span><span class="tg on">Vinted</span></dd></div>
+                <div><dt>Prix max absolu</dt><dd><b>500 €</b> · les panneaux perso sont plafonnés par cette valeur</dd></div>
+                <div><dt>Seuil des bonnes affaires</dt><dd><b>50 €</b> de profit → #deals-fire</dd></div>
+                <div><dt>Signalements en cours</dt><dd>1, avec le bouton «&nbsp;Voir détails&nbsp;»</dd></div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Qui est prévenu ? ========== -->
+  <section class="band b-yellow" aria-labelledby="h-who">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-who">Deux chasseurs, un bot.</h2>
+      <p class="intro">Chacun règle son panneau dans son salon privé. Changez les réglages&nbsp;: les mentions se recalculent.</p>
+      <div class="who" id="who">
+        <div class="who-deals">
+          <p class="dh-k">L’annonce postée</p>
+          <div class="who-tabs" role="tablist">
+            {WHO_DEALS.map((sid, i) => (
+              <button type="button" role="tab" class={"wtab" + (i === 0 ? " on" : "")} data-sid={sid}><span>{bySid[sid].title}</span></button>
+            ))}
+          </div>
+          <div class="who-deal" id="who-deal"></div>
+          <p class="who-bot" id="who-bot"></p>
+        </div>
+        {[["me", "moi", ME], ["other", "second chasseur", OTHER]].map(([key, name, s]: any) => (
+          <div class="hunt" data-u={key}>
+            <p class="hunt-h">Panneau de chasse · {name}</p>
+            <div class="hunt-res" data-res={key}></div>
+            <div class="hunt-row"><span>Présence</span><button type="button" class="sw" data-f="presence" aria-pressed={s.presence === "ON" ? "true" : "false"}>{s.presence}</button></div>
+            <div class="hunt-row"><span>Mentionné même OFF</span><button type="button" class="sw" data-f="notify_when_offline" aria-pressed={s.notify_when_offline ? "true" : "false"}>{s.notify_when_offline ? "oui" : "non"}</button></div>
+            <div class="hunt-row"><span>Profit minimum</span><span class="seg-g">{[25, 50, 80].map((v) => <button type="button" class="seg2" data-f="min_profit_to_ping" data-v={v} aria-pressed={s.min_profit_to_ping === v ? "true" : "false"}>{v} €</button>)}</span></div>
+            <div class="hunt-row col"><span>Salons qui le mentionnent</span><span class="chs">{SLOTS.map((k) => <button type="button" class={"chk c-" + CHANNEL_INFO[k].c} data-f="ch" data-v={k} aria-pressed={s.channels_to_ping[k] ? "true" : "false"}>{CHANNEL_INFO[k].label}</button>)}</span></div>
+            <button type="button" class="hunt-off" data-f="disconnect">Fermer Discord</button>
+          </div>
+        ))}
+      </div>
+      <p class="who-note">Réglages de départ&nbsp;: les miens, relevés dans mon panneau (présence mise à ON pour la démo)&nbsp;; ceux du second chasseur sont les valeurs par défaut du code. Fermer Discord fait passer sa présence à OFF, jamais l’inverse.</p>
+    </div>
+  </section>
+
+  <!-- ========== Le plan ========== -->
+  <section class="band b-ink" id="plan" aria-labelledby="h-plan">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-plan">Le plan.</h2>
+      <p class="intro">Une annonce traverse la chaîne étape par étape. Touchez une étape pour voir ce qu’elle fait.</p>
+      <div class="rail" id="rail">
+        <button type="button" class="st2 side" data-k="mem" style="--c:4"><b>Mémoire locale</b><span>SQLite</span></button>
+        <button type="button" class="st2 side" data-k="ref" style="--c:5"><b>Référence Videntis</b><span>PostgreSQL, lecture seule</span></button>
+        <button type="button" class="st2 side" data-k="forge" style="--c:7"><b>Règles Forge</b><span>console Videntis</span></button>
+        <button type="button" class="st2 main on" data-k="src" style="--c:1"><b>Nouvelles annonces</b><span>Leboncoin, Vinted</span></button>
+        <button type="button" class="st2 main" data-k="excl" style="--c:2"><b>Écartées ?</b><span>lots, portables…</span></button>
+        <button type="button" class="st2 main" data-k="model" style="--c:3"><b>Modèle</b><span>4 familles + alias</span></button>
+        <button type="button" class="st2 main" data-k="seen" style="--c:4"><b>Déjà vue ?</b><span>baisse, doublon</span></button>
+        <button type="button" class="st2 main hot" data-k="profit" style="--c:5"><b>Profit</b><span>3 reventes</span></button>
+        <button type="button" class="st2 main" data-k="risk" style="--c:6"><b>Pièces, arnaque</b><span>signaux</span></button>
+        <button type="button" class="st2 main disc" data-k="route" style="--c:7"><b>Six salons</b><span>Discord</span></button>
+        <div class="rail-out">
+          <button type="button" class="st2 out2 pk" data-k="haiku"><b>Analyser</b><span>Claude Haiku</span></button>
+          <button type="button" class="st2 out2" data-k="report"><b>Signaler</b><span>signalements</span></button>
+          <button type="button" class="st2 out2" data-k="panels"><b>Panneaux</b><span>réglages</span></button>
+        </div>
+      </div>
+      <p class="plan-detail" id="rail-detail" aria-live="polite"><b>{PLAN.src[0]}</b> {PLAN.src[1]}</p>
+      <p class="rail-bg">En fond, trois tâches&nbsp;: prix rechargés toutes les 30 minutes, ménage toutes les heures, état du bot posté toutes les 30 minutes.</p>
+    </div>
+  </section>
+
+  <!-- ========== Six questions ========== -->
+  <section class="band b-green" aria-labelledby="h-q">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-q">Six questions, six choix.</h2>
+      <div class="duels">
+        {[
+          ["L’IA lit-elle chaque annonce ?", "Non, au clic sur « Analyser »", "20 appels par heure, 50 par jour, 5 par personne et par heure. La traduction automatique des annonces a été coupée le 30 mars 2026 pour son coût.", "Haiku sur chaque annonce, avant le tri", "Payer une analyse pour des annonces que personne n’ouvrira."],
+          ["Une bonne affaire, en pourcentage ou en euros ?", "En euros de profit net", "Frais, port et meilleur canal de revente compris. 15 % sous la médiane d’une carte à 100 €, c’est 15 € : le port en mange plus de la moitié.", "Un pourcentage sous la médiane", "Le même pourcentage ne vaut pas la même chose à 100 € et à 600 €."],
+          ["Que faire d’une annonce « pour pièces » ?", "La garder, dans son salon", "Une carte à réparer peut être la meilleure marge. Haiku y répond en réparateur : panne probable, coût, valeur des pièces.", "L’écarter avec les lots", "On jette les cartes réparables avec les boîtes vides."],
+          ["Quelle référence de prix ?", "Les ventes confirmées de Videntis", "Revues à la baisse : −15 % à partir de 300 €, −20 % à partir de 150 €, −25 % en dessous. Jamais plus de 90 % du prix neuf.", "Les prix demandés des annonces en ligne", "Un prix demandé n’est pas un prix de vente."],
+          ["Tout poster ou trier avant ?", "Tout poster, ne mentionner que l’utile", "Rien n’est perdu, on peut fouiller un salon. Mais seul ce qui passe vos seuils fait sonner le téléphone.", "N’envoyer que les bonnes affaires", "Impossible ensuite de voir ce que le tri a laissé passer."],
+          ["L’avis de l’IA contre les chiffres du bot ?", "Un second avis qui part des chiffres", "La consigne lui donne la revente déjà corrigée et des règles fixes (ratio 0,55 et 0,35). Il juge le vendeur et la photo, pas le marché.", "Laisser l’IA réestimer la revente", "Elle ne voit pas les ventes : elle inventerait un prix."],
+        ].map(([q, a, why, cut, cutWhy], i) => (
+          <article class="duel" tabindex="0">
+            <header><span class="qn" aria-hidden="true">{i + 1}</span><h3>{q}</h3></header>
+            <div class="duel-b">
+              <div class="keep"><p class="k">Retenu</p><p class="a">{a}</p><p class="why">{why}</p></div>
+              <div class="drop"><p class="k">Écarté</p><p class="c"><s>{cut}</s></p><p class="cw">{cutWhy}</p></div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Ce qui a cassé ========== -->
+  <section class="band b-ink" aria-labelledby="h-bugs">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-bugs">Ce qui a cassé, et comment je l’ai réparé.</h2>
+      <div class="incs">
+        <article class="inc2">
+          <div class="inc-art" data-bg="lined"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.glasses.svg} /><span class="tag2 bad">Radeon RX 5154&nbsp;?</span></div>
+          <div class="inc-txt">
+            <p class="i-id">Filtres · faux positif</p>
+            <h3>Les lunettes Radeon</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Des lunettes Ray-Ban «&nbsp;RX 5154&nbsp;» arrivaient comme cartes graphiques.</dd></div>
+              <div><dt>Cause</dt><dd>«&nbsp;RX&nbsp;» suivi de quatre chiffres&nbsp;: c’est exactement le motif d’une Radeon.</dd></div>
+              <div><dt>Solution</dt><dd>Lunettes, montures et Ray-Ban dans les exclusions. Un «&nbsp;RX&nbsp;» est refusé si le titre dit «&nbsp;Ray&nbsp;».</dd></div>
+            </dl>
+          </div>
+        </article>
+        <article class="inc2">
+          <div class="inc-art" data-bg="floor"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.jacket.svg} /><span class="tag2 bad">HS = hors service&nbsp;?</span></div>
+          <div class="inc-txt">
+            <p class="i-id">Pour pièces · faux positif</p>
+            <h3>La veste « HS »</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Une veste dont le nom de modèle contient «&nbsp;HS&nbsp;» a été classée pièce en panne.</dd></div>
+              <div><dt>Cause</dt><dd>Pour le détecteur, «&nbsp;HS&nbsp;» seul veut dire hors service.</dd></div>
+              <div><dt>Solution</dt><dd>Des mots qui annulent tout passent avant la détection&nbsp;: vêtements, titres de jeux «&nbsp;of the dead&nbsp;», radio-cassette.</dd></div>
+            </dl>
+          </div>
+        </article>
+        <article class="inc2">
+          <div class="inc-art" data-bg="mat"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={triple()} /><span class="tag2 bad">3 alertes</span></div>
+          <div class="inc-txt">
+            <p class="i-id">Vinted · doublons</p>
+            <h3>Trois numéros, un seul objet</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Une même carte déclenchait trois alertes d’affilée.</dd></div>
+              <div><dt>Cause</dt><dd>Vinted publie parfois un objet sous plusieurs numéros. La mémoire du bot ne connaissait que les numéros.</dd></div>
+              <div><dt>Solution</dt><dd>Une empreinte de plus&nbsp;: site, titre sans espaces ni ponctuation, prix arrondi à 5&nbsp;€. Gardée 2&nbsp;heures, même après un redémarrage.</dd></div>
+            </dl>
+          </div>
+        </article>
+        <article class="inc2">
+          <div class="inc-art" data-bg="wood"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.laptop.svg} /><span class="tag2 bad">« RTX 3070 » ≠ carte de bureau</span></div>
+          <div class="inc-txt">
+            <p class="i-id">Filtres · profit faux</p>
+            <h3>La RTX du portable</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Des PC portables passaient pour des cartes graphiques, avec des profits imaginaires.</dd></div>
+              <div><dt>Cause</dt><dd>Le titre citait la carte du portable, que le bot évaluait comme une carte de bureau.</dd></div>
+              <div><dt>Solution</dt><dd>Exclusion des portables&nbsp;: mots (portable, laptop) et gammes (Legion, Omen, Zephyrus…), plus la RTX 2050, qui n’existe qu’en portable.</dd></div>
+            </dl>
+          </div>
+        </article>
+        <article class="inc2">
+          <div class="inc-art calc" aria-hidden="true">
+            <p><span>Ventes confirmées</span><b>360 €</b></p>
+            <p class="bad"><span>× 0,85 dans l’API Videntis</span><b>306 €</b></p>
+            <p class="bad"><span>× 0,85 encore, dans le bot</span><b>260 €</b></p>
+            <p class="good"><span>Aujourd’hui&nbsp;: une seule fois</span><b>306 €</b></p>
+          </div>
+          <div class="inc-txt">
+            <p class="i-id">Référence · juin 2026</p>
+            <h3>La décote comptée deux fois</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Des reventes estimées trop basses&nbsp;: des bonnes affaires passaient inaperçues.</dd></div>
+              <div><dt>Cause</dt><dd>La correction du port eBay (× 0,85) se faisait dans l’API Videntis, puis de nouveau dans le bot.</dd></div>
+              <div><dt>Solution</dt><dd>L’API donne la médiane brute des ventes confirmées&nbsp;; le bot corrige une seule fois (6&nbsp;juin 2026).</dd></div>
+            </dl>
+          </div>
+        </article>
+        <article class="inc2">
+          <div class="inc-art term" aria-hidden="true">
+            <code>titre&nbsp;: RTX 3080 <mark>\udc4d</mark> top état</code>
+            <code class="bad">→ Analyser&nbsp;: erreur d’encodage</code>
+            <code class="good">→ caractère orphelin retiré, appel OK</code>
+          </div>
+          <div class="inc-txt">
+            <p class="i-id">Claude Haiku · avril 2026</p>
+            <h3>Le demi-émoji qui faisait planter l’analyse</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Certains clics sur «&nbsp;Analyser&nbsp;» échouaient.</dd></div>
+              <div><dt>Cause</dt><dd>Des émojis mal stockés dans les annonces, coupés en deux moitiés, rendaient le texte invalide à l’envoi.</dd></div>
+              <div><dt>Solution</dt><dd>Ces moitiés orphelines sont retirées de chaque champ avant l’appel, et des consignes elles-mêmes (30&nbsp;avril 2026).</dd></div>
+            </dl>
+          </div>
+        </article>
+        <article class="inc2 open">
+          <div class="inc-art rose"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.waterblock.svg} /><span class="tag2 bad">« TRÈS BON DEAL · RTX 3080 »</span></div>
+          <div class="inc-txt">
+            <p class="i-id">Pas encore corrigé · vrai message du 27 mai 2026</p>
+            <h3>Le bloc à eau vendu comme une RTX 3080</h3>
+            <dl class="pcs2">
+              <div><dt>Problème</dt><dd>Un bloc de watercooling pour RTX 3080 et 3090, à 200&nbsp;€, est arrivé en «&nbsp;très bon deal&nbsp;»&nbsp;: revente ~306&nbsp;€, +95&nbsp;€ via Leboncoin. Haiku a reconnu un bloc à eau… et a conseillé d’acheter.</dd></div>
+              <div><dt>Cause</dt><dd>Le titre ne disait jamais «&nbsp;water block&nbsp;», seule la description le disait, et les filtres ne lisent que le titre. Haiku, lui, part des chiffres du bot&nbsp;: il a hérité de son erreur.</dd></div>
+              <div><dt>Leçon</dt><dd>Un second avis réglé pour faire confiance au pipeline ne rattrape pas ses erreurs de modèle.</dd></div>
+            </dl>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Suite ========== -->
+  <section class="band b-pink" aria-labelledby="h-next">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-next">À l’arrêt, pas fini.</h2>
+      <p class="intro">La pièce suivante était déjà branchée&nbsp;: des règles propres à chaque chasseur, écrites dans la console de Videntis.</p>
+      <div class="nx2">
+        <figure class="forge" id="forge">
+          <figcaption class="nx-k2">Une règle Forge, pour l’exemple</figcaption>
+          <div class="rule">
+            <span class="pred" style="--i:0"><em>catégorie</em><b>=</b><i>carte graphique</i></span>
+            <span class="pred" style="--i:1"><em>prix</em><b>≤</b><i>300 €</i></span>
+            <span class="pred" style="--i:2"><em>marge</em><b>≥</b><i>60 €</i></span>
+            <span class="pred" style="--i:3"><em>titre</em><b>ne contient pas</b><i>« pour pièces »</i></span>
+          </div>
+          <p class="rule-to"><span>→</span><b># deals-forge</b><em>@moi</em></p>
+          <div class="ops" aria-label="Les dix opérateurs">
+            {["=", "≠", ">", "≥", "<", "≤", "dans", "hors de", "contient", "ne contient pas"].map((o) => <span>{o}</span>)}
+          </div>
+          <ul class="rule-modes">
+            <li><b>Essai</b>, par défaut&nbsp;: la règle note ce qu’elle aurait envoyé, sans rien poster.</li>
+            <li><b>Envoi</b>&nbsp;: elle poste à la place du tri, dans son salon. Si l’envoi échoue, le tri classique reprend.</li>
+            <li>Un champ absent fait échouer la règle&nbsp;: mieux vaut rater une annonce qu’alerter à tort.</li>
+          </ul>
+        </figure>
+        <ol class="road">
+          <li class="rd rd-done"><span class="rd-k">Fait</span><p>Tri, profit sur trois canaux, six salons, panneaux, analyse au clic, signalements.</p></li>
+          <li class="rd rd-wire"><span class="rd-k">Branché</span><p>Forge&nbsp;: les règles par chasseur. Désactivées par défaut, en mode essai à l’activation.</p></li>
+          <li class="rd rd-open"><span class="rd-k">À corriger</span><p>Les exclusions ne lisent que le titre&nbsp;: un bloc à eau décrit seulement dans le texte passe encore.</p></li>
+          <li class="rd rd-now"><span class="rd-k">Aujourd’hui</span><p>À l’arrêt. Les alertes de prix doivent revenir dans Videntis, sur cette base.</p></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="band b-paper v-end">
+    <div class="wrap end-grid">
+      <a class="back" href="/projets/videntis/">← Videntis, le projet principal</a>
+      <a class="back" href="/">Retour à l’accueil</a>
+    </div>
+    <div class="wrap"><SiteFooter /></div>
+  </section>
+</main>
+
+<script type="application/json" id="srt-data" set:html={JSON.stringify(HERO)}></script>
+<script type="application/json" id="plan-data" set:html={JSON.stringify(PLAN)}></script>
+<script type="application/json" id="who-data" set:html={JSON.stringify({ me: ME, other: OTHER, deals: WHO_DEALS.map((sid) => bySid[sid]), pipeline: PIPELINE, channels: CHANNEL_INFO, pics: Object.fromEntries(Object.keys(PIC).map((k) => [k, PIC[k].bg])) })}></script>
+<script is:inline>
+  (function () {
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function each(l, f) { Array.prototype.forEach.call(l, f); }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    // ---------- En-tête : la trieuse ----------
+    // Chaque annonce tombe, ses mots-clés s'allument, le bot affiche modèle, revente et profit,
+    // puis une étiquette part dans la case de son salon. Piloté par le temps, rejoué à chaque arrivée.
+    (function () {
+      var SC = JSON.parse(document.getElementById("srt-data").textContent);
+      var srt = document.getElementById("srt"), stage = srt.querySelector(".srt-stage"), card = srt.querySelector(".dh-card");
+      var pic = srt.querySelector(".dh-card-pic"), pics = pic.querySelectorAll(".pv"), tt = document.getElementById("srt-t");
+      var read = document.getElementById("srt-read"), chip = document.getElementById("srt-chip"), slots = srt.querySelectorAll(".slot");
+      var i = 0, timers = [], counts = {};
+      function fill(k) {
+        var s = SC[k];
+        tt.innerHTML = s.t.map(function (w) { return "<span class=\"tkn " + w[1] + "\">" + esc(w[0]) + "</span>"; }).join(" ");
+        document.getElementById("srt-p").textContent = s.p + "\u00a0€";
+        document.getElementById("srt-m").textContent = s.meta;
+        read.innerHTML = s.lines.map(function (l, j) { return "<div style=\"--j:" + j + "\"><dt>" + esc(l[0]) + "</dt><dd>" + esc(l[1]) + "</dd></div>"; }).join("");
+        pic.setAttribute("data-bg", s.bg);
+        each(pics, function (p) { p.classList.toggle("on", p.getAttribute("data-k") === s.pic); });
+        chip.textContent = s.t.map(function (w) { return w[0]; }).join(" ").slice(0, 26) + (s.t.map(function (w) { return w[0]; }).join(" ").length > 26 ? "…" : "") + " · " + s.p + "\u00a0€";
+        read.className = "srt-read" + (s.slot === "out" ? " is-out" : "");
+      }
+      function slotOf(s) { for (var k = 0; k < slots.length; k++) if (slots[k].getAttribute("data-s") === s.slot) return slots[k]; return slots[slots.length - 1]; }
+      function lit(on) { each(slots, function (li) { li.classList.remove("hit", "pinged"); }); }
+      function stop() { timers.forEach(clearTimeout); timers = []; }
+      function setCount(li) { var s = li.getAttribute("data-s"); counts[s] = (counts[s] || 0) + 1; li.querySelector("em").textContent = counts[s]; li.classList.add("has"); }
+      function reset() {
+        srt.className = "srt pre notr"; chip.style.transform = ""; lit(false);
+        void srt.offsetWidth; srt.classList.remove("notr");
+      }
+      function rewind() {                               // retour au début : première annonce, compteurs à zéro
+        i = 0; counts = {}; reset(); fill(0);
+        each(slots, function (li) { li.classList.remove("has"); li.querySelector("em").textContent = "0"; });
+      }
+      function finalState() {                          // mouvement réduit : la première annonce, déjà triée
+        i = 0; fill(0); srt.className = "srt done";
+        each(tt.querySelectorAll(".tkn"), function (t) { t.classList.add("lit"); });
+        var li = slotOf(SC[0]); li.classList.add("hit"); setCount(li); if (SC[0].ping) li.classList.add("pinged");
+      }
+      function play() {
+        stop(); reset(); fill(i);
+        var s = SC[i], toks = tt.querySelectorAll(".tkn");
+        timers.push(setTimeout(function () { srt.className = "srt in"; }, 60));
+        each(toks, function (t, k) { timers.push(setTimeout(function () { t.classList.add("lit"); }, 650 + k * 120)); });
+        var tEnd = 650 + toks.length * 120;
+        timers.push(setTimeout(function () { srt.classList.add("read"); }, tEnd + 100));
+        var tFly = tEnd + 650 + s.lines.length * 260;
+        timers.push(setTimeout(function () {             // l'étiquette part vers sa case
+          var li = slotOf(s), sr = stage.getBoundingClientRect(), cr = chip.getBoundingClientRect(), lr = li.getBoundingClientRect();
+          var dx = lr.left + lr.width / 2 - (cr.left + cr.width / 2), dy = lr.top + lr.height / 2 - (cr.top + cr.height / 2);
+          srt.classList.add("fly");
+          chip.style.transform = "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(.55)";
+        }, tFly));
+        timers.push(setTimeout(function () {
+          var li = slotOf(s); srt.classList.add("landed"); li.classList.add("hit"); setCount(li);
+          if (s.ping) li.classList.add("pinged");
+        }, tFly + 640));
+        timers.push(setTimeout(next, tFly + 640 + 1700));
+      }
+      function next() { stop(); i = (i + 1) % SC.length; if (reduce) { fill(i); return; } play(); }
+      document.getElementById("srt-next").addEventListener("click", function () { armed = false; next(); });
+      if (reduce) { finalState(); return; }
+      var armed = true;
+      reset(); fill(0);
+      if (!("IntersectionObserver" in window)) timers.push(setTimeout(function () { armed = false; play(); }, 400));
+      else {
+        new IntersectionObserver(function (es) {
+          var e = es[0];
+          if (!e.isIntersecting) { if (!armed) { stop(); rewind(); armed = true; } return; }
+          if (armed && e.intersectionRatio >= .25) { armed = false; play(); }
+        }, { threshold: [0, .25] }).observe(srt);
+      }
+    })();
+
+    // ---------- Survols : sur mobile, le toucher rejoue l'animation ----------
+    each(document.querySelectorAll(".salon, .out, .duel, .inc2"), function (el) {
+      el.addEventListener("click", function () {
+        el.classList.remove("play"); void el.offsetWidth; el.classList.add("play");
+        clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove("play"); }, 1600);
+      });
+    });
+
+    // ---------- Le vrai bot : légende et repères liés ----------
+    (function () {
+      var anat = document.getElementById("anat");
+      function hi(n) { each(anat.querySelectorAll("[data-n]"), function (e) { e.classList.toggle("hi", e.getAttribute("data-n") === n); }); }
+      each(anat.querySelectorAll(".legend li, [data-n] > .n, .win-top .n"), function (el) {
+        var n = el.getAttribute("data-n") || el.textContent.trim();
+        el.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") hi(n); });
+        el.addEventListener("click", function () { hi(n); });
+      });
+      anat.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") hi(""); });
+    })();
+
+    // ---------- Deux chasseurs : les mentions se recalculent ----------
+    (function () {
+      var E = window.DealHunterEngine, W = JSON.parse(document.getElementById("who-data").textContent);
+      if (!E) return;
+      var data = { index: {}, market: null, cpu: null };
+      var raw = JSON.parse(document.getElementById("dhd-data").textContent);
+      data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
+      var users = { me: JSON.parse(JSON.stringify(W.me)), other: JSON.parse(JSON.stringify(W.other)) };
+      var R = W.deals.map(function (s) {
+        return { s: s, r: E.processAd({ ad_id: s.id, title: s.title, price_eur: s.price, platform: s.platform, description: s.description || "", condition: s.condition || null }, data, { seen: {}, sent: {} }, W.pipeline, [users.me]) };
+      });
+      var cur = 0, auto = null, who = document.getElementById("who"), note = {};
+      function eur(x) { var r = Math.round(x); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + "\u00a0€"; }
+      function render() {
+        var d = R[cur], ev = d.r.ev, ch = W.channels[d.r.channel];
+        document.getElementById("who-deal").innerHTML =
+          "<div class=\"wd\"><span class=\"wd-pic\" data-bg=\"" + W.pics[d.s.pic] + "\">" + (document.querySelector("#dhd-pic .pv[data-k=\"" + d.s.pic + "\"]") || { outerHTML: "" }).outerHTML.replace(" on\"", "\"") + "</span>" +
+          "<div><p class=\"wd-t\">" + esc(d.s.title) + "</p><p class=\"wd-m\">" + d.s.price + " € · " + (d.s.platform === "vinted" ? "Vinted" : "Leboncoin") + "</p>" +
+          "<p class=\"wd-r\"><span class=\"salpill c-" + ch.c + "\"># " + ch.name + "</span><b>" + eur(ev.best_profit) + "</b> de profit</p></div></div>";
+        var off = users.me.presence === "OFF" && users.other.presence === "OFF";
+        var res = E.mentions([users.me, users.other], ev, d.r.channel);
+        document.getElementById("who-bot").innerHTML = off ? "<b>Bot en pause</b>&nbsp;: plus personne ne chasse, les annonces ne sont même plus lues." : "<b>Bot en chasse</b>&nbsp;: au moins un chasseur est ON.";
+        who.classList.toggle("paused", off);
+        ["me", "other"].forEach(function (k, j) {
+          var box = who.querySelector("[data-res=\"" + k + "\"]"), r = res[j];
+          box.className = "hunt-res " + (off ? "zz" : r.pinged ? "yes" : "no");
+          box.innerHTML = off ? "Bot en pause&nbsp;: annonce jamais lue" : r.pinged ? "<b>@" + esc(r.name) + "</b> mentionné" : "Silencieux&nbsp;: " + esc(r.why) + (note[k] ? "<em>" + note[k] + "</em>" : "");
+          if (!off && r.pinged && note[k]) box.innerHTML += "<em>" + note[k] + "</em>";
+          var p = who.querySelector("[data-u=\"" + k + "\"]"), u = users[k];
+          each(p.querySelectorAll("[data-f]"), function (b) {
+            var f = b.getAttribute("data-f");
+            if (f === "presence") { b.textContent = u.presence; b.setAttribute("aria-pressed", u.presence === "ON" ? "true" : "false"); }
+            else if (f === "notify_when_offline") { b.textContent = u.notify_when_offline ? "oui" : "non"; b.setAttribute("aria-pressed", u.notify_when_offline ? "true" : "false"); }
+            else if (f === "min_profit_to_ping") b.setAttribute("aria-pressed", String(u.min_profit_to_ping === +b.getAttribute("data-v")));
+            else if (f === "ch") b.setAttribute("aria-pressed", String(!!u.channels_to_ping[b.getAttribute("data-v")]));
+          });
+        });
+        each(who.querySelectorAll(".wtab"), function (t, j) { t.classList.toggle("on", j === cur); t.setAttribute("aria-selected", String(j === cur)); });
+      }
+      function stopAuto() { clearInterval(auto); auto = null; }
+      each(who.querySelectorAll(".wtab"), function (t, j) { t.addEventListener("click", function () { stopAuto(); cur = j; render(); }); });
+      each(who.querySelectorAll(".hunt"), function (p) {
+        var k = p.getAttribute("data-u"), u = users[k];
+        each(p.querySelectorAll("[data-f]"), function (b) {
+          b.addEventListener("click", function () {
+            stopAuto(); note[k] = "";
+            var f = b.getAttribute("data-f");
+            if (f === "presence") u.presence = u.presence === "ON" ? "OFF" : "ON";
+            else if (f === "notify_when_offline") u.notify_when_offline = !u.notify_when_offline;
+            else if (f === "min_profit_to_ping") u.min_profit_to_ping = +b.getAttribute("data-v");
+            else if (f === "ch") { var c = b.getAttribute("data-v"); u.channels_to_ping[c] = !u.channels_to_ping[c]; }
+            else if (f === "disconnect") { if (u.presence === "ON") { u.presence = "OFF"; note[k] = "Discord fermé : présence passée à OFF."; } else note[k] = "Déjà OFF."; }
+            render();
+          });
+        });
+      });
+      render();
+      if (!reduce && "IntersectionObserver" in window) {
+        new IntersectionObserver(function (es) {
+          if (es[0].isIntersecting) { if (!auto && auto !== false) auto = setInterval(function () { cur = (cur + 1) % R.length; render(); }, 3200); }
+          else if (auto) { clearInterval(auto); auto = null; }
+        }, { threshold: .3 }).observe(who);
+      }
+    })();
+
+    // ---------- Le plan : détail de l'étape choisie ----------
+    (function () {
+      var P = JSON.parse(document.getElementById("plan-data").textContent), rail = document.getElementById("rail"), det = document.getElementById("rail-detail");
+      each(rail.querySelectorAll(".st2"), function (n) {
+        function show() {
+          each(rail.querySelectorAll(".st2"), function (o) { o.classList.toggle("on", o === n); });
+          var t = P[n.getAttribute("data-k")]; det.innerHTML = "<b>" + esc(t[0]) + "</b> " + esc(t[1]);
+        }
+        n.addEventListener("click", show);
+        n.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") show(); });
+      });
+    })();
+
+    // ---------- Forge : la règle se construit à l'arrivée ----------
+    (function () {
+      var f = document.getElementById("forge");
+      if (reduce || !("IntersectionObserver" in window)) { f.classList.add("built"); return; }
+      var armed = true;
+      new IntersectionObserver(function (es) {
+        var e = es[0];
+        if (!e.isIntersecting) { if (!armed) { f.classList.remove("built"); armed = true; } return; }
+        if (armed && e.intersectionRatio >= .35) { armed = false; void f.offsetWidth; f.classList.add("built"); }
+      }, { threshold: [0, .35] }).observe(f);
+    })();
+  })();
+</script>
+</Base>
