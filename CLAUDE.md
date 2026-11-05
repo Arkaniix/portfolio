@@ -60,8 +60,12 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 - Section après le récit : « Parcours » (frise tracée au défilement, logos qui prennent leurs couleurs, `pathFrame`).
   « Ma méthode » a quitté l'accueil pour la page Videntis (composant `MethodPipe.astro`). Les règles `.live` restées dans
   le style de l'accueil s'appliquent aussi aux points `.dot.live` de la diapositive Videntis : ne pas les supprimer.
-- La diapositive Videntis porte un lien « Voir le projet » (`.plink`) à côté du titre, avec des marges verticales négatives
+- Les diapositives Videntis et Deal Hunter portent un lien « Voir le projet » (`.plink`) à côté du titre, avec des marges verticales négatives
   pour ne pas grandir la ligne : sur téléphone, la hauteur des textes fixe la place laissée à l'animation de toutes les diapositives.
+  « Deal Hunter » étant plus long, sa pastille est `.plink.tight` (sinon le titre passe sur deux lignes à 1440 px).
+- Diapositive Deal Hunter : annonce, filtres (dont un portable écarté), profit net à la revente (référence 520 € − 15 %),
+  jauge face au seuil de 50 € de profit, message dans #deals-fire, clic sur « Analyser » et réponse de Haiku sous le message.
+  Sa légende a été réécrite à hauteur identique aux quatre tailles (vérifié) : changer le texte impose de remesurer.
 - Boucle unique `frame()` en requestAnimationFrame.
 
 ## Projets présentés (contenu factuel)
@@ -100,7 +104,11 @@ Décisions déjà prises :
 
 ## Pages projet (`src/pages/projets/<slug>.astro`, adresse `/projets/<slug>/`)
 
-- Modèle : la page Videntis (`videntis.astro`). Gabarit `Base.astro` + `SiteHeader` (variante sous-page : transparente sur la
+- Gabarit commun dans `src/styles/projet.css` (bandes, titres, boutons, fin de page), importé avant la feuille de la page.
+- Chaque page raconte son projet avec sa propre structure : ne pas recopier l'enchaînement de Videntis (refus d'Etienne sur la
+  première version de Deal Hunter, trop proche). Deal Hunter suit le trajet d'une annonce en huit étapes, avec une annonce
+  collante qui change d'état ; choix en bifurcations, incidents en « signalements » placés à l'étape concernée.
+- Modèle de départ : la page Videntis (`videntis.astro`). Gabarit `Base.astro` + `SiteHeader` (variante sous-page : transparente sur la
   bande de couleur, fond papier dès qu'on défile) + `SiteFooter`. Styles propres à la page dans `src/styles/<slug>.css`.
 - Mise en page en bandes pleine largeur : `.band.b-yellow | b-blue | b-pink | b-ink | b-green | b-paper`, contenu dans `.wrap`
   (1180 px) ; titres `.v-h1`, `.v-h2`, chapeau `.intro`. Sur-titre `.kicker` : marge proportionnelle à la taille du titre.
@@ -114,6 +122,8 @@ Décisions déjà prises :
     (sheet, wood, mat, floor, lined) ;
   - `src/scripts/videntis-engine.js` : code porté du produit (reconnaissance du modèle, règles d'intention, verdict),
     avec `src/data/videntis/` (catalogue GPU et règles réels, marché inventé) ; `VidentisDemo.astro` l'utilise.
+  - `src/scripts/deal-hunter-engine.js` : filtres, modèle, profit, pour pièces, arnaque, empreintes et routage portés du bot
+    (sans les collecteurs), avec `src/data/deal-hunter/` ; `DealHunterDemo.astro` et la page l'utilisent ; dessins dans `src/lib/dh-art.ts`.
 - Captures réelles dans `src/assets/<slug>/`, affichées avec `<Image>` d'`astro:assets` ; bandeau et e-mail masqués.
 - Aperçu à commenter : un artifact autonome tiré de `dist` (CSS en ligne, polices et images en data URI, liens réécrits vers
   le site en ligne), republié sous le même fichier pour garder l'adresse.

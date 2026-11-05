@@ -60,6 +60,8 @@ const description = "Développeur full-stack basé dans la Loire, disponible imm
   transition:transform .2s var(--ease), box-shadow .2s var(--ease), background-color .2s ease, color .2s ease;
 }
 .plink span{ display:inline-block; transition:transform .2s var(--ease); }
+/* « Deal Hunter » est plus long que « Videntis » : pastille un peu plus serrée pour rester sur la ligne du titre à 1440 px */
+.plink.tight{ gap:3px; margin-left:6px; padding-inline:8px; font-size:12.5px; }
 .plink:hover, .plink:focus-visible{ background:var(--fg); color:var(--bgc); transform:translateY(-2px); box-shadow:0 4px 0 var(--fg); }
 .plink:hover span, .plink:focus-visible span{ transform:translateX(3px); }
 .hero-name{
@@ -300,6 +302,15 @@ const description = "Développeur full-stack basé dans la Loire, disponible imm
 .emb .ef + .ef{ margin-top:5px; }
 .emb .ef span{ display:block; font-size:11px; font-weight:800; opacity:.65; }
 .emb .ef.ia span{ color:var(--pink); opacity:1; }
+.dm .at{ font-size:10px; font-weight:800; background:#DDE2FF; color:var(--blue); border-radius:3px; padding:0 4px; }
+.dm .btns{ margin:6px 0 0; display:flex; gap:5px; }
+.dm .bt{ font-size:10.5px; font-weight:800; border:1px solid rgba(255,255,255,.45); border-radius:4px; padding:1px 7px; transition:transform .15s ease, box-shadow .15s ease; }
+.dm .bt.ai{ background:var(--blue); border-color:var(--blue); }
+.dm .bt.ai.press{ transform:scale(.92); box-shadow:0 0 0 3px var(--yellow); }
+.dm .rp{ display:none; margin-top:7px; border-left:4px solid var(--blue); background:rgba(255,255,255,.08); border-radius:4px; padding:6px 9px; font-size:12px; line-height:1.4; }
+.dm .rp.on{ display:block; }
+.dm .rp-h{ margin:0 0 2px; font-size:11px; font-weight:800; color:var(--pink); }
+.dm .rp-t{ margin:0; min-height:1.4em; }
 .dm.new{ animation:dmIn .55s var(--ease) both; }
 @keyframes dmIn{ from{ opacity:0; transform:translateY(18px); } }
 @media (max-height: 680px){
@@ -552,8 +563,8 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
 
         <div class="cap">
           <p class="k">Projet 2, module de Videntis</p>
-          <h2>Deal Hunter</h2>
-          <p>Il surveille les nouvelles annonces en continu. Des filtres écartent les lots pour pièces, puis Claude Haiku lit chaque annonce restante et rend son diagnostic. Si le prix passe nettement sous la référence, l’alerte part sur Discord avec ce diagnostic.</p>
+          <h2>Deal Hunter <a class="plink tight" href="/projets/deal-hunter/">Voir le projet <span aria-hidden="true">→</span></a></h2>
+          <p>Il lisait les nouvelles annonces de matériel PC sur Leboncoin et Vinted, reconnaissait le modèle, calculait le profit net à la revente et rangeait l’annonce dans l’un de ses six salons Discord. Un clic sur « Analyser », et Claude Haiku donnait son diagnostic.</p>
           <p class="meta">Python, PostgreSQL, Claude Haiku, Discord. Annonces, diagnostics et prix inventés pour la démonstration.</p>
         </div>
 
@@ -662,7 +673,7 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   /* ---------------- Diapositives ---------------- */
   var WEIGHT = [1, 1, 1, 1, 1];
   // Durée de chaque animation (ms). Deal Hunter : deux annonces complètes, puis la boucle continue
-  var DUR = [1800, 7600, 11900, 7300, 4200];
+  var DUR = [1800, 7600, 12350, 7300, 4200];
   var NS = WEIGHT.length;
   var CUM = [0];
   WEIGHT.forEach(function (w, i) { CUM.push(CUM[i] + w); });
@@ -863,37 +874,40 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
     });
   });
 
-  // Deal Hunter : chaque annonce traverse filtres, diagnostic IA et comparaison, puis l'alerte part sur Discord
+  // Deal Hunter : les filtres, le profit net à la revente, le salon ; puis un clic sur « Analyser » et Claude Haiku répond dans le salon
+  var RES = Math.round(REF * .85), SEUIL = 50, QMIN = -20, QMAX = 120;
   var DHL = [
     { site: "Vinted", city: "Lyon", title: "{m:rtx 3080ti} {g:12go} {n:urgent} {n:facture}", p: 390, checks: [1, 1, 1],
-      ai: ["Modèle confirmé : RTX 3080 Ti 12 Go.", "Facture fournie, aucun usage en minage.", "Prix bas dû à une vente urgente."],
-      verdict: "Bonne affaire probable, risque faible", aiShort: "Facture fournie, aucun usage en minage. Prix bas dû à une vente urgente : risque faible." },
-    { site: "Leboncoin", city: "Grenoble", title: "{m:3080 ti} {n:pour pièces}", p: 120, checks: [1, 1, 0] },
-    { site: "eBay", city: "Paris", title: "{b:msi} {m:rtx 3080 ti} {g:12go}", p: 535, checks: [1, 1, 1],
-      ai: ["Modèle confirmé : RTX 3080 Ti 12 Go, MSI.", "Bon état annoncé, vendue sans facture.", "Prix conforme au marché."], verdict: "Prix normal, rien à signaler" },
-    { site: "Leboncoin", city: "Nantes", title: "{b:RTX} {m:3080 Ti} {b:FE} {g:12Go} {n:TBE}", p: 430, checks: [1, 1, 1],
-      ai: ["Modèle confirmé : 3080 Ti Founders Edition.", "Très bon état, boîte d’origine.", "Description détaillée et cohérente."],
-      verdict: "Bonne affaire probable, risque faible", aiShort: "Founders Edition en très bon état, boîte d’origine, description cohérente : risque faible." }
+      ai: "Ratio 0,88, aucun drapeau. Facture fournie, vente urgente : bon deal, à négocier." },
+    { site: "Leboncoin", city: "Grenoble", title: "{n:PC portable} {b:Legion} {m:RTX 3080 Ti}", p: 480, checks: [0, 1, 1] },
+    { site: "Vinted", city: "Paris", title: "{b:msi} {m:rtx 3080 ti} {g:12go}", p: 410, checks: [1, 1, 1] },
+    { site: "Leboncoin", city: "Nantes", title: "{b:RTX} {m:3080 Ti} {b:FE} {g:12Go} {n:TBE}", p: 360, checks: [1, 1, 1],
+      ai: "Ratio 0,81, aucun drapeau. Founders Edition en très bon état, boîte d’origine : acheter." }
   ];
-  var CK = [700, 1000, 1300], AI_HEAD = 1650, AI_L0 = 2000, AI_LSTEP = 700, AI_LDUR = 600;
-  var VERD = AI_L0 + 3 * AI_LSTEP, G0 = 4400, G1 = 5100, ALERT = 5600, SEUIL = Math.round(REF * .85);
+  function sgn(v) { return (v >= 0 ? "+" : "−") + Math.abs(v) + " €"; }
+  function verdictOf(v) { return v >= 100 ? "ÉNORME DEAL" : v >= 80 ? "TRÈS BON DEAL" : v >= 50 ? "BON PRIX" : v >= 20 ? "PRIX CORRECT" : "PAS RENTABLE"; }
+  var CK = [700, 1000, 1300], P_HEAD = 1650, P_L0 = 2000, P_LSTEP = 700, P_LDUR = 600;
+  var VERD = P_L0 + 3 * P_LSTEP, G0 = 4400, G1 = 5100, ALERT = 5600, CLICK = 6700, REP0 = 7000, REPDUR = 1100;
   DHL.forEach(function (x) {
     x.fail = x.checks.indexOf(0);
-    x.alert = x.fail < 0 && x.p <= SEUIL;
-    x.len = x.fail >= 0 ? CK[x.fail] + 2250 : (x.alert ? 8000 : 6800);
+    x.lbc = RES - x.p; x.vin = Math.round(RES * .95 - 8 - x.p);
+    x.alert = x.fail < 0 && x.lbc >= SEUIL;
+    x.verdict = verdictOf(x.lbc);
+    x.lines = ["Revente estimée : " + RES + " € (" + REF + " € − 15 %)", "Leboncoin, main propre : " + sgn(x.lbc), "Vinted, 5 % et 8 € de port : " + sgn(x.vin)];
+    x.len = x.fail >= 0 ? CK[x.fail] + 2250 : (x.alert ? 9400 : 6800);
   });
-  function pct(p) { return (clamp(p, PMIN, PMAX) - PMIN) / (PMAX - PMIN) * 100; }
+  function qpos(v) { return (clamp(v, QMIN, QMAX) - QMIN) / (QMAX - QMIN) * 100; }
   var dh = make("dh",
     "<div class=\"dh-work\">" +
       "<section class=\"dh-p dh-in\"><h4><i>1</i>Nouvelle annonce</h4><div class=\"dh-card chip\"></div></section>" +
       "<section class=\"dh-p\"><h4><i>2</i>Filtres automatiques</h4><div class=\"bd\"><div><ul class=\"dh-checks\">" +
-        "<li>Modèle reconnu : RTX 3080 Ti</li><li>Variante complète : Ti, 12 Go</li><li>Ni lot pour pièces, ni carte HS</li></ul><p class=\"dh-out\"></p></div></div></section>" +
-      "<section class=\"dh-p\"><h4><i>3</i>Diagnostic IA<span>Claude Haiku</span></h4><div class=\"bd\"><div><div class=\"dh-ai\"><p></p><p></p><p></p><span class=\"dh-verdict\"></span></div></div></div></section>" +
-      "<section class=\"dh-p\"><h4><i>4</i>Comparaison au prix de référence</h4><div class=\"bd\"><div><div class=\"dh-gauge\"><div class=\"gt\"></div><div class=\"gfill\"></div>" +
-        "<div class=\"gth\" style=\"left:" + pct(SEUIL).toFixed(2) + "%\"><span>Seuil d’alerte : −15 %</span></div>" +
-        "<div class=\"gref\" style=\"left:" + pct(REF).toFixed(2) + "%\"><span>Référence " + REF + " €</span></div><div class=\"gm\"></div></div><p class=\"dh-diff\"></p></div></div></section>" +
+        "<li>Ni lot, ni portable, ni boîte vide</li><li>Modèle reconnu : RTX 3080 Ti</li><li>Annonce nouvelle, pas déjà vue</li></ul><p class=\"dh-out\"></p></div></div></section>" +
+      "<section class=\"dh-p\"><h4><i>3</i>Profit net à la revente<span>Référence " + REF + " €</span></h4><div class=\"bd\"><div><div class=\"dh-ai\"><p></p><p></p><p></p><span class=\"dh-verdict\"></span></div></div></div></section>" +
+      "<section class=\"dh-p\"><h4><i>4</i>Quel salon ?</h4><div class=\"bd\"><div><div class=\"dh-gauge\"><div class=\"gt\"></div><div class=\"gfill\"></div>" +
+        "<div class=\"gth\" style=\"left:" + qpos(SEUIL).toFixed(2) + "%\"><span>Seuil : 50 € de profit</span></div>" +
+        "<div class=\"gref\" style=\"left:" + qpos(0).toFixed(2) + "%\"><span>0 €</span></div><div class=\"gm\"></div></div><p class=\"dh-diff\"></p></div></div></section>" +
     "</div>" +
-    "<section class=\"dh-p dh-disc\"><h4><i>5</i>Alerte envoyée sur Discord</h4><div class=\"dc\"><div class=\"dc-head\"><b>#</b> bonnes-affaires<span>Discord</span></div><div class=\"dc-feed\"></div></div></section>" +
+    "<section class=\"dh-p dh-disc\"><h4><i>5</i>Salon Discord</h4><div class=\"dc\"><div class=\"dc-head\"><b>#</b> deals-fire<span>Discord</span></div><div class=\"dc-feed\"></div></div></section>" +
     "<div class=\"dh-fly\"></div>");
   var dhWork = dh.querySelector(".dh-work");
   var dhPanels = Array.prototype.slice.call(dh.querySelectorAll(".dh-p"));
@@ -907,14 +921,16 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   var dhCur = -1, dhFeedKey = null, dhMem = {};
   function memo(key, val, fn) { if (dhMem[key] !== val) { dhMem[key] = val; fn(val); } }
 
-  function dhMsg(x, isNew) {
-    var diff = Math.round((1 - x.p / REF) * 100);
-    return "<div class=\"dm" + (isNew ? " new" : "") + "\"><span class=\"av\">DH</span><div class=\"db\">" +
-      "<p class=\"dn\"><b>Deal Hunter</b><span class=\"tag\">BOT</span></p>" +
-      "<div class=\"emb\"><p class=\"et\">Bonne affaire : RTX 3080 Ti 12 Go à " + x.p + " €</p>" +
-      "<p class=\"ef\"><span>Écart</span>" + diff + " % sous la référence (" + REF + " €)</p>" +
-      "<p class=\"ef\"><span>Annonce</span>" + esc(x.site) + ", " + esc(x.city) + "</p>" +
-      "<p class=\"ef ia\"><span>Diagnostic IA (Claude Haiku)</span>" + esc(x.aiShort) + "</p></div></div></div>";
+  // Message du bot ; done : déjà analysé (réponse de Haiku complète)
+  function dhMsg(x, n, isNew, done) {
+    return "<div class=\"dm" + (isNew ? " new" : "") + "\" data-n=\"" + n + "\"><span class=\"av\">DH</span><div class=\"db\">" +
+      "<p class=\"dn\"><b>Deal Hunter</b><span class=\"tag\">BOT</span><span class=\"at\">@moi</span></p>" +
+      "<div class=\"emb\"><p class=\"et\">" + x.verdict + " · RTX 3080 Ti à " + x.p + " €</p>" +
+      "<p class=\"ef\"><span>Profit net</span>" + sgn(x.lbc) + " via Leboncoin</p>" +
+      "<p class=\"ef\"><span>Annonce</span>" + esc(x.site) + ", " + esc(x.city) + "</p></div>" +
+      "<p class=\"btns\"><span class=\"bt\">Acheter</span><span class=\"bt ai" + (done ? " press" : "") + "\">Analyser</span></p>" +
+      "<div class=\"rp" + (done ? " on" : "") + "\"><p class=\"rp-h\">Claude Haiku · analyse du deal</p><p class=\"rp-t\">" + (done ? esc(x.ai) : "") + "</p></div>" +
+      "</div></div>";
   }
 
   function dhFrame(el) {
@@ -949,61 +965,58 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
     });
     var failed = x.fail >= 0 && lt >= CK[x.fail] + 350;
     memo("st", failed ? clamp((lt - CK[x.fail] - 350) / 300, 0, 1).toFixed(2) : "0", function (v) { dhCard.style.setProperty("--st", v); });
-    memo("out", failed ? 1 : 0, function (v) { dhOut.textContent = v ? "Écartée par les filtres, sans appeler l’IA." : ""; });
+    memo("out", failed ? 1 : 0, function (v) { dhOut.textContent = v ? "Écartée : PC portable. Rien n’est posté." : ""; });
 
-    // Diagnostic IA, écrit au fil de l'eau
+    // Profit net, écrit ligne à ligne
     dhLines.forEach(function (p, i) {
       var html = "";
       if (x.fail >= 0) {
-        if (i === 0 && failed) html = "<span class=\"dh-wait\">Non sollicitée : l’annonce a été écartée avant.</span>";
-      } else if (lt >= AI_HEAD) {
-        if (lt < AI_L0) { if (i === 0) html = "<span class=\"dh-wait\">Lecture de l’annonce<span class=\"dots\"></span></span>"; }
+        if (i === 0 && failed) html = "<span class=\"dh-wait\">Pas de calcul : l’annonce a été écartée avant.</span>";
+      } else if (lt >= P_HEAD) {
+        if (lt < P_L0) { if (i === 0) html = "<span class=\"dh-wait\">Calcul<span class=\"dots\"></span></span>"; }
         else {
-          var f = clamp((lt - (AI_L0 + i * AI_LSTEP)) / AI_LDUR, 0, 1);
-          var txt = x.ai[i];
+          var f = clamp((lt - (P_L0 + i * P_LSTEP)) / P_LDUR, 0, 1);
+          var txt = x.lines[i];
           html = esc(txt.slice(0, Math.round(txt.length * f))) + (f > 0 && f < 1 ? "<span class=\"car\"></span>" : "");
         }
       }
       memo("l" + i, html, function (v) { p.innerHTML = v; });
     });
-    memo("vt", x.verdict || "", function (v) { dhVerd.textContent = v; });
+    memo("vt", x.fail < 0 ? x.verdict + " · " + sgn(x.lbc) : "", function (v) { dhVerd.textContent = v; });
     var vd = x.fail < 0 && lt >= VERD ? 1 : 0;
     memo("vd", vd, function (v) { dhVerd.className = "dh-verdict" + (v ? " show" : "") + (x.alert ? "" : " neutral"); });
 
-    // Comparaison au prix de référence
+    // Le profit face au seuil des bonnes affaires
     var g = x.fail < 0 ? ease(clamp((lt - G0) / (G1 - G0), 0, 1)) : 0;
     var showG = x.fail < 0 && lt >= G0 - 200;
-    var mp = lerp(pct(REF), pct(x.p), g);
+    var mp = lerp(qpos(0), qpos(x.lbc), g);
     memo("gm", showG ? mp.toFixed(2) : "off", function () {
       dhMark.style.opacity = showG ? 1 : 0;
       dhMark.style.left = mp.toFixed(2) + "%";
-      var lo = Math.min(mp, pct(REF)), hi = Math.max(mp, pct(REF));
+      var lo = Math.min(mp, qpos(0)), hi = Math.max(mp, qpos(0));
       dhFill.style.left = lo.toFixed(2) + "%"; dhFill.style.width = (hi - lo).toFixed(2) + "%";
       dhFill.className = "gfill" + (x.alert ? " good" : "");
       dhMark.className = "gm" + (x.alert ? " good" : "");
     });
     var dtxt = "";
-    if (x.fail < 0 && lt >= G1) {
-      var d = Math.round(Math.abs(1 - x.p / REF) * 100);
-      dtxt = x.p + " € : " + d + " % " + (x.p < REF ? "sous" : "au-dessus de") + " la référence. " + (x.alert ? "Alerte envoyée." : "Pas d’alerte.");
-    }
+    if (x.fail < 0 && lt >= G1) dtxt = x.alert ? sgn(x.lbc) + " ≥ 50 € : #deals-fire, @moi mentionné." : sgn(x.lbc) + " < 50 € : #deals-other, sans mention.";
     memo("dt", dtxt, function (v) { dhDiff.textContent = v; dhDiff.className = "dh-diff" + (x.alert ? " good" : ""); });
 
     // Étape en cours
-    var act = lt < CK[0] ? 0 : (x.fail >= 0 || lt < AI_HEAD ? 1 : (lt < G0 ? 2 : (!x.alert || lt < ALERT ? 3 : 4)));
+    var act = lt < CK[0] ? 0 : (x.fail >= 0 || lt < P_HEAD ? 1 : (lt < G0 ? 2 : (!x.alert || lt < ALERT ? 3 : 4)));
     dhPanels.forEach(function (p, k) {
       var c = k === 4 ? (act === 4 ? "on" : "") : (k === act ? "on" : (k < act ? "done" : (x.fail >= 0 && k > 1 ? "skip" : "pending")));
       memo("p" + k, c, function (v) { p.classList.remove("on", "done", "skip", "pending"); if (v) p.classList.add(v); });
     });
 
-    // L'alerte quitte la jauge et part vers le salon Discord
+    // La mention quitte la jauge et part vers le salon Discord
     var FLY = 650, fly = !small && x.alert && lt >= ALERT - FLY && lt < ALERT + 60;
     if (fly) {
       if (!dhMem.fr) {
         var r0 = dh.getBoundingClientRect(), rg = dhGauge.getBoundingClientRect(), rf = dhFeed.getBoundingClientRect();
-        dhMem.fr = { x0: rg.left + rg.width * pct(x.p) / 100 - r0.left, y0: rg.top + rg.height / 2 - r0.top,
+        dhMem.fr = { x0: rg.left + rg.width * qpos(x.lbc) / 100 - r0.left, y0: rg.top + rg.height / 2 - r0.top,
           x1: rf.left + rf.width / 2 - r0.left, y1: rf.bottom - 50 - r0.top };
-        dhFly.textContent = "Alerte : " + x.p + " €";
+        dhFly.textContent = "@moi · " + sgn(x.lbc);
       }
       var fr = dhMem.fr, fk = ease(clamp((lt - (ALERT - FLY)) / FLY, 0, 1));
       var fx = lerp(fr.x0, fr.x1, fk), fy = lerp(fr.y0, fr.y1, fk) - Math.sin(fk * Math.PI) * (small ? 30 : 70);
@@ -1012,16 +1025,23 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
     }
     memo("fly", fly ? 1 : 0, function (v) { if (!v) dhFly.style.opacity = 0; });
 
-    // Sur mobile, le salon Discord remonte par-dessus la chaîne au moment de l'alerte
+    // Sur mobile, le salon Discord remonte par-dessus la chaîne au moment du message
     memo("up", small && x.alert && lt >= ALERT - 350 && lt < x.len - 350 ? 1 : 0, function (v) { dhPanels[4].classList.toggle("up", !!v); dh.classList.toggle("sent", !!v); });
 
-    // Fil Discord : les deux dernières alertes (la dernière seule sur mobile)
+    // Fil Discord : les deux derniers messages (le dernier seul sur mobile)
     var last = fired.slice(small ? -1 : -2), key = last.join(",");
     if (key !== dhFeedKey) {
       var prev = dhFeedKey === null ? [] : dhFeedKey.split(",");
-      dhFeed.innerHTML = last.length ? last.map(function (m) { return dhMsg(DHL[m % DHL.length], prev.indexOf(String(m)) < 0 && dhFeedKey !== null); }).join("")
+      dhFeed.innerHTML = last.length ? last.map(function (m) { return dhMsg(DHL[m % DHL.length], m, prev.indexOf(String(m)) < 0 && dhFeedKey !== null, m !== n); }).join("")
         : "<p class=\"dc-empty\">En attente d’une bonne affaire…</p>";
-      dhFeedKey = key;
+      dhFeedKey = key; delete dhMem.press; delete dhMem.rp;
+    }
+    // Le clic sur « Analyser », puis la réponse de Haiku sous le message
+    var dm = x.alert ? dhFeed.querySelector(".dm[data-n=\"" + n + "\"]") : null;
+    if (dm) {
+      memo("press", lt >= CLICK ? 1 : 0, function (v) { dm.querySelector(".bt.ai").classList.toggle("press", !!v); });
+      var rk = lt >= REP0 ? Math.round(clamp((lt - REP0) / REPDUR, 0, 1) * x.ai.length) : -1;
+      memo("rp", rk, function (v) { var rp = dm.querySelector(".rp"); rp.classList.toggle("on", v >= 0); rp.querySelector(".rp-t").textContent = v > 0 ? x.ai.slice(0, v) : ""; });
     }
   }
 
