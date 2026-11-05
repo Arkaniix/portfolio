@@ -1,22 +1,24 @@
 ---
 // Démo Videntis : une annonce traverse les quatre étapes du produit, avec le code porté (videntis-engine.js).
 // Catalogue GPU allégé et règles d'intention : données publiques de l'API. Prix : jeu inventé.
-import Draw from "./Draw.astro";
+import { gpuArt, boxArt, wantedArt, GPUS } from "../lib/listing-art";
 import catalog from "../data/videntis/gpu-catalog.json";
 import rules from "../data/videntis/intent-rules.json";
 import market from "../data/videntis/demo-market.json";
 import engineSrc from "../scripts/videntis-engine.js?raw";
 
 const SAMPLES = [
-  { title: "rtx3080ti 12go comme neuf !!!", price: 420, platform: "leboncoin" },
-  { title: "MSI RTX 3080 gaming Z trio 10Go", price: 255, platform: "leboncoin" },
-  { title: "RTX 4070 Super dual OC, facture", price: 560, platform: "vinted" },
-  { title: "RX 6800 XT 16Go ex-minage", price: 450, platform: "ebay" },
-  { title: "Recherche RTX 3080 Ti, Saint-Étienne", price: 380, platform: "leboncoin" },
-  { title: "Boîte vide RTX 3080 Ti", price: 15, platform: "leboncoin" },
+  { title: "rtx3080ti 12go comme neuf !!!", price: 420, platform: "leboncoin", pic: 0 },
+  { title: "MSI RTX 3080 gaming Z trio 10Go", price: 255, platform: "leboncoin", pic: 1 },
+  { title: "RTX 4070 Super dual OC, facture", price: 560, platform: "vinted", pic: 2 },
+  { title: "RX 6800 XT 16Go ex-minage", price: 450, platform: "ebay", pic: 3 },
+  { title: "Recherche RTX 3080 Ti, Saint-Étienne", price: 380, platform: "leboncoin", pic: 4 },
+  { title: "Boîte vide RTX 3080 Ti", price: 15, platform: "leboncoin", pic: 5 },
 ];
+// « Photos » : les quatre cartes de l'en-tête, puis une annonce sans produit (recherche) et une boîte vide.
+const PICS = [...GPUS.map((v) => ({ svg: gpuArt(v.art), bg: v.bg })), { svg: wantedArt(), bg: "lined" }, { svg: boxArt(), bg: "floor" }];
 const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted", ebay: "eBay" };
-const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES });
+const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PICS.map((p) => p.bg) });
 ---
 <div class="dm" id="dm">
   <div class="dm-pick">
@@ -41,7 +43,7 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES });
 
   <div class="dm-run">
     <article class="dm-ad" aria-live="polite">
-      <div class="dm-photo"><Draw name="gpu" /><span>annonce inventée</span></div>
+      <div class="dm-photo" id="dm-photo" data-bg={PICS[0].bg}>{PICS.map((p, i) => <svg class={"draw pic-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={p.svg} />)}<span>annonce inventée</span></div>
       <div class="dm-ad-txt"><p class="dm-ad-t" id="dm-ad-t"></p><p class="dm-ad-p"><b id="dm-ad-p"></b><span id="dm-ad-pl"></span></p></div>
     </article>
     <ol class="dm-steps">
@@ -134,9 +136,20 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES });
     return "<div class=\"verdict-row\"><div class=\"stamp big " + VERD[v.code][1] + "\">" + VERD[v.code][0] + "</div><p class=\"offer\">Prix max<b>" + eur(m.achatMax) + "</b></p></div>" + gauge(v) + "<p class=\"ds-d why\">" + s + "</p>" + low;
   }
 
+  // Image de l'annonce : celle de l'exemple choisi ; pour un titre libre, une recherche ou une boîte vide
+  // ont leur dessin, une carte reconnue garde toujours la même carte dessinée.
+  var pics = document.querySelectorAll("#dm-photo .pic-v");
+  function hash(t) { var h = 0; for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return Math.abs(h); }
+  function showPic(input, r) {
+    var k = input.pic;
+    if (k === undefined) k = r.intent.intent === "wanted" ? 4 : r.intent.intent === "box_only" ? 5 : hash(r.match ? String(r.match.componentId) : input.title) % 4;
+    Array.prototype.forEach.call(pics, function (p, i) { p.classList.toggle("on", i === k); });
+    $("dm-photo").setAttribute("data-bg", raw.bgs[k]);
+  }
   function run(input) {
     timers.forEach(clearTimeout); timers = [];
     var r = E.analyse(input, data);
+    showPic(input, r);
     $("dm-ad-t").textContent = input.title; $("dm-ad-p").textContent = eur(input.price); $("dm-ad-pl").textContent = E.PLATFORMS[input.platform].label;
     var html = [step1(r), step2(r), step3(r), step4(r)];
     steps.forEach(function (st, i) {

@@ -12,6 +12,7 @@ import capMarche from "../../assets/videntis/cap-marche.png";
 import capScore from "../../assets/videntis/cap-score.png";
 import capPlans from "../../assets/videntis/cap-plans.png";
 import capRepair from "../../assets/videntis/cap-repair.png";
+import { gpuArt, GPUS } from "../../lib/listing-art";
 import "../../styles/videntis.css";
 
 const description =
@@ -32,51 +33,28 @@ const FEATURES = [
   { k: "watchlist", t: "Watchlist", tag: "Suivi", d: "Les modèles qu’on surveille, toujours sous les yeux." },
   { k: "stock", t: "Inventaire", tag: "Achats et ventes", d: "La marge réelle de chaque pièce, de l’achat à la revente." },
   { k: "dashboard", t: "Tableau de bord", tag: "Vue d’ensemble", d: "Capital engagé, profit réalisé, stock à écouler." },
-  { k: "repair", t: "Repair Guide", tag: "37 pannes", d: "Causes probables, étapes de diagnostic et réparations chiffrées." },
+  { k: "repair", t: "Repair Guide", tag: "37 pannes", d: "Causes probables, diagnostic pas à pas, réparations chiffrées. Fiches rédigées par Claude." },
   { k: "community", t: "Communauté", tag: "Votes et missions", d: "Les utilisateurs confirment la nature des annonces, à la manière de Waze." },
 ];
 
 // ---------- En-tête : quatre annonces inventées, une par verdict ----------
 // Chiffres tirés du moteur de la démo (demo-market.json, inventé) : revente nette, marge, offre maximale.
-const C = { I: "#111216", W: "#FFFFFF", B: "#2B45FF", P: "#FF4F9A", G: "#3DDC97", Y: "#FFD93B", R: "#D3D6DC", I2: "#4A4E57" };
-type Art = { fans: number; len: number; body: string; fan: string; blade: string; stripe: string; dust?: boolean };
 const HERO = [
   { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: 420, meta: "Comme neuf · Leboncoin · il y a 4 min",
-    model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier", ref: 457, pc: "+9 %", why: "+24 % après négo", rot: 2.5, bg: "sheet",
-    art: { fans: 2, len: 136, body: C.W, fan: C.B, blade: C.W, stripe: C.I } },
+    model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier", ref: 457, pc: "+9 %", why: "+24 % après négo", rot: 2.5, g: 0 },
   { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: 255, meta: "Bon état · Leboncoin · il y a 12 min",
-    model: "GeForce RTX 3080", v: "go", label: "Foncer", ref: 340, pc: "+33 %", why: "à prendre tel quel", rot: -2, bg: "wood",
-    art: { fans: 3, len: 154, body: C.I, fan: C.P, blade: C.W, stripe: C.P } },
+    model: "GeForce RTX 3080", v: "go", label: "Foncer", ref: 340, pc: "+33 %", why: "à prendre tel quel", rot: -2, g: 1 },
   { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: 560, meta: "Très bon état · Vinted · il y a 1 h",
-    model: "GeForce RTX 4070 Super", v: "try", label: "Tenter", ref: 500, pc: "−11 %", why: "offre max 417 €", rot: 1.5, bg: "mat",
-    art: { fans: 2, len: 112, body: C.W, fan: C.G, blade: C.I, stripe: C.Y } },
+    model: "GeForce RTX 4070 Super", v: "try", label: "Tenter", ref: 500, pc: "−11 %", why: "offre max 417 €", rot: 1.5, g: 2 },
   { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: 450, meta: "État correct · eBay · il y a 2 h",
-    model: "Radeon RX 6800 XT", v: "pass", label: "Passer", ref: 360, pc: "−20 %", why: "il faudrait −33 %", rot: -1.5, bg: "floor",
-    art: { fans: 3, len: 148, body: C.R, fan: C.I2, blade: C.W, stripe: C.I, dust: true } },
+    model: "Radeon RX 6800 XT", v: "pass", label: "Passer", ref: 360, pc: "−20 %", why: "il faudrait −33 %", rot: -1.5, g: 3 },
 ];
 // Jauge : barre encre jusqu'au prix demandé, repère à la revente, écart vert (marge) ou rose (trop cher).
 const geo = (p: number, ref: number) => {
   const max = Math.max(p, ref) * 1.15, P = p / max, Rr = ref / max;
   return { p: +P.toFixed(3), r: +Rr.toFixed(3), a: +Math.min(P, Rr).toFixed(3), w: +Math.abs(P - Rr).toFixed(3), up: ref > p };
 };
-const heroFan = (cx: number, cy: number, r: number, fill: string, blade: string) =>
-  `<g class="an-fan"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${C.I}" stroke-width="2"/>` +
-  [0, 72, 144, 216, 288].map((a) => `<path d="M${cx} ${cy}q${r * .55} ${-r * .15} ${r * .78} ${r * .32}" fill="none" stroke="${blade}" stroke-width="2.4" stroke-linecap="round" transform="rotate(${a} ${cx} ${cy})"/>`).join("") +
-  `<circle cx="${cx}" cy="${cy}" r="${r * .26}" fill="${C.W}" stroke="${C.I}" stroke-width="2"/></g>`;
-const gpuArt = (o: Art) => {
-  const x = Math.round((176 - o.len - 10) / 2), y = 20, h = 56, step = o.len / o.fans, r = Math.min(20, step * .4);
-  let s = `<rect x="${x}" y="${y}" width="${o.len}" height="${h}" rx="8" fill="${o.body}" stroke="${C.I}" stroke-width="2"/>`;
-  s += `<path d="M${x + 10} ${y + 5}h${o.len - 20}" stroke="${o.stripe}" stroke-width="3" stroke-linecap="round"/>`;
-  for (let i = 0; i < o.fans; i++) s += heroFan(+(x + step * (i + .5)).toFixed(1), y + h / 2 + 2, r, o.fan, o.blade);
-  s += `<rect x="${x + o.len}" y="14" width="10" height="68" rx="2" fill="${C.R}" stroke="${C.I}" stroke-width="2"/>`;
-  const pw = Math.min(80, Math.round(o.len * .52));
-  s += `<rect x="${x + 26}" y="${y + h}" width="${pw}" height="9" fill="${C.Y}" stroke="${C.I}" stroke-width="2"/>`;
-  s += `<path d="${Array.from({ length: Math.floor(pw / 6) }, (_, i) => `M${x + 31 + i * 6} ${y + h + 1}v7`).join("")}" stroke="${C.I}" stroke-width="1.2"/>`;
-  if (o.dust) s += [[18, 30], [44, 66], [70, 26], [96, 70], [118, 34], [140, 62], [60, 46], [128, 50]]
-    .map(([dx, dy], i) => `<circle cx="${x + dx}" cy="${dy}" r="${i % 3 ? 1.6 : 2.4}" fill="${C.I2}" opacity=".55"/>`).join("");
-  return s;
-};
-const HERO_JS = HERO.map(({ art, ...s }) => ({ ...s, g: geo(s.p, s.ref) }));
+const HERO_JS = HERO.map(({ g, ...s }) => ({ ...s, bg: GPUS[g].bg, g: geo(s.p, s.ref) }));
 const g0 = HERO_JS[0].g;
 ---
 <Base title="Videntis, le juste prix du matériel d’occasion" description={description} themeColor="#FFD93B">
@@ -103,8 +81,8 @@ const g0 = HERO_JS[0].g;
       <div class="stamp-scene" id="hs" aria-hidden="true">
         <div class="lot-wrap">
           <article class="lot" style={`--rot:${HERO[0].rot}deg`}>
-            <div class="lot-photo" data-bg={HERO[0].bg}>
-              {HERO.map((s, i) => <svg class={"draw gpu-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={gpuArt(s.art)} />)}
+            <div class="lot-photo" data-bg={GPUS[0].bg}>
+              {GPUS.map((v, i) => <svg class={"draw gpu-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={gpuArt(v.art)} />)}
               <span>annonce inventée</span>
             </div>
             <p class="lot-title" id="hs-title">{HERO[0].t.map(([w, k], i) => <Fragment>{i > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
@@ -200,7 +178,7 @@ const g0 = HERO_JS[0].g;
           <button type="button" class="zoom" aria-label="Agrandir la capture du Repair Guide">
             <Image src={capRepair} alt="Repair Guide, ventilateurs hors service : sévérité, difficulté, taux de réussite, causes probables en pourcentage et étapes de diagnostic." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
           </button>
-          <figcaption>Repair Guide&nbsp;: une panne, ses causes probables et le diagnostic pas à pas.</figcaption>
+          <figcaption>Repair Guide&nbsp;: une panne, ses causes probables et le diagnostic pas à pas. Fiches rédigées par Claude.</figcaption>
         </figure>
       </div>
     </div>
@@ -240,7 +218,7 @@ const g0 = HERO_JS[0].g;
       <ol class="eras">
         <li class="era"><Draw name="era-gpt" /><p class="era-k">2025</p><h3>ChatGPT sur mon PC</h3><p>Le code naissait dans la conversation. Je le recopiais sur le VPS, fichier par fichier.</p></li>
         <li class="era"><Draw name="era-cc" /><p class="era-k">Janvier–février 2026</p><h3>Claude Code sur le VPS</h3><p>L’agent travaille dans le projet&nbsp;: il lit, modifie, lance les tests. Je passe de copiste à relecteur.</p></li>
-        <li class="era"><Draw name="era-lovable" /><p class="era-k">Puis</p><h3>Lovable pour l’interface</h3><p>J’écris les briefs, Claude Code fait le serveur, Lovable l’interface. Je relis chaque diff.</p></li>
+        <li class="era"><Draw name="era-lovable" /><p class="era-k">Avril 2026</p><h3>Lovable pour l’interface</h3><p>J’écris les briefs, Claude Code fait le serveur, Lovable l’interface. Je relis chaque diff.</p></li>
         <li class="era"><Draw name="era-git" /><p class="era-k">30 avril 2026</p><h3>Tout passe sous Git</h3><p>450 commits sur l’API en quatre mois, une branche par chantier, un seul script de mise en ligne.</p></li>
       </ol>
       <h3 class="sub-h">Aujourd’hui, chaque fonctionnalité suit ces cinq étapes</h3>
