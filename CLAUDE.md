@@ -71,8 +71,15 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
   Prêt mais pas encore en production (novembre 2026). Site public : videntis-corp.fr (Lens, Estimator, verdicts FONCER / NÉGOCIER / TENTER / PASSER,
   formules Free, Standard, Pro). Ne jamais montrer les collecteurs côté serveur (proxys, contournement des protections anti-robots).
   Les fiches du Repair Guide sont rédigées par Claude (à dire comme tel). Pas de photos de cartes : les annonces de démo sont dessinées (`src/lib/listing-art.ts`).
-- **Deal Hunter** : module de Videntis. Filtres déterministes, puis diagnostic de chaque annonce par Claude Haiku, puis alerte Discord si le prix passe nettement sous la référence.
-  Code dans le dépôt privé Arkaniix/deal-hunter (collecteurs compris : ne jamais les montrer) ; la référence de prix vient de l'API (Arkaniix/monark-api).
+- **Deal Hunter** : bot Discord, module de Videntis, à l'arrêt aujourd'hui (novembre 2026). Il lisait les nouvelles annonces Leboncoin et Vinted
+  (eBay n'est jamais une source, seulement un canal de revente dans le calcul), écartait le bruit (lots, boîtes vides, portables, échanges,
+  goodies, vieilles générations), reconnaissait le modèle, calculait le profit net de revente (Leboncoin 0 %, Vinted 5 % + 8 € de port,
+  eBay 13 % + 8 €) à partir de la référence Videntis, puis postait chaque annonce dans l'un de six salons (bonnes affaires, baisses de prix,
+  pour pièces, suspectes, pas rentables, autres). Une bonne affaire = un profit net en euros au-dessus d'un seuil réglable, jamais un pourcentage.
+  Claude Haiku n'analyse qu'au clic sur « Analyser » (20 appels par heure, 50 par jour, 5 par personne et par heure), jamais automatiquement.
+  Les annonces « pour pièces » ne sont pas écartées : salon dédié et analyse orientée réparation.
+  Deux utilisateurs : Etienne et un second chasseur, dont le nom n'apparaît jamais sur le site.
+  Code dans le dépôt privé Arkaniix/deal-hunter (collecteurs compris : ne jamais les montrer, ni la raison de l'arrêt) ; la référence de prix vient de l'API (Arkaniix/monark-api).
 - **recon** : outil OSINT local (FastAPI, httpx, React Flow, xterm.js) qui relie les résultats de plusieurs sources dans un graphe.
 - **Méthode** : spécifications, agents (Claude Code côté serveur, Lovable côté interface), relecture de chaque diff, tests golden master, déploiement unique qui refuse un dépôt sale.
   Chronologie : ChatGPT sur PC et copier-coller vers le VPS (2025), Claude Code sur le VPS (janvier–février 2026), Lovable (avril 2026), tout sous Git (30 avril 2026).
@@ -84,8 +91,8 @@ Objectif : une page par projet, avec une démo interactive et le cheminement tec
 Décisions déjà prises :
 - Démos d'abord dans le navigateur : vrai code là où c'est peu coûteux (par exemple la normalisation des titres),
   réponses d'IA et jeux d'annonces enregistrés, signalés comme tels. Une démo doit marcher à tous les coups.
-- Si une démo a besoin d'un vrai serveur : sur le VPS d'Etienne, sous une adresse à part (`api.…`), conteneur Docker isolé,
-  limite de requêtes et plafond de dépenses sur la clé Claude. À sortir du VPS de Videntis quand celui-ci passera en production.
+- Le portfolio ne dépend jamais du VPS (décision de novembre 2026) : aucune requête vers lui, aucun serveur de démo.
+  Tout tourne dans le navigateur ; les réponses d'IA sont écrites ou enregistrées à l'avance.
 - recon : jamais de requête sur une vraie personne dans une démo publique, identité fictive uniquement.
 - Videntis et Deal Hunter : pas de collecte en direct sur Leboncoin ou Vinted depuis une démo publique, jeux de données enregistrés.
 
