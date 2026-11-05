@@ -72,6 +72,7 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
   formules Free, Standard, Pro). Ne jamais montrer les collecteurs côté serveur (proxys, contournement des protections anti-robots).
   Les fiches du Repair Guide sont rédigées par Claude (à dire comme tel). Pas de photos de cartes : les annonces de démo sont dessinées (`src/lib/listing-art.ts`).
 - **Deal Hunter** : module de Videntis. Filtres déterministes, puis diagnostic de chaque annonce par Claude Haiku, puis alerte Discord si le prix passe nettement sous la référence.
+  Code dans le dépôt privé Arkaniix/deal-hunter (collecteurs compris : ne jamais les montrer) ; la référence de prix vient de l'API (Arkaniix/monark-api).
 - **recon** : outil OSINT local (FastAPI, httpx, React Flow, xterm.js) qui relie les résultats de plusieurs sources dans un graphe.
 - **Méthode** : spécifications, agents (Claude Code côté serveur, Lovable côté interface), relecture de chaque diff, tests golden master, déploiement unique qui refuse un dépôt sale.
   Chronologie : ChatGPT sur PC et copier-coller vers le VPS (2025), Claude Code sur le VPS (janvier–février 2026), Lovable (avril 2026), tout sous Git (30 avril 2026).
@@ -89,6 +90,33 @@ Décisions déjà prises :
 - Videntis et Deal Hunter : pas de collecte en direct sur Leboncoin ou Vinted depuis une démo publique, jeux de données enregistrés.
 
 - Structure tranchée : Astro (voir « État actuel »). Travail sur une branche, fusion dans `main` seulement après validation d'Etienne.
+
+## Pages projet (`src/pages/projets/<slug>.astro`, adresse `/projets/<slug>/`)
+
+- Modèle : la page Videntis (`videntis.astro`). Gabarit `Base.astro` + `SiteHeader` (variante sous-page : transparente sur la
+  bande de couleur, fond papier dès qu'on défile) + `SiteFooter`. Styles propres à la page dans `src/styles/<slug>.css`.
+- Mise en page en bandes pleine largeur : `.band.b-yellow | b-blue | b-pink | b-ink | b-green | b-paper`, contenu dans `.wrap`
+  (1180 px) ; titres `.v-h1`, `.v-h2`, chapeau `.intro`. Sur-titre `.kicker` : marge proportionnelle à la taille du titre.
+- Sections de Videntis, pour référence : en-tête animé (une annonce tombe, son titre est lu, le tampon du verdict tombe),
+  fonctions (tuiles dessinées animées au survol), démo, captures réelles (loupe au clic), « Le plan » (architecture en trois
+  colonnes reliées), méthode (époques + frise `MethodPipe.astro`), choix (la question en bandeau, la réponse, l'option écartée),
+  « Ce qui a cassé » (problème, cause, solution, avec schéma), suite (boucle, jauge, feuille de route), carte « Projet suivant ».
+- Composants et données réutilisables :
+  - `Draw.astro` : dessins SVG trait encre (composants, fonctions, époques), classes `an-*` animées au survol ;
+  - `src/lib/listing-art.ts` : cartes graphiques dessinées (4 variantes), boîte, loupe, et leurs décors `data-bg`
+    (sheet, wood, mat, floor, lined) ;
+  - `src/scripts/videntis-engine.js` : code porté du produit (reconnaissance du modèle, règles d'intention, verdict),
+    avec `src/data/videntis/` (catalogue GPU et règles réels, marché inventé) ; `VidentisDemo.astro` l'utilise.
+- Captures réelles dans `src/assets/<slug>/`, affichées avec `<Image>` d'`astro:assets` ; bandeau et e-mail masqués.
+- Aperçu à commenter : un artifact autonome tiré de `dist` (CSS en ligne, polices et images en data URI, liens réécrits vers
+  le site en ligne), republié sous le même fichier pour garder l'adresse.
+- Aperçu Cloudflare d'une branche : `https://<branche>-etiennemonat.etiennemonat.workers.dev/`. Si un envoi n'est pas
+  construit (webhook manqué, aucune vérification sur le commit), un commit vide relance le build.
+- Retours d'Etienne sur la page Videntis, à appliquer d'emblée : peu de texte, beaucoup de dessins, schémas et captures ;
+  chaque exemple visuellement distinct ; animation au survol de tout ce qui est interactif ; questions et titres mis en avant ;
+  aucune section « légère » de quelques lignes ; chiffres exacts tirés du code ou d'Etienne, jamais estimés.
+- Liens : chaque page a sa pastille « Voir le projet » sur sa diapositive de l'accueil (`.plink`) et la carte
+  « Projet suivant » de la page précédente pointe vers elle ; une carte vers une page qui n'existe pas encore est masquée.
 
 ## En attente côté Etienne
 
