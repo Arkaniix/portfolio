@@ -31,8 +31,12 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 - Titres en Anybody (étroit, très gras, via `font-variation-settings: "wdth" ~70, "wght" ~820`), texte courant en Schibsted Grotesk.
 - Composants récurrents : cartes blanches à bord encre 1,5 px, rayon 8 à 12 px, ombre portée pleine `0 4px 0 rgba(17,18,22,.2)`.
   État actif ou survol : décalage + ombre noire décalée (`-5px 5px 0 var(--ink)`). Pastilles arrondies colorées pour les étiquettes.
-- Marques tierces : noms en texte simple, jamais de logo ni de couleurs de marque (Leboncoin, Vinted, eBay, Discord…).
-  Les seuls logos autorisés sont ceux fournis par Etienne (section Parcours).
+- Marques tierces : jamais de logo (Leboncoin, Vinted, eBay, Discord…). Les seuls logos autorisés sont ceux fournis par Etienne (section Parcours).
+  Depuis novembre 2026 (choix d'Etienne), les interfaces reconstituées prennent les vraies couleurs et la mise en page de leur service
+  pour être reconnaissables, et sont signalées comme redessinées : Discord en thème sombre (`src/scripts/dh-discord.js`, styles `.dsc`
+  dans `deal-hunter.css`, messages au format exact de notifier.py : emojis, champs, couleurs d'embed, étiquette APP, boutons) ;
+  annonces Leboncoin, Vinted et eBay (`src/scripts/annonce.js`, `src/styles/annonces.css`, étiquettes `.pf` ; prix au format de chaque
+  site, Vinted avec le prix protection acheteurs incluse : 0,70 € + 5 %). Sur Discord, l'utilisateur affiché est « Etienne ».
 - Toutes les données de démo (annonces, prix, identités) sont inventées et signalées comme telles.
 
 ## Exigences sur les animations
@@ -64,8 +68,10 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
   pour ne pas grandir la ligne : sur téléphone, la hauteur des textes fixe la place laissée à l'animation de toutes les diapositives.
   « Deal Hunter » étant plus long, sa pastille est `.plink.tight` (sinon le titre passe sur deux lignes à 1440 px).
 - Diapositive Deal Hunter : annonce, filtres (dont un portable écarté), profit net à la revente (référence 520 € − 15 %),
-  jauge face au seuil de 50 € de profit, message dans #deals-fire, clic sur « Analyser » et réponse de Haiku sous le message.
+  jauge face au seuil de 50 € de profit, message dans #deals-fire (thème sombre de Discord), clic sur « Analyser » et réponse de Haiku.
+  Sur téléphone, champs et pieds d'embed sont masqués et les réponses tiennent sur une ligne : sinon le salon déborde à 375×667.
   Sa légende a été réécrite à hauteur identique aux quatre tailles (vérifié) : changer le texte impose de remesurer.
+- Étiquettes de site des annonces (`.chip .src b`, `SITE_COL`) aux couleurs de Leboncoin, Vinted et eBay, prix au format de chaque site.
 - Boucle unique `frame()` en requestAnimationFrame.
 
 ## Projets présentés (contenu factuel)

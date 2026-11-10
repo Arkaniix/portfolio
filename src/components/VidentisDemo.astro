@@ -19,6 +19,8 @@ const SAMPLES = [
 const PICS = [...GPUS.map((v) => ({ svg: gpuArt(v.art), bg: v.bg })), { svg: wantedArt(), bg: "lined" }, { svg: boxArt(), bg: "floor" }];
 const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted", ebay: "eBay" };
 const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PICS.map((p) => p.bg) });
+const PK: Record<string, string> = { leboncoin: "lbc", vinted: "vin", ebay: "ebay" };
+function fmtP(p: number, k: string) { return k === "lbc" ? p + "\u00a0€" : p.toFixed(2).replace(".", ",") + (k === "ebay" ? "\u00a0EUR" : "\u00a0€"); }
 ---
 <div class="dm" id="dm">
   <div class="dm-pick">
@@ -26,7 +28,7 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PIC
     <div class="dm-samples">
       {SAMPLES.map((s, i) => (
         <button type="button" class={"smp" + (i === 0 ? " on" : "")} data-i={i}>
-          <span class="smp-t">{s.title}</span><span class="smp-m">{s.price} € · {PL[s.platform]}</span>
+          <span class="smp-t">{s.title}</span><span class="smp-m"><b class={"pf " + PK[s.platform]}>{PL[s.platform]}</b>{fmtP(s.price, PK[s.platform])}</span>
         </button>
       ))}
     </div>
@@ -42,9 +44,9 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PIC
   </div>
 
   <div class="dm-run">
-    <article class="dm-ad" aria-live="polite">
+    <article class="dm-lot pl-lbc" id="dm-lot" aria-live="polite">
       <div class="dm-photo" id="dm-photo" data-bg={PICS[0].bg}>{PICS.map((p, i) => <svg class={"draw pic-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={p.svg} />)}<span>annonce inventée</span></div>
-      <div class="dm-ad-txt"><p class="dm-ad-t" id="dm-ad-t"></p><p class="dm-ad-p"><b id="dm-ad-p"></b><span id="dm-ad-pl"></span></p></div>
+      <div class="dm-lot-txt"><p class="dm-lot-t" id="dm-lot-t"></p><p class="dm-lot-p"><b id="dm-lot-p"></b><span class="pf lbc" id="dm-lot-pl">Leboncoin</span></p><p class="dm-lot-incl" id="dm-lot-incl" hidden></p></div>
     </article>
     <ol class="dm-steps">
       <li class="ds" id="ds1"><header><i>1</i><h3>Quel modèle&nbsp;?</h3><span class="tag t-real">vrai code de Lens</span></header><div class="ds-b"></div></li>
@@ -72,6 +74,14 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PIC
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function pct(x) { return (x * 100).toFixed(1).replace(".", ",") + " %"; }
   function eur(x) { return Math.round(x).toLocaleString("fr-FR") + " €"; }
+  // L'annonce prend l'allure de son site : couleur, format du prix, prix protection acheteurs sur Vinted (0,70 € + 5 %)
+  function showPl(pl, p, label) {
+    var k = { leboncoin: "lbc", vinted: "vin", ebay: "ebay" }[pl] || "lbc", c2 = function (x) { return x.toFixed(2).replace(".", ","); };
+    $("dm-lot").className = "dm-lot pl-" + k;
+    $("dm-lot-p").textContent = k === "lbc" ? Math.round(p) + "\u00a0€" : c2(p) + (k === "ebay" ? "\u00a0EUR" : "\u00a0€");
+    $("dm-lot-pl").className = "pf " + k; $("dm-lot-pl").textContent = label;
+    $("dm-lot-incl").hidden = k !== "vin"; $("dm-lot-incl").textContent = c2(p + 0.7 + p * 0.05) + "\u00a0€ incl.";
+  }
   function suffixOf(name) { var m = /\b(Ti Super|Super|Ti|XTX|XT)$/i.exec(name); return m ? m[1] : ""; }
 
   function step1(r) {
@@ -150,7 +160,7 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PIC
     timers.forEach(clearTimeout); timers = [];
     var r = E.analyse(input, data);
     showPic(input, r);
-    $("dm-ad-t").textContent = input.title; $("dm-ad-p").textContent = eur(input.price); $("dm-ad-pl").textContent = E.PLATFORMS[input.platform].label;
+    $("dm-lot-t").textContent = input.title; showPl(input.platform, input.price, E.PLATFORMS[input.platform].label);
     var html = [step1(r), step2(r), step3(r), step4(r)];
     steps.forEach(function (st, i) {
       var b = st.querySelector(".ds-b");
@@ -180,7 +190,7 @@ const data = JSON.stringify({ catalog, rules, market, samples: SAMPLES, bgs: PIC
   var started = false, dm = $("dm");
   function go() { if (!started) { started = true; run(raw.samples[0]); } }
   steps.forEach(function (st, i) { st.querySelector(".ds-b").innerHTML = [step1, step2, step3, step4][i](E.analyse(raw.samples[0], data)); st.className = "ds done"; });
-  $("dm-ad-t").textContent = raw.samples[0].title; $("dm-ad-p").textContent = eur(raw.samples[0].price); $("dm-ad-pl").textContent = "Leboncoin";
+  $("dm-lot-t").textContent = raw.samples[0].title; showPl("leboncoin", raw.samples[0].price, "Leboncoin");
   if ("IntersectionObserver" in window && !reduce) {
     new IntersectionObserver(function (es, ob) { if (es[0].isIntersecting) { go(); ob.disconnect(); } }, { threshold: .35 }).observe(dm);
   }

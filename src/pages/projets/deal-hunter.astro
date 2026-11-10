@@ -10,17 +10,24 @@ import { SAMPLES, PIPELINE, ME, OTHER, CHANNEL_INFO } from "../../data/deal-hunt
 import market from "../../data/deal-hunter/demo-market.json";
 import catalog from "../../data/videntis/gpu-catalog.json";
 import "../../scripts/deal-hunter-engine.js";
+import "../../scripts/annonce.js";
+import "../../scripts/dh-discord.js";
+import "../../styles/annonces.css";
 import "../../styles/projet.css";
 import "../../styles/deal-hunter.css";
 
 const E = (globalThis as any).DealHunterEngine;
+const A = (globalThis as any).Annonce;
+const D = (globalThis as any).DHDiscord;
+const svgOf = (k: string, cls = "draw") => `<svg class="${cls}" viewBox="0 0 176 100" aria-hidden="true">${PIC[k].svg}</svg>`;
+const tokHtml = (t: string[][]) => t.map(([w, k]) => `<span class="tkn ${k}">${esc(w)}</span>`).join(" ");
 const data = { index: E.buildModelIndex(catalog as { name: string }[]), market: market.gpu, cpu: market.cpu };
 const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted" };
 const CHN: Record<string, string> = { lbc: "Leboncoin", vinted: "Vinted", ebay: "eBay" };
 const NB = " ";
+function esc(s: string) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 const eur = (x: number) => Math.round(x).toLocaleString("fr-FR") + NB + "€";
 const seur = (x: number) => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(Math.round(x)).toLocaleString("fr-FR") + NB + "€";
-const esc = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const run = (title: string, price: number, extra: Record<string, any> = {}) =>
   E.processAd({ ad_id: "p" + title.length + "-" + price, title, price_eur: price, platform: "leboncoin", description: "", ...extra }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
 
@@ -31,6 +38,8 @@ const bySid = Object.fromEntries(SAMPLES.map((s) => [s.id, s]));
 const S1 = SAMPLES[0];
 const R1 = E.processAd({ ad_id: "s1", title: S1.title, price_eur: S1.price, platform: "leboncoin", description: S1.description }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
 const ev1 = R1.ev;
+const HERO_MSG = D.deal({ ev: ev1, ad: R1.ad, city: S1.city, ago: S1.ago, who: [ME.username], mine: true, thumb: { bg: PIC["gpu-fe"].bg, svg: svgOf("gpu-fe") } });
+const annOf = (s: any, title: string, extra: Record<string, any> = {}) => A.html({ pl: s.platform, bg: PIC[s.pic].bg, art: svgOf(s.pic), title, price: s.price, city: s.city, zip: s.zip, ago: s.ago, brand: s.brand, cond: s.cond, likes: s.likes, ship: s.ship, ...extra });
 
 // Mots du titre : m = modèle lu, x = cause de l'exclusion, r = signal de panne, n = le reste
 function tokens(title: string, r: any) {
@@ -70,16 +79,17 @@ const FOLLOW = [
     ri ? (ri.hs && ri.hs.is_hs ? `<span class="fs-warn">Pour pièces&nbsp;:</span> ${esc(ri.hs.signals.slice(0, 2).join(", "))}.`
       : ri.suspect ? `<span class="fs-no">Suspecte&nbsp;:</span> ${ri.flags.length} drapeaux, dont un prix à ${String(Math.round(ri.ratio * 100) / 100).replace(".", ",")} de la revente.`
       : `<span class="fs-ok">Rien à signaler.</span> Prix à ${String(Math.round(ri.ratio * 100) / 100).replace(".", ",")} de la revente.`) : stop,
-    ch ? `<span class="salpill c-${ch.c}">#&nbsp;${ch.name}</span> <span class="at">@moi</span> mentionné.` : stop,
+    ch ? `<span class="salpill c-${ch.c}">#&nbsp;${ch.name}</span> <span class="at">@${ME.username}</span> mentionné.` : stop,
     AI_LINE[sid] ? `Clic sur «&nbsp;Analyser&nbsp;», Haiku répond&nbsp;: <b>${AI_LINE[sid]}</b>` : stop,
   ];
-  return { sid, short, title: s.title, price: s.price, meta: PL[s.platform] + (s.city ? " · " + s.city : "") + " · " + s.ago, pic: s.pic, t: tokens(s.title, r), states, last: r.stop ? 2 : 8 };
+  const t = tokens(s.title, r);
+  return { sid, short, pic: s.pic, ann: annOf(s, tokHtml(t), { cls: "fol-ann" + (sid === "s1" ? " on" : ""), attrs: ` data-f="${sid}"` }), states, last: r.stop ? 2 : 8 };
 });
 
 // ---------- Étape 1 : ce qui arrive ----------
 const FLOW = [
-  { t: "RTX 3080 Founders Edition", p: 210 }, { t: "PC complet RTX 4070", p: 900 }, { t: "Ryzen 7 5800X", p: 95 },
-  { t: "RTX 4080 Super neuve", p: 780 }, { t: "Kit DDR4 2x16 Go", p: 110 }, { t: "RX 6700 XT", p: 230 },
+  { t: "RTX 3080 Founders Edition", p: 210, pl: "leboncoin" }, { t: "PC complet RTX 4070", p: 900, pl: "leboncoin" }, { t: "Ryzen 7 5800X", p: 95, pl: "vinted" },
+  { t: "RTX 4080 Super neuve", p: 780, pl: "vinted" }, { t: "Kit DDR4 2x16 Go", p: 110, pl: "vinted" }, { t: "RX 6700 XT", p: 230, pl: "leboncoin" },
 ];
 // ---------- Étape 3 : quatre titres, ce que le bot en lit ----------
 const READS = ["RTX 3080 Founders Edition comme neuve", "Ryzen 7 5800X, très bon état", "Kit 2x16 Go DDR4 3200 Corsair Vengeance", "GTX 1080 Ti Strix"].map((t) => {
@@ -122,40 +132,14 @@ const STEPS = [
 
 <main class="v dh">
 
-  <!-- ========== En-tête : le message, en très grand ========== -->
+  <!-- ========== En-tête : le salon Discord, au moment où le message arrive ========== -->
   <section class="band b-pink dh-open" aria-labelledby="dh-title">
     <div class="wrap">
-      <noscript><style>.op.wait .op-av, .op.wait .op-h, .op.wait .op-at, .op.wait .op-emb, .op.wait .op-b .msg-btns{ opacity:1 !important; }</style></noscript>
-      <p class="op-k">Projet 2 · Module de Videntis · Bot Discord, à l’arrêt aujourd’hui</p>
-      <div class="op wait" id="op">
-        <div class="op-msg">
-          <span class="op-av" aria-hidden="true">DH</span>
-          <div class="op-b">
-            <div class="op-h"><h1 id="dh-title" class="op-name">Deal Hunter</h1><span class="botp">bot</span><span class="op-time">aujourd’hui à 14:31</span></div>
-            <p class="op-at"><span class="at">@moi</span></p>
-            <div class="emb op-emb k-vgood">
-              <div class="emb-top">
-                <div>
-                  <p class="emb-t"><span class="newp">nouveau</span>{ev1.verdict.v} · {ev1.matched_model.name}</p>
-                  <p class="emb-d">{S1.title}<span class="emb-desc">{S1.description}</span></p>
-                </div>
-                <span class="emb-th" data-bg={PIC["gpu-fe"].bg}><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC["gpu-fe"].svg} /></span>
-              </div>
-              <dl class="emb-f">
-                <div><dt>Prix</dt><dd><b>{eur(S1.price)}</b></dd></div>
-                <div><dt>Revente estimée</dt><dd>~{eur(ev1.realistic_sell_price)}</dd></div>
-                <div><dt>Profit net</dt><dd><b>{seur(ev1.best_profit)}</b> via LBC</dd></div>
-                <div><dt>Localisation</dt><dd>{S1.city}</dd></div>
-                <div><dt>Observations</dt><dd>{ev1.observation_count} ✓ fiable</dd></div>
-                <div><dt>Publiée</dt><dd>il y a 3 min</dd></div>
-              </dl>
-            </div>
-            <div class="msg-btns">
-              <a class="mb mb-buy" href="#a-vous">Acheter ↗</a>
-              <a class="mb mb-ai" href="#analyser">Analyser</a>
-              <a class="mb mb-rep" href="#salon">Signaler</a>
-            </div>
-          </div>
+      <noscript><style>.op.wait .dsc-feed .msg, .op.wait .op-badge{ opacity:1 !important; }</style></noscript>
+      <div class="op-top">
+        <div class="op-ttl">
+          <p class="op-k">Projet 2 · Module de Videntis · Bot Discord, à l’arrêt aujourd’hui</p>
+          <h1 id="dh-title" class="op-name">Deal Hunter</h1>
         </div>
         <div class="op-side">
           <p class="op-lead">Ce message, Deal Hunter le postait dans un salon Discord quelques instants après une annonce de matériel PC sur Leboncoin ou Vinted. <b>Voici tout ce qui se passe entre les deux.</b></p>
@@ -163,9 +147,35 @@ const STEPS = [
             <a class="vbtn primary" href="#trajet">Suivre une annonce ↓</a>
             <a class="vbtn" href="#a-vous">Essayer avec la vôtre</a>
           </div>
-          <p class="op-note">Annonce et prix inventés, message redessiné d’après mes captures du salon. Le code et ses 901 tests restent&nbsp;; le bot, lui, ne tourne plus.</p>
         </div>
       </div>
+      <div class="dsc dsc-win op wait" id="op">
+        <nav class="dsc-rail" aria-hidden="true"><span class="dsc-srv on">DH</span><span class="dsc-sep"></span><span class="dsc-srv add">+</span></nav>
+        <aside class="dsc-side" aria-label="Salons du serveur">
+          <p class="dsc-sname">Deal Hunter<span aria-hidden="true">⌄</span></p>
+          <ul class="dsc-chs">
+            <li class="dsc-cat">Deals</li>
+            {SLOTS.map((k) => <li class={"dsc-ch" + (k === "deals_fire" ? " on" : "")}><i>#</i><span>{CHANNEL_INFO[k].name}</span>{k === "deals_fire" && <span class="dsc-badge op-badge">1</span>}</li>)}
+            <li class="dsc-cat">Bot</li>
+            {["bot-settings", "settings-etienne", "deals-forge", "bot-logs"].map((c) => <li class="dsc-ch"><i>#</i><span>{c}</span></li>)}
+          </ul>
+          <div class="dsc-me"><span class="msg-av">E</span><p>{ME.username}<span>En ligne</span></p></div>
+        </aside>
+        <div class="dsc-main">
+          <p class="dsc-bar"><i>#</i><b>deals-fire</b></p>
+          <div class="dsc-feed">
+            <p class="dsc-day">Aujourd’hui</p>
+            <Fragment set:html={HERO_MSG} />
+          </div>
+          <p class="dsc-input"><i>+</i>Envoyer un message dans #deals-fire</p>
+        </div>
+        <aside class="dsc-mem" aria-label="Membres">
+          <p class="dsc-cat">En ligne — 2</p>
+          <p class="dsc-mbr"><span class="msg-av">DH</span>Deal Hunter<span class="botp">APP</span></p>
+          <p class="dsc-mbr"><span class="msg-av me">E</span>{ME.username}</p>
+        </aside>
+      </div>
+      <p class="op-note">Salon redessiné d’après mes captures, aux couleurs de Discord mais sans son logo. Annonce et prix inventés. Le code et ses 901 tests restent&nbsp;; le bot, lui, ne tourne plus.</p>
     </div>
   </section>
 
@@ -183,20 +193,9 @@ const STEPS = [
 
       <div class="trip">
         <aside class="fol" id="fol" data-f="s1" data-n="1" aria-live="polite">
-          <article class="fol-card">
-            <div class="fol-pic">
-              {FOLLOW.map((f, i) => <svg class={"draw pv" + (i === 0 ? " on" : "")} data-f={f.sid} data-bg={PIC[f.pic].bg} viewBox="0 0 176 100" aria-hidden="true" set:html={PIC[f.pic].svg} />)}
-              <span>annonce inventée</span>
-            </div>
-            <div class="fol-txt">
-              {FOLLOW.map((f, i) => (
-                <div class={"fol-ann" + (i === 0 ? " on" : "")} data-f={f.sid}>
-                  <p class="fol-t">{f.t.map(([w, k], j) => <Fragment>{j > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
-                  <p class="fol-p"><b>{eur(f.price)}</b><span>{f.meta}</span></p>
-                </div>
-              ))}
-            </div>
-          </article>
+          <div class="fol-card">
+            {FOLLOW.map((f) => <Fragment set:html={f.ann} />)}
+          </div>
           <ol class="fol-dots" aria-hidden="true">{STEPS.map((s, i) => <li data-n={i + 1}><i>{i + 1}</i><span>{s.short}</span></li>)}</ol>
           <div class="fol-st">
             {FOLLOW.map((f) => f.states.map((h, i) => <p class="fs" data-f={f.sid} data-n={i + 1} data-stop={i + 1 > f.last ? "1" : undefined} set:html={h} />))}
@@ -209,7 +208,7 @@ const STEPS = [
             <header class="stn-h"><span class="stn-n">1</span><h2 id="q1">{STEPS[0].q}</h2></header>
             <p class="stn-p">Le bot lisait les nouvelles annonces de matériel PC sur Leboncoin et Vinted. Au-dessus du prix maximum réglé dans #bot-settings, 500&nbsp;€, il ne va pas plus loin. Et quand plus aucun chasseur n’est en chasse, il se met en pause.</p>
             <ul class="flow" aria-label="Annonces qui arrivent (inventées)">
-              {FLOW.map((x, i) => <li class={x.p > 500 ? "over" : ""} style={`--i:${i}`}><b>{x.t}</b><span>{eur(x.p)}</span>{x.p > 500 && <em>au-dessus de 500&nbsp;€</em>}</li>)}
+              {FLOW.map((x, i) => <li class={A.key(x.pl) + (x.p > 500 ? " over" : "")} style={`--i:${i}`}><span class={"pf " + A.key(x.pl)}>{PL[x.pl]}</span><b>{x.t}</b><span class="fl-p">{A.euros(x.p, x.pl === "vinted")}</span>{x.p > 500 && <em>au-dessus de 500&nbsp;€</em>}</li>)}
             </ul>
           </section>
 
@@ -390,15 +389,11 @@ const STEPS = [
                 <div class="who-deal" id="who-deal"></div>
                 <p class="who-bot" id="who-bot"></p>
               </div>
-              {[["me", "moi", ME], ["other", "second chasseur", OTHER]].map(([key, name, s]: any) => (
+              {[["me", ME], ["other", OTHER]].map(([key, u]: any) => (
                 <div class="hunt" data-u={key}>
-                  <p class="hunt-h">Panneau de chasse · {name}</p>
                   <div class="hunt-res" data-res={key}></div>
-                  <div class="hunt-row"><span>Présence</span><button type="button" class="sw" data-f="presence" aria-pressed={s.presence === "ON" ? "true" : "false"}>{s.presence}</button></div>
-                  <div class="hunt-row"><span>Mentionné même OFF</span><button type="button" class="sw" data-f="notify_when_offline" aria-pressed={s.notify_when_offline ? "true" : "false"}>{s.notify_when_offline ? "oui" : "non"}</button></div>
-                  <div class="hunt-row"><span>Profit minimum</span><span class="seg-g">{[25, 50, 80].map((v) => <button type="button" class="seg2" data-f="min_profit_to_ping" data-v={v} aria-pressed={s.min_profit_to_ping === v ? "true" : "false"}>{v}{NB}€</button>)}</span></div>
-                  <div class="hunt-row col"><span>Salons qui le mentionnent</span><span class="chs">{SLOTS.map((k) => <button type="button" class={"chk c-" + CHANNEL_INFO[k].c} data-f="ch" data-v={k} aria-pressed={s.channels_to_ping[k] ? "true" : "false"}>{CHANNEL_INFO[k].label}</button>)}</span></div>
-                  <button type="button" class="hunt-off" data-f="disconnect">Fermer Discord</button>
+                  <div class="dsc hunt-d" set:html={D.panel(u)} />
+                  <button type="button" class="hunt-off" data-f="disconnect">Fermer Discord ({u.username})</button>
                 </div>
               ))}
             </div>
@@ -421,11 +416,7 @@ const STEPS = [
               {[["s1", "Revendeur"], ["s2", "Réparateur"]].map(([sid, k]) => (
                 <div class="ai-c" tabindex="0">
                   <p class="ai-k">Consigne {k.toLowerCase()} · {bySid[sid].title}</p>
-                  <div class="emb k-ai">
-                    <p class="emb-t">Analyse du deal</p>
-                    {bySid[sid].ai!.slice(0, k === "Revendeur" ? 3 : 4).map((s) => (<Fragment><p class="ai-h">{s.h}</p>{s.l.map((l) => <p class="ai-l">{l}</p>)}</Fragment>))}
-                    <p class="emb-foot">Analyse par Claude Haiku (texte + image) · usage personnel</p>
-                  </div>
+                  <div class="dsc ai-box" set:html={D.analysis({ sections: bySid[sid].ai!.slice(0, k === "Revendeur" ? 3 : 4), quote: (sid === "s1" ? "💰 TRÈS BON DEAL  GeForce RTX 3080" : "🔥 ÉNORME DEAL  GeForce RTX 3070") })} />
                 </div>
               ))}
             </div>
@@ -492,7 +483,7 @@ const STEPS = [
           <span class="pred" style="--i:2"><em>marge</em><b>≥</b><i>60&nbsp;€</i></span>
           <span class="pred" style="--i:3"><em>titre</em><b>ne contient pas</b><i>«&nbsp;pour pièces&nbsp;»</i></span>
         </div>
-        <p class="rule-to"><span>→</span><b># deals-forge</b><em>@moi</em></p>
+        <p class="rule-to"><span>→</span><b># deals-forge</b><em>@{ME.username}</em></p>
         <div class="ops" aria-label="Les dix opérateurs">
           {["=", "≠", ">", "≥", "<", "≤", "dans", "hors de", "contient", "ne contient pas"].map((o) => <span>{o}</span>)}
         </div>
@@ -545,13 +536,10 @@ const STEPS = [
         b.addEventListener("click", function () {
           f = b.getAttribute("data-f");
           each(document.querySelectorAll(".pk"), function (o) { var on = o === b; o.classList.toggle("on", on); o.setAttribute("aria-selected", String(on)); });
-          each(fol.querySelectorAll(".pv"), function (v) { v.classList.toggle("on", v.getAttribute("data-f") === f); });
           each(fol.querySelectorAll(".fol-ann"), function (v) { v.classList.toggle("on", v.getAttribute("data-f") === f); });
-          fol.querySelector(".fol-pic").setAttribute("data-bg", fol.querySelector('.pv[data-f="' + f + '"]').getAttribute("data-bg"));
           show();
         });
       });
-      fol.querySelector(".fol-pic").setAttribute("data-bg", fol.querySelector(".pv.on").getAttribute("data-bg"));
       show();
       if (!("IntersectionObserver" in window)) { each(stns, function (s) { s.classList.add("arr"); }); return; }
       // Étape courante : celle qui traverse le milieu de l'écran
@@ -594,10 +582,10 @@ const STEPS = [
       function eur(x) { var r = Math.round(x); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + " €"; }
       function render() {
         var d = R[cur], ev = d.r.ev, ch = W.channels[d.r.channel];
-        document.getElementById("who-deal").innerHTML =
-          "<div class=\"wd\"><span class=\"wd-pic\" data-bg=\"" + W.pics[d.s.pic] + "\">" + (document.querySelector("#dhd-pic .pv[data-k=\"" + d.s.pic + "\"]") || { outerHTML: "" }).outerHTML.replace(" on\"", "\"") + "</span>" +
-          "<div><p class=\"wd-t\">" + esc(d.s.title) + "</p><p class=\"wd-m\">" + d.s.price + " € · " + (d.s.platform === "vinted" ? "Vinted" : "Leboncoin") + "</p>" +
-          "<p class=\"wd-r\"><span class=\"salpill c-" + ch.c + "\"># " + ch.name + "</span><b>" + eur(ev.best_profit) + "</b> de profit</p></div></div>";
+        var art = document.querySelector("#dhd-lot .pv[data-k=\"" + d.s.pic + "\"]");
+        document.getElementById("who-deal").innerHTML = "<div class=\"wd\">" + window.Annonce.html({ pl: d.s.platform, bg: W.pics[d.s.pic], pics: art ? art.outerHTML.replace(" pv on\"", "\"").replace(" pv\"", "\"") : "",
+            title: esc(d.s.title), price: d.s.price, city: d.s.city, zip: d.s.zip, ago: d.s.ago, brand: d.s.brand, cond: d.s.cond, likes: d.s.likes, ship: d.s.ship, row: true }) +
+          "<p class=\"wd-r\"><span class=\"salpill c-" + ch.c + "\"># " + ch.name + "</span><b>" + eur(ev.best_profit) + "</b> de profit net</p></div>";
         var off = users.me.presence === "OFF" && users.other.presence === "OFF";
         var res = E.mentions([users.me, users.other], ev, d.r.channel);
         document.getElementById("who-bot").innerHTML = off ? "<b>Bot en pause</b>&nbsp;: plus personne ne chasse, les annonces ne sont même plus lues." : "<b>Bot en chasse</b>&nbsp;: au moins un chasseur est ON.";
@@ -607,14 +595,7 @@ const STEPS = [
           box.className = "hunt-res " + (off ? "zz" : r.pinged ? "yes" : "no");
           box.innerHTML = off ? "Bot en pause&nbsp;: annonce jamais lue" : r.pinged ? "<b>@" + esc(r.name) + "</b> mentionné" : "Silencieux&nbsp;: " + esc(r.why) + (note[k] ? "<em>" + note[k] + "</em>" : "");
           if (!off && r.pinged && note[k]) box.innerHTML += "<em>" + note[k] + "</em>";
-          var p = who.querySelector("[data-u=\"" + k + "\"]"), u = users[k];
-          each(p.querySelectorAll("[data-f]"), function (b) {
-            var fl = b.getAttribute("data-f");
-            if (fl === "presence") { b.textContent = u.presence; b.setAttribute("aria-pressed", u.presence === "ON" ? "true" : "false"); }
-            else if (fl === "notify_when_offline") { b.textContent = u.notify_when_offline ? "oui" : "non"; b.setAttribute("aria-pressed", u.notify_when_offline ? "true" : "false"); }
-            else if (fl === "min_profit_to_ping") b.setAttribute("aria-pressed", String(u.min_profit_to_ping === +b.getAttribute("data-v")));
-            else if (fl === "ch") b.setAttribute("aria-pressed", String(!!u.channels_to_ping[b.getAttribute("data-v")]));
-          });
+          who.querySelector("[data-u=\"" + k + "\"] .hunt-d").innerHTML = window.DHDiscord.panel(users[k]);
         });
         each(who.querySelectorAll(".wtab"), function (t, j) { t.classList.toggle("on", j === cur); t.setAttribute("aria-selected", String(j === cur)); });
       }
@@ -622,8 +603,9 @@ const STEPS = [
       each(who.querySelectorAll(".wtab"), function (t, j) { t.addEventListener("click", function () { stopAuto(); cur = j; render(); }); });
       each(who.querySelectorAll(".hunt"), function (p) {
         var k = p.getAttribute("data-u"), u = users[k];
-        each(p.querySelectorAll("[data-f]"), function (b) {
-          b.addEventListener("click", function () {
+        p.addEventListener("click", function (e) {               // délégation : le panneau est régénéré à chaque réglage
+          var b = e.target.closest("[data-f]"); if (!b || !p.contains(b)) return;
+          (function () {
             stopAuto(); note[k] = "";
             var fl = b.getAttribute("data-f");
             if (fl === "presence") u.presence = u.presence === "ON" ? "OFF" : "ON";
@@ -632,7 +614,7 @@ const STEPS = [
             else if (fl === "ch") { var c = b.getAttribute("data-v"); u.channels_to_ping[c] = !u.channels_to_ping[c]; }
             else if (fl === "disconnect") { if (u.presence === "ON") { u.presence = "OFF"; note[k] = "Discord fermé : présence passée à OFF."; } else note[k] = "Déjà OFF."; }
             render();
-          });
+          })();
         });
       });
       render();

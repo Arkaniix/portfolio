@@ -14,6 +14,7 @@ import capPlans from "../../assets/videntis/cap-plans.png";
 import capRepair from "../../assets/videntis/cap-repair.png";
 import { gpuArt, GPUS } from "../../lib/listing-art";
 import "../../styles/projet.css";
+import "../../styles/annonces.css";
 import "../../styles/videntis.css";
 
 const description =
@@ -41,13 +42,13 @@ const FEATURES = [
 // ---------- En-tête : quatre annonces inventées, une par verdict ----------
 // Chiffres tirés du moteur de la démo (demo-market.json, inventé) : revente nette, marge, offre maximale.
 const HERO = [
-  { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: 420, meta: "Comme neuf · Leboncoin · il y a 4 min",
+  { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: 420, pl: "lbc", meta: "Comme neuf · il y a 4 min",
     model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier", ref: 457, pc: "+9 %", why: "+24 % après négo", rot: 2.5, g: 0 },
-  { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: 255, meta: "Bon état · Leboncoin · il y a 12 min",
+  { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: 255, pl: "lbc", meta: "Bon état · il y a 12 min",
     model: "GeForce RTX 3080", v: "go", label: "Foncer", ref: 340, pc: "+33 %", why: "à prendre tel quel", rot: -2, g: 1 },
-  { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: 560, meta: "Très bon état · Vinted · il y a 1 h",
+  { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: 560, pl: "vin", meta: "Très bon état · il y a 1 h",
     model: "GeForce RTX 4070 Super", v: "try", label: "Tenter", ref: 500, pc: "−11 %", why: "offre max 417 €", rot: 1.5, g: 2 },
-  { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: 450, meta: "État correct · eBay · il y a 2 h",
+  { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: 450, pl: "ebay", meta: "État correct · il y a 2 h",
     model: "Radeon RX 6800 XT", v: "pass", label: "Passer", ref: 360, pc: "−20 %", why: "il faudrait −33 %", rot: -1.5, g: 3 },
 ];
 // Jauge : barre encre jusqu'au prix demandé, repère à la revente, écart vert (marge) ou rose (trop cher).
@@ -55,6 +56,9 @@ const geo = (p: number, ref: number) => {
   const max = Math.max(p, ref) * 1.15, P = p / max, Rr = ref / max;
   return { p: +P.toFixed(3), r: +Rr.toFixed(3), a: +Math.min(P, Rr).toFixed(3), w: +Math.abs(P - Rr).toFixed(3), up: ref > p };
 };
+// Prix au format de chaque site : « 420 € » (Leboncoin), « 560,00 € » (Vinted), « 450,00 EUR » (eBay)
+const PLN: Record<string, string> = { lbc: "Leboncoin", vin: "Vinted", ebay: "eBay" };
+function fmtP(p: number, pl: string) { return pl === "lbc" ? p + "\u00a0€" : p.toFixed(2).replace(".", ",") + (pl === "ebay" ? "\u00a0EUR" : "\u00a0€"); }
 const HERO_JS = HERO.map(({ g, ...s }) => ({ ...s, bg: GPUS[g].bg, g: geo(s.p, s.ref) }));
 const g0 = HERO_JS[0].g;
 ---
@@ -81,13 +85,16 @@ const g0 = HERO_JS[0].g;
       </div>
       <div class="stamp-scene" id="hs" aria-hidden="true">
         <div class="lot-wrap">
-          <article class="lot" style={`--rot:${HERO[0].rot}deg`}>
+          <article class={"lot pl-" + HERO[0].pl} style={`--rot:${HERO[0].rot}deg`}>
             <div class="lot-photo" data-bg={GPUS[0].bg}>
               {GPUS.map((v, i) => <svg class={"draw gpu-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={gpuArt(v.art)} />)}
               <span>annonce inventée</span>
+              <b class={"pf " + HERO[0].pl} id="hs-pf">{PLN[HERO[0].pl]}</b>
+              <i class="lot-heart" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.5 8.1 3.6 4.5 7.1 4.5c2 0 3.5 1.1 4.9 2.9 1.4-1.8 2.9-2.9 4.9-2.9 3.5 0 5.6 3.6 4.4 6.8-1.8 4.6-9.3 9.2-9.3 9.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></i>
             </div>
             <p class="lot-title" id="hs-title">{HERO[0].t.map(([w, k], i) => <Fragment>{i > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
-            <p class="lot-price" id="hs-price">{HERO[0].p} €</p>
+            <p class="lot-price" id="hs-price">{fmtP(HERO[0].p, HERO[0].pl)}</p>
+            <p class="lot-incl" id="hs-incl" hidden>{fmtP(HERO[0].p, "vin")}</p>
             <p class="lot-meta" id="hs-meta">{HERO[0].meta}</p>
             <p class="lot-model" id="hs-model">= {HERO[0].model}</p>
             <div class="lot-gauge" id="hs-gauge" style={`--p:${g0.p};--r:${g0.r};--a:${g0.a};--w:${g0.w}`}>
@@ -415,7 +422,12 @@ const g0 = HERO_JS[0].g;
     function fill(i) {                                // contenu de la carte seulement
       var s = SC[i];
       hT.innerHTML = s.t.map(function (w) { return "<span class=\"tkn " + w[1] + "\">" + w[0] + "</span>"; }).join(" ");
-      $("hs-price").textContent = s.p + " €";
+      var PLN = { lbc: "Leboncoin", vin: "Vinted", ebay: "eBay" }, c2 = function (x) { return x.toFixed(2).replace(".", ","); };
+      $("hs-price").textContent = s.pl === "lbc" ? s.p + "\u00a0€" : c2(s.p) + (s.pl === "ebay" ? "\u00a0EUR" : "\u00a0€");
+      $("hs-incl").hidden = s.pl !== "vin";                 // Vinted : prix avec la protection acheteurs (0,70 € + 5 %)
+      $("hs-incl").textContent = c2(s.p + 0.7 + s.p * 0.05) + "\u00a0€ incl.";
+      $("hs-pf").textContent = PLN[s.pl]; $("hs-pf").className = "pf " + s.pl;
+      lot.className = lot.className.replace(/\bpl-\w+/, "pl-" + s.pl);
       $("hs-meta").textContent = s.meta;
       $("hs-model").textContent = "= " + s.model;
       $("hs-ref").textContent = s.ref + " €";

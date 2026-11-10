@@ -134,9 +134,9 @@ const description = "Développeur full-stack basé dans la Loire, disponible imm
   will-change:transform, opacity; opacity:0;
 }
 .chip .src, .tip .src{ grid-column:1 / -1; display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600; line-height:1.25; color:var(--ink-2); }
-.chip .src b, .tip .src b{ font-size:11px; font-weight:800; letter-spacing:.01em; border-radius:3px; padding:1px 6px; color:#fff; background:var(--ink); }
-.chip .src b.s1, .tip .src b.s1{ background:var(--blue); }
-.chip .src b.s2, .tip .src b.s2{ background:var(--pink-ink); }
+.chip .src b, .tip .src b{ font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:.01em; border-radius:4px; padding:1px 6px; color:#fff; background:#EC5A13; }
+.chip .src b.s1, .tip .src b.s1{ background:#007782; }
+.chip .src b.s2, .tip .src b.s2{ background:#3665F3; }
 .chip .ttl{ display:grid; position:relative; }
 .chip .msg, .chip .cln{ grid-area:1 / 1; }
 .chip .msg{ opacity:calc(1 - var(--sw)); }
@@ -281,35 +281,41 @@ const description = "Développeur full-stack basé dans la Loire, disponible imm
 .dh-diff.good{ font-weight:800; }
 .dh-disc{ display:flex; flex-direction:column; min-height:0; contain:size; }
 .dh-disc.on{ box-shadow:-5px 5px 0 var(--ink); }
-.dc{ flex:1; min-height:0; display:flex; flex-direction:column; background:var(--ink); color:#fff; border-radius:7px; overflow:hidden; }
-.dc-head{ display:flex; align-items:center; gap:6px; padding:9px 12px; font-size:13.5px; font-weight:750; border-bottom:1px solid rgba(255,255,255,.14); }
-.dc-head b{ font-size:17px; font-weight:600; opacity:.6; }
-.dc-head span{ margin-left:auto; font-size:11px; font-weight:700; opacity:.6; }
+.dc{ flex:1; min-height:0; display:flex; flex-direction:column; background:#313338; color:#dbdee1; border-radius:7px; overflow:hidden; font-family:"gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.dc-head{ display:flex; align-items:center; gap:6px; padding:9px 12px; font-size:14px; font-weight:600; color:#f2f3f5; box-shadow:0 1px 0 rgba(0,0,0,.3); }
+.dc-head b{ font-size:19px; font-weight:400; color:#80848e; }
 .dc-feed{
   flex:1; min-height:0; display:flex; flex-direction:column; justify-content:flex-end; gap:14px; padding:10px 10px 12px; overflow:hidden;
   -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 36px); mask-image:linear-gradient(to bottom, transparent 0, #000 36px);
 }
-.dc-empty{ margin:auto; font-size:13px; opacity:.6; text-align:center; }
-.dm{ display:grid; grid-template-columns:30px minmax(0, 1fr); gap:9px; flex:none; }
+.dc-empty{ margin:auto; font-size:13px; color:#949ba4; text-align:center; }
+.dm{ display:grid; grid-template-columns:30px minmax(0, 1fr); gap:9px; flex:none; margin:0 -10px; padding:4px 10px 6px; background:rgba(240, 178, 50, .1); box-shadow:inset 2px 0 0 #f0b232; }
 .dm .av{ width:30px; height:30px; border-radius:50%; background:var(--yellow); color:var(--ink); display:grid; place-items:center; font-size:11px; font-weight:900; }
 .dm .db{ min-width:0; }
-.dm .dn{ margin:3px 0 5px; display:flex; align-items:center; gap:6px; font-size:13px; line-height:1.2; }
-.dm .dn b{ font-weight:800; }
-.dm .tag{ font-size:9.5px; font-weight:800; background:var(--blue); color:#fff; border-radius:3px; padding:1px 4px; }
-.emb{ border-left:4px solid var(--green); background:rgba(255,255,255,.08); border-radius:4px; padding:8px 10px 9px; font-size:12.5px; line-height:1.4; }
-.emb .et{ margin:0 0 6px; font-weight:800; font-size:13.5px; line-height:1.3; }
-.emb .ef{ margin:0; }
-.emb .ef + .ef{ margin-top:5px; }
-.emb .ef span{ display:block; font-size:11px; font-weight:800; opacity:.65; }
-.emb .ef.ia span{ color:var(--pink); opacity:1; }
-.dm .at{ font-size:10px; font-weight:800; background:#DDE2FF; color:var(--blue); border-radius:3px; padding:0 4px; }
-.dm .btns{ margin:6px 0 0; display:flex; gap:5px; }
-.dm .bt{ font-size:10.5px; font-weight:800; border:1px solid rgba(255,255,255,.45); border-radius:4px; padding:1px 7px; transition:transform .15s ease, box-shadow .15s ease; }
-.dm .bt.ai{ background:var(--blue); border-color:var(--blue); }
-.dm .bt.ai.press{ transform:scale(.92); box-shadow:0 0 0 3px var(--yellow); }
-.dm .rp{ display:none; margin-top:7px; border-left:4px solid var(--blue); background:rgba(255,255,255,.08); border-radius:4px; padding:6px 9px; font-size:12px; line-height:1.4; }
+.dm .dn{ margin:3px 0 3px; display:flex; align-items:center; gap:5px; font-size:13.5px; line-height:1.2; }
+.dm .dn b{ font-weight:500; color:#f2f3f5; }
+.dm .dn time{ font-size:10.5px; color:#949ba4; }
+.dm .dct{ margin:0 0 5px; font-size:12.5px; line-height:1.3; }
+.dm .tag{ font-size:9px; font-weight:600; background:#5865f2; color:#fff; border-radius:3px; padding:1px 4px; }
+.emb{ border-left:4px solid #27AE60; background:#2b2d31; border-radius:4px; padding:7px 10px 8px; font-size:12px; line-height:1.35; }
+.emb .et{ margin:0 0 6px; font-weight:600; font-size:12.5px; line-height:1.3; color:#00a8fc; }
+.emb .efs{ margin:0; display:grid; grid-template-columns:auto minmax(0, 1fr); gap:4px 12px; }
+.emb .efo, .dm .efo{ margin:6px 0 0; font-size:10.5px; color:#949ba4; }
+.emb .ef{ display:flex; flex-direction:column; min-width:0; }
+.emb .ef b{ font-size:11px; font-weight:600; color:#f2f3f5; }
+.dm .at{ background:rgba(88, 101, 242, .3); color:#c9cdfb; border-radius:3px; padding:0 2px; font-weight:500; }
+.dm .btns{ margin:6px 0 0; display:flex; flex-wrap:wrap; gap:4px; }
+.dm .bt{ font-size:10.5px; font-weight:500; color:#fff; background:#4e5058; border-radius:3px; padding:2px 6px; white-space:nowrap; transition:transform .15s ease, box-shadow .15s ease; }
+.dm .bt.ai{ background:#5865f2; }
+.dm .bt.rd{ background:#da373c; }
+.dm .bt.ai.press{ transform:scale(.92); box-shadow:0 0 0 3px #f0b232; }
+.dm .rp{ display:none; margin-top:8px; font-size:12px; line-height:1.35; }
+.dm .rp-re{ margin:0 0 4px; padding-left:16px; position:relative; font-size:10.5px; color:#949ba4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dm .rp-re::before{ content:""; position:absolute; left:2px; top:6px; width:10px; height:8px; border-left:2px solid #4e5058; border-top:2px solid #4e5058; border-top-left-radius:5px; }
+.dm .rp-re b{ color:#c9cdfb; font-weight:500; }
+.dm .rp-e{ border-left:4px solid #3498DB; background:#2b2d31; border-radius:4px; padding:6px 9px 7px; }
 .dm .rp.on{ display:block; }
-.dm .rp-h{ margin:0 0 2px; font-size:11px; font-weight:800; color:var(--pink); }
+.dm .rp-h{ margin:0 0 3px; font-size:12px; font-weight:600; color:#f2f3f5; }
 .dm .rp-t{ margin:0; min-height:1.4em; }
 .dm.new{ animation:dmIn .55s var(--ease) both; }
 @keyframes dmIn{ from{ opacity:0; transform:translateY(18px); } }
@@ -347,7 +353,12 @@ const description = "Développeur full-stack basé dans la Loire, disponible imm
 .viz.small .dc-feed{ flex:none; -webkit-mask-image:none; mask-image:none; padding:8px 8px 10px; }
 .viz.small .dc-head{ padding:7px 10px; font-size:13px; }
 .viz.small .emb{ padding:6px 9px 7px; font-size:12px; }
-.viz.small .emb .et{ font-size:13px; margin-bottom:4px; }
+.viz.small .emb .et{ font-size:12px; margin-bottom:4px; }
+.viz.small .dm .efo, .viz.small .dm .rp-re, .viz.small .emb .efs{ display:none; }
+.viz.small .emb .et{ margin-bottom:0; }
+.viz.small .dm .rp{ margin-top:6px; }
+.viz.small .dm .dn{ margin-bottom:1px; }
+.viz.small .dm .dct{ margin-bottom:4px; }
 .viz.small .dm.new{ animation-delay:.25s; }
 .dh-fly{
   position:absolute; left:0; top:0; z-index:3; white-space:nowrap; opacity:0;
@@ -742,7 +753,7 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
     var si = SITES.indexOf(site);
     return "<span class=\"src\"><b class=\"s" + si + "\">" + esc(site) + "</b>" + esc(city) + "</span>" +
       "<span class=\"ttl\"><span class=\"msg\">" + parse(title) + "</span>" + (clean ? "<span class=\"cln\">" + esc(clean) + "</span>" : "") + "</span>" +
-      "<span class=\"pz\">" + price + " €</span>" +
+      "<span class=\"pz\">" + (si === 1 ? price.toFixed(2).replace(".", ",") + " €" : si === 2 ? price.toFixed(2).replace(".", ",") + " EUR" : price + " €") + "</span>" +
       (why ? "<span class=\"why\">" + esc(why) + "</span>" : "");
   }
   var REJ_AT = [7, 15, 23, 30];
@@ -824,7 +835,7 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   var cKo = traylab.querySelector("#cKo");
 
   // Fin de Videntis : ce que voit un revendeur
-  var SITE_COL = ["#111216", "#2B45FF", "#D81B6A"];
+  var SITE_COL = ["#EC5A13", "#007782", "#3665F3"];
   var SORTED = PRICES.slice().sort(function (a, b) { return a - b; });
   function quant(q) { var i = (SORTED.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return SORTED[lo] + (SORTED[hi] - SORTED[lo]) * (i - lo); }
   var Q1 = Math.round(quant(.25) / 5) * 5, Q3 = Math.round(quant(.75) / 5) * 5;
@@ -878,11 +889,11 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   var RES = Math.round(REF * .85), SEUIL = 50, QMIN = -20, QMAX = 120;
   var DHL = [
     { site: "Vinted", city: "Lyon", title: "{m:rtx 3080ti} {g:12go} {n:urgent} {n:facture}", p: 390, checks: [1, 1, 1],
-      ai: "Ratio 0,88, aucun drapeau. Facture fournie, vente urgente : bon deal, à négocier." },
+      ai: "Ratio 0,88 : bon deal, à négocier." },
     { site: "Leboncoin", city: "Grenoble", title: "{n:PC portable} {b:Legion} {m:RTX 3080 Ti}", p: 480, checks: [0, 1, 1] },
     { site: "Vinted", city: "Paris", title: "{b:msi} {m:rtx 3080 ti} {g:12go}", p: 410, checks: [1, 1, 1] },
     { site: "Leboncoin", city: "Nantes", title: "{b:RTX} {m:3080 Ti} {b:FE} {g:12Go} {n:TBE}", p: 360, checks: [1, 1, 1],
-      ai: "Ratio 0,81, aucun drapeau. Founders Edition en très bon état, boîte d’origine : acheter." }
+      ai: "Ratio 0,81 : à acheter vite." }
   ];
   function sgn(v) { return (v >= 0 ? "+" : "−") + Math.abs(v) + " €"; }
   function verdictOf(v) { return v >= 100 ? "ÉNORME DEAL" : v >= 80 ? "TRÈS BON DEAL" : v >= 50 ? "BON PRIX" : v >= 20 ? "PRIX CORRECT" : "PAS RENTABLE"; }
@@ -907,7 +918,7 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
         "<div class=\"gth\" style=\"left:" + qpos(SEUIL).toFixed(2) + "%\"><span>Seuil : 50 € de profit</span></div>" +
         "<div class=\"gref\" style=\"left:" + qpos(0).toFixed(2) + "%\"><span>0 €</span></div><div class=\"gm\"></div></div><p class=\"dh-diff\"></p></div></div></section>" +
     "</div>" +
-    "<section class=\"dh-p dh-disc\"><h4><i>5</i>Salon Discord</h4><div class=\"dc\"><div class=\"dc-head\"><b>#</b> deals-fire<span>Discord</span></div><div class=\"dc-feed\"></div></div></section>" +
+    "<section class=\"dh-p dh-disc\"><h4><i>5</i>Salon Discord</h4><div class=\"dc\"><div class=\"dc-head\"><b>#</b> deals-fire</div><div class=\"dc-feed\"></div></div></section>" +
     "<div class=\"dh-fly\"></div>");
   var dhWork = dh.querySelector(".dh-work");
   var dhPanels = Array.prototype.slice.call(dh.querySelectorAll(".dh-p"));
@@ -922,14 +933,20 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   function memo(key, val, fn) { if (dhMem[key] !== val) { dhMem[key] = val; fn(val); } }
 
   // Message du bot ; done : déjà analysé (réponse de Haiku complète)
+  // Message au format réel du bot (titre, emojis, champs, couleur, boutons), dans le thème sombre de Discord
+  var VEMO = { "ÉNORME DEAL": "🔥", "TRÈS BON DEAL": "💰", "BON PRIX": "👍", "PRIX CORRECT": "ℹ️", "PAS RENTABLE": "⚠️" };
+  var VCOL = { "ÉNORME DEAL": "#2ECC71", "TRÈS BON DEAL": "#27AE60", "BON PRIX": "#F1C40F", "PRIX CORRECT": "#F39C12", "PAS RENTABLE": "#E74C3C" };
   function dhMsg(x, n, isNew, done) {
     return "<div class=\"dm" + (isNew ? " new" : "") + "\" data-n=\"" + n + "\"><span class=\"av\">DH</span><div class=\"db\">" +
-      "<p class=\"dn\"><b>Deal Hunter</b><span class=\"tag\">BOT</span><span class=\"at\">@moi</span></p>" +
-      "<div class=\"emb\"><p class=\"et\">" + x.verdict + " · RTX 3080 Ti à " + x.p + " €</p>" +
-      "<p class=\"ef\"><span>Profit net</span>" + sgn(x.lbc) + " via Leboncoin</p>" +
-      "<p class=\"ef\"><span>Annonce</span>" + esc(x.site) + ", " + esc(x.city) + "</p></div>" +
-      "<p class=\"btns\"><span class=\"bt\">Acheter</span><span class=\"bt ai" + (done ? " press" : "") + "\">Analyser</span></p>" +
-      "<div class=\"rp" + (done ? " on" : "") + "\"><p class=\"rp-h\">Claude Haiku · analyse du deal</p><p class=\"rp-t\">" + (done ? esc(x.ai) : "") + "</p></div>" +
+      "<p class=\"dn\"><b>Deal Hunter</b><span class=\"tag\">APP</span><time>Aujourd’hui</time></p>" +
+      "<p class=\"dct\"><span class=\"at\">@Etienne</span></p>" +
+      "<div class=\"emb\" style=\"border-left-color:" + VCOL[x.verdict] + "\"><p class=\"et\">🆕 " + VEMO[x.verdict] + " " + x.verdict + "  RTX 3080 Ti</p>" +
+      "<p class=\"efs\"><span class=\"ef\"><b>💰 Prix</b>" + x.p + "€</span><span class=\"ef\"><b>💵 Profit net</b>" + (x.lbc >= 0 ? "+" : "") + x.lbc + "€ via LBC</span>" +
+      "</p>" +
+      "<p class=\"efo\">Deal Hunter • " + (x.site === "Vinted" ? "VINTED" : "LBC") + "</p></div>" +
+      "<p class=\"btns\"><span class=\"bt\">🛒 Acheter</span><span class=\"bt ai" + (done ? " press" : "") + "\">🔍 Analyser</span><span class=\"bt rd\">🚩 Signaler</span></p>" +
+      "<div class=\"rp" + (done ? " on" : "") + "\"><p class=\"rp-re\"><b>@Deal Hunter</b> " + VEMO[x.verdict] + " " + x.verdict + "  RTX 3080 Ti</p>" +
+      "<div class=\"rp-e\"><p class=\"rp-h\">🔍 Analyse du deal</p><p class=\"rp-t\">" + (done ? esc(x.ai) : "") + "</p><p class=\"efo\">Analyse par Claude Haiku (texte + image) • usage personnel</p></div></div>" +
       "</div></div>";
   }
 
@@ -999,7 +1016,7 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
       dhMark.className = "gm" + (x.alert ? " good" : "");
     });
     var dtxt = "";
-    if (x.fail < 0 && lt >= G1) dtxt = x.alert ? sgn(x.lbc) + " ≥ 50 € : #deals-fire, @moi mentionné." : sgn(x.lbc) + " < 50 € : #deals-other, sans mention.";
+    if (x.fail < 0 && lt >= G1) dtxt = x.alert ? sgn(x.lbc) + " ≥ 50 € : #deals-fire, @Etienne mentionné." : sgn(x.lbc) + " < 50 € : #deals-other, sans mention.";
     memo("dt", dtxt, function (v) { dhDiff.textContent = v; dhDiff.className = "dh-diff" + (x.alert ? " good" : ""); });
 
     // Étape en cours
@@ -1016,7 +1033,7 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
         var r0 = dh.getBoundingClientRect(), rg = dhGauge.getBoundingClientRect(), rf = dhFeed.getBoundingClientRect();
         dhMem.fr = { x0: rg.left + rg.width * qpos(x.lbc) / 100 - r0.left, y0: rg.top + rg.height / 2 - r0.top,
           x1: rf.left + rf.width / 2 - r0.left, y1: rf.bottom - 50 - r0.top };
-        dhFly.textContent = "@moi · " + sgn(x.lbc);
+        dhFly.textContent = "@Etienne · " + sgn(x.lbc);
       }
       var fr = dhMem.fr, fk = ease(clamp((lt - (ALERT - FLY)) / FLY, 0, 1));
       var fx = lerp(fr.x0, fr.x1, fk), fy = lerp(fr.y0, fr.y1, fk) - Math.sin(fk * Math.PI) * (small ? 30 : 70);

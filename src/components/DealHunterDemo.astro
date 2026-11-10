@@ -7,8 +7,14 @@ import { PIC } from "../lib/dh-art";
 import market from "../data/deal-hunter/demo-market.json";
 import catalog from "../data/videntis/gpu-catalog.json";
 import engineSrc from "../scripts/deal-hunter-engine.js?raw";
+import annSrc from "../scripts/annonce.js?raw";
+import dscSrc from "../scripts/dh-discord.js?raw";
+import "../scripts/annonce.js";
 
 const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted" };
+const A = (globalThis as any).Annonce;
+const esc = (x: string) => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const S0 = SAMPLES[0];
 const picKeys = Object.keys(PIC);
 const data = JSON.stringify({
   catalog: (catalog as { name: string }[]).map((c) => ({ name: c.name })),
@@ -31,9 +37,9 @@ const STEPS = [
     <div class="dhd-samples">
       {SAMPLES.map((s, i) => (
         <button type="button" class={"smp2" + (i === 0 ? " on" : "")} data-i={i}>
-          <span class="smp2-pic" data-bg={PIC[s.pic].bg}><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC[s.pic].svg} /></span>
+          <span class="smp2-pic" data-bg={PIC[s.pic].bg}><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC[s.pic].svg} /><span class={"pf " + A.key(s.platform)}>{PL[s.platform]}</span></span>
           <span class="smp2-t">{s.title}</span>
-          <span class="smp2-m">{s.price} € · {PL[s.platform]}</span>
+          <span class={"smp2-m " + A.key(s.platform)}>{A.euros(s.price, s.platform === "vinted")}</span>
         </button>
       ))}
     </div>
@@ -51,17 +57,9 @@ const STEPS = [
 
   <div class="dhd-run">
     <p class="dh-k">2. Le bot la lit</p>
-    <article class="dh-lot" aria-live="polite">
-      <div class="dh-lot-pic" id="dhd-pic" data-bg={PIC[SAMPLES[0].pic].bg}>
-        {picKeys.map((k) => <svg class={"draw pv" + (k === SAMPLES[0].pic ? " on" : "")} data-k={k} viewBox="0 0 176 100" aria-hidden="true" set:html={PIC[k].svg} />)}
-        <span>annonce inventée</span>
-      </div>
-      <div class="dh-lot-txt">
-        <p class="dh-lot-t" id="dhd-t">{SAMPLES[0].title}</p>
-        <p class="dh-lot-p"><b id="dhd-p">{SAMPLES[0].price} €</b><span id="dhd-pl">Leboncoin</span></p>
-        <p class="dh-lot-d" id="dhd-d"></p>
-      </div>
-    </article>
+    <div class="dh-lot" id="dhd-lot" aria-live="polite" set:html={A.html({ pl: S0.platform, bg: PIC[S0.pic].bg, title: esc(S0.title), price: S0.price, city: S0.city, zip: S0.zip, ago: S0.ago, row: true,
+      pics: picKeys.map((k) => `<svg class="draw pv${k === S0.pic ? " on" : ""}" data-k="${k}" viewBox="0 0 176 100" aria-hidden="true">${PIC[k].svg}</svg>`).join("") })} />
+    <p class="dh-lot-d" id="dhd-d"></p>
     <ol class="dhd-steps">
       {STEPS.map(([q, tag, cls], i) => (
         <li class="st" id={"st" + (i + 1)}>
@@ -74,12 +72,17 @@ const STEPS = [
 
   <div class="dhd-out">
     <p class="dh-k">3. Le salon</p>
-    <ul class="dhd-salons" aria-label="Les six salons">
-      {ORDER.map((k) => (
-        <li class={"sal c-" + CHANNEL_INFO[k].c} data-ch={k}><b><i>#&nbsp;</i>{CHANNEL_INFO[k].name}</b><span>{CHANNEL_INFO[k].label}</span><em>0</em></li>
-      ))}
-    </ul>
-    <div class="dhd-msg" id="dhd-msg"></div>
+    <div class="dsc dhd-dsc">
+      <ul class="dsc-chs dhd-salons" aria-label="Les six salons">
+        <li class="dsc-cat">Deals</li>
+        {ORDER.map((k) => (
+          <li class="dsc-ch sal" data-ch={k} title={CHANNEL_INFO[k].label}><i>#</i><span>{CHANNEL_INFO[k].name}</span><em class="dsc-cnt">0</em></li>
+        ))}
+      </ul>
+      <p class="dsc-bar"><i>#</i><b id="dhd-chn">deals-fire</b></p>
+      <div class="dhd-msg" id="dhd-msg"></div>
+      <div class="dhd-reply" id="dhd-reply"></div>
+    </div>
     <div class="dhd-what" id="dhd-what" hidden>
       <p class="dh-k">Et si…</p>
       <div>
@@ -88,13 +91,12 @@ const STEPS = [
         <button type="button" class="wif" data-w="seen">relue au passage suivant</button>
       </div>
     </div>
-    <div class="dhd-reply" id="dhd-reply"></div>
   </div>
 </div>
 <p class="dh-note">« Vrai code » : les fonctions du bot, portées de Python en JavaScript sans changer leur logique, tournent dans votre navigateur. Prix de marché inventés ; les réponses de Claude Haiku ont été écrites pour la démo au format exact du bot. Rien n’est envoyé à un serveur.</p>
 
 <script type="application/json" id="dhd-data" set:html={data}></script>
-<Fragment set:html={"<script>" + engineSrc + "</script>"} />
+<Fragment set:html={"<script>" + engineSrc + "</script><script>" + annSrc + "</script><script>" + dscSrc + "</script>"} />
 <script is:inline>
 (function () {
   "use strict";
@@ -169,62 +171,25 @@ const STEPS = [
   }
   var BODY = { exclude: bodyExclude, model: bodyModel, seen: bodySeen, profit: bodyProfit, risk: bodyRisk, route: bodyRoute };
 
-  // ---------- Message du bot ----------
-  var FAM = { gpu: "", cpu: "CPU · ", ram: "RAM · ", ssd: "SSD · " };
-  function fam(ev) { return ev.is_cpu ? "cpu" : ev.is_ram ? "ram" : ev.is_ssd ? "ssd" : "gpu"; }
+  // ---------- Message du bot, tel que Discord l'affiche (dh-discord.js) ----------
+  var D = window.DHDiscord, A = window.Annonce;
   function msgHtml(r, smp) {
-    var ev = r.ev, ad = r.ad, drop = ev.price_drop, model = ev.matched_model ? ev.matched_model.name : (r.steps[1].token || "GPU");
-    var kind = ev.is_scam_suspect ? "sus" : drop ? "drop" : vk(ev);
-    var title = (drop ? "BAISSE DE PRIX" : ev.verdict.v) + " · " + model;
-    var f = [];
-    f.push(["Prix", "<b>" + eur(ad.price_eur) + "</b>"]);
-    if (drop) f.push(["Baisse", eur(drop.old_price) + " → " + eur(drop.new_price) + " (−" + Math.round(drop.drop_pct) + " %)"]);
-    f.push(ev.realistic_sell_price !== null ? ["Revente estimée", "~" + eur(ev.realistic_sell_price)] : ["Revente", "N/A"]);
-    f.push(ev.best_profit !== null ? ["Profit net", "<b>" + seur(ev.best_profit) + "</b> via " + ev.best_channel.toUpperCase()] : ["Profit", "N/A"]);
-    if (smp && smp.city) f.push(["Localisation", esc(smp.city)]);
-    f.push(["Plateforme", PL[ad.platform]]);
-    var n = ev.observation_count;
-    if (n > 0) f.push(["Observations", n + (n >= 30 ? " ✓ fiable" : n >= 15 ? "" : " ⚠ faible")]);
-    if (ev.new_price_eur) f.push(["Prix neuf", eur(ev.new_price_eur)]);
-    var wide = [];
-    if (ev.best_channel) wide.push(["Détail profits", ["lbc", "vinted", "ebay"].map(function (c) { return c.toUpperCase() + "&nbsp;: " + seur(ev.profits_by_channel[c].profit); }).join(" | ")]);
-    if (ev.is_scam_suspect) wide.push(["Drapeaux", ev.scam_flags.map(function (x) { return "• " + esc(x); }).join("<br>")]);
-    if (ev.is_hs) {
-      if (ev.hs.signals.length) wide.unshift(["Signaux HS", esc(ev.hs.signals.slice(0, 3).join(" · "))]);
-      if (ev.hs.price_anomaly) wide.splice(1, 0, ["Prix exceptionnellement bas", "Prix &lt; 40 % de la revente estimée, vérifier la cohérence."]);
-      wide.push(["", "<b>Annonce détectée comme HS / pour pièces.</b> Le verdict ci-dessus est basé sur la valeur fonctionnelle du composant. La rentabilité réelle dépend de la réparabilité. Utilise <b>Analyser</b> pour un diagnostic technique détaillé."]);
-    }
-    f.push(["Publiée", smp ? smp.ago : "à l’instant"]);
-    var who = r.who.filter(function (w) { return w.pinged; }).map(function (w) { return "@" + w.name; }).join(" ");
-    var desc = esc(ad.title) + (ad.description ? "<span class=\"emb-desc\">" + esc(ad.description) + "</span>" : "") + (ev.is_scam_suspect ? "<b class=\"emb-warn\">NE PAS ACHETER SANS VÉRIFIER LE VENDEUR</b>" : "");
-    return "<div class=\"msg\"><span class=\"msg-av\" aria-hidden=\"true\">DH</span><div class=\"msg-b\">" +
-      "<p class=\"msg-h\"><b>Deal Hunter</b><span class=\"botp\">bot</span><em>aujourd’hui</em></p>" +
-      (who ? "<p class=\"msg-at\">" + esc(who) + "</p>" : "") +
-      "<div class=\"emb k-" + kind + "\"><div class=\"emb-top\"><div class=\"emb-txt\"><p class=\"emb-t\">" + (drop ? "" : "<span class=\"newp\">nouveau</span>") + esc(title) + "</p><p class=\"emb-d\">" + desc + "</p></div>" +
-      "<span class=\"emb-th\" data-bg=\"" + raw.pics[cur.pic] + "\">" + picSvg(cur.pic) + "</span></div>" +
-      "<dl class=\"emb-f\">" + f.map(function (x) { return "<div><dt>" + x[0] + "</dt><dd>" + x[1] + "</dd></div>"; }).join("") +
-      wide.map(function (x) { return "<div class=\"w\">" + (x[0] ? "<dt>" + x[0] + "</dt>" : "") + "<dd>" + x[1] + "</dd></div>"; }).join("") + "</dl>" +
-      "<p class=\"emb-foot\">Deal Hunter · " + FAM[fam(ev)] + PLS[ad.platform] + "</p></div>" +
-      "<div class=\"msg-btns\"><span class=\"mb mb-buy\">Acheter ↗</span><button type=\"button\" class=\"mb mb-ai\" id=\"dhd-ai\">Analyser</button><button type=\"button\" class=\"mb mb-rep\" id=\"dhd-rep\">Signaler</button></div>" +
-      "<p class=\"msg-rep\" id=\"dhd-repn\" hidden>Signalée&nbsp;: elle rejoint la liste de #bot-settings, avec le contexte du message figé. Les causes qui reviennent deviennent des exclusions.</p>" +
-      "</div></div>";
+    return D.deal({ ev: r.ev, ad: r.ad, token: r.steps[1].token, city: smp && smp.city ? smp.city : "", ago: smp ? smp.ago : "à l’instant",
+      who: r.who.filter(function (w) { return w.pinged; }).map(function (w) { return w.name; }), mine: r.who.some(function (w) { return w.pinged; }),
+      thumb: { bg: raw.pics[cur.pic], svg: picSvg(cur.pic) }, aiId: "dhd-ai", repId: "dhd-rep",
+      after: "<p class=\"msg-rep\" id=\"dhd-repn\" hidden>Signalée&nbsp;: elle rejoint la liste de #bot-settings, avec le contexte du message figé. Les causes qui reviennent deviennent des exclusions.</p>" });
   }
   // Sur téléphone, la suite se joue plus bas : on l'amène à l'écran.
   function bring(el) {
     var r = el.getBoundingClientRect();
     if (r.top < 60 || r.top > innerHeight - 120) el.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
   }
-  function picSvg(k) { var s = document.querySelector("#dhd-pic .pv[data-k=\"" + k + "\"]"); return s ? s.outerHTML.replace(" on\"", "\"") : ""; }
+  function picSvg(k) { var s = document.querySelector("#dhd-lot .pv[data-k=\"" + k + "\"]"); return s ? s.outerHTML.replace(" pv on\"", "\"").replace(" pv\"", "\"") : ""; }
 
   // ---------- Réponse de Haiku ----------
-  function aiHtml(sections, hs) {
-    return "<div class=\"msg msg-ai\"><span class=\"msg-av\" aria-hidden=\"true\">DH</span><div class=\"msg-b\">" +
-      "<p class=\"msg-re\">↳ réponse à Deal Hunter</p><p class=\"msg-h\"><b>Deal Hunter</b><span class=\"botp\">bot</span><em>aujourd’hui</em></p>" +
-      "<div class=\"emb k-ai\"><p class=\"emb-t\">Analyse du deal</p>" + sections.map(function (s) {
-        var pd = reduce ? "" : " pend";
-        return "<p class=\"ai-h" + pd + "\">" + esc(s.h) + "</p>" + s.l.map(function (l) { return "<p class=\"ai-l" + pd + "\" data-t=\"" + esc(l) + "\"></p>"; }).join("");
-      }).join("") + "<p class=\"emb-foot\">Analyse par Claude Haiku (texte + image) · usage personnel" + (hs ? " · consigne réparateur" : "") + "</p></div>" +
-      "<p class=\"ai-tag\">Réponse écrite pour la démo, au format exact du bot.</p></div></div>";
+  function aiHtml(sections, hs, quote) {
+    return D.analysis({ sections: sections, pend: !reduce, quote: quote }) +
+      "<p class=\"ai-tag\">Réponse écrite pour la démo, au format exact du bot" + (hs ? ", consigne réparateur" : "") + ".</p>";
   }
   function typeAi(box) {
     var ls = box.querySelectorAll(".ai-l");
@@ -249,7 +214,7 @@ const STEPS = [
       ai.classList.add("used");
       var sec = smp ? (r.ev.price_drop && smp.aiDrop ? smp.aiDrop : smp.ai) : null;
       if (!sec) { reply.innerHTML = "<p class=\"ai-none\">Sur une annonce libre, rien n’est simulé&nbsp;: la démo n’appelle aucune IA. Les réponses de Haiku existent pour les annonces d’exemple.</p>"; return; }
-      reply.innerHTML = aiHtml(sec, !!smp.aiHs);
+      reply.innerHTML = aiHtml(sec, !!smp.aiHs, (r.ev.price_drop ? "📉 BAISSE DE PRIX  " : D.VERDICT[r.ev.verdict.k] + "  ") + (r.ev.matched_model ? r.ev.matched_model.name : ""));
       typeAi(reply);
       bring(reply);
     });
@@ -271,12 +236,11 @@ const STEPS = [
     }
     return "unknown";
   }
-  function showAd(input, pic, hit) {
-    $("dhd-t").innerHTML = markTitle(input.title, hit);
-    $("dhd-p").textContent = eur(input.price_eur); $("dhd-pl").textContent = PL[input.platform] + (input.city ? " · " + input.city : "");
+  function showAd(input, pic, hit, smp) {
+    var box = $("dhd-lot"), pics = Array.prototype.map.call(box.querySelectorAll(".pv"), function (v) { v.classList.toggle("on", v.getAttribute("data-k") === pic); return v.outerHTML; }).join("");
+    box.innerHTML = A.html({ pl: input.platform, bg: raw.pics[pic], title: markTitle(input.title, hit), price: input.price_eur, city: smp ? smp.city : "", zip: smp ? smp.zip : "",
+      ago: smp ? smp.ago : "à l’instant", brand: smp ? smp.brand : "", cond: smp ? smp.cond : "", likes: smp ? smp.likes : 0, ship: smp ? smp.ship : false, row: true, pics: pics });
     $("dhd-d").textContent = input.description || ""; $("dhd-d").hidden = !input.description;
-    Array.prototype.forEach.call(document.querySelectorAll("#dhd-pic .pv"), function (s) { s.classList.toggle("on", s.getAttribute("data-k") === pic); });
-    $("dhd-pic").setAttribute("data-bg", raw.pics[pic]);
   }
   function run(input, sample, opts) {
     timers.forEach(clearTimeout); timers = [];
@@ -285,7 +249,7 @@ const STEPS = [
     var pic = pickPic(r, { title: input.title, pic: sample ? sample.pic : null });
     cur = { ad: input, sample: sample, pic: pic, r: r };
     var exStep = r.steps[0] && !r.steps[0].ok ? r.steps[0] : null;
-    showAd(input, pic, exStep ? exStep.hit : null);
+    showAd(input, pic, exStep ? exStep.hit : null, sample);
     $("dhd-reply").innerHTML = "";
     var byK = {};
     r.steps.forEach(function (s) { byK[s.k] = s; });
@@ -303,8 +267,8 @@ const STEPS = [
       Array.prototype.forEach.call(document.querySelectorAll(".sal"), function (li) { li.classList.toggle("on", posted && li.getAttribute("data-ch") === r.channel); });
       if (posted) {
         if (!opts.noCount) { counts[r.channel] = (counts[r.channel] || 0) + 1; }
-        Array.prototype.forEach.call(document.querySelectorAll(".sal"), function (li) { var c = counts[li.getAttribute("data-ch")] || 0; li.querySelector("em").textContent = c; li.classList.toggle("has", c > 0); });
-        msg.innerHTML = msgHtml(r, sample);
+        Array.prototype.forEach.call(document.querySelectorAll(".sal"), function (li) { var c = counts[li.getAttribute("data-ch")] || 0; li.querySelector("em").textContent = c; li.classList.toggle("unr", c > 0); li.classList.toggle("has", c > 0); });
+        msg.innerHTML = msgHtml(r, sample); $("dhd-chn").textContent = raw.channels[r.channel].name;
         if (!instant) { msg.classList.remove("in"); void msg.offsetWidth; msg.classList.add("in"); }
         bindMsg(r);
         lastPosted = { input: input, sample: sample };

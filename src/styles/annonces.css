@@ -1,0 +1,58 @@
+/* Annonces dessinées à la manière de Leboncoin et de Vinted : leurs couleurs et leur mise en page, jamais leur logo.
+   Les photos restent des dessins (src/lib/listing-art.ts) ; prix, villes et dates sont inventés et signalés comme tels.
+   .ann.lbc : carte de résultat Leboncoin (photo arrondie, cœur, titre, prix gras, ville et date).
+   .ann.vin : carte de catalogue Vinted (photo, cœur et compteur, marque, état, prix, prix protection acheteurs incluse).
+   .ann.row : même contenu, photo à gauche (vue liste). */
+
+.ann{
+  --lbc:#EC5A13; --lbc-ink:#1A1A1A; --lbc-grey:#5D6266; --lbc-line:#E6EBEF;
+  --vin:#007782; --vin-ink:#171717; --vin-grey:#757575; --vin-line:#E8E8E8;
+  position:relative; display:flex; flex-direction:column; gap:8px; min-width:0;
+  font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; color:var(--lbc-ink); text-align:left;
+}
+.ann-pic{ position:relative; display:grid; place-items:center; overflow:hidden; aspect-ratio:4 / 3; padding:10% 12%; }
+.ann-pic .draw{ width:100%; max-width:220px; }
+.ann-pic .pv{ display:none; }
+.ann-pic .pv.on{ display:block; }
+.ann-fake{ position:absolute; left:8px; bottom:8px; font-family:var(--mono, monospace); font-size:10px; line-height:1.4; background:#fff; color:#4A4E57; border-radius:4px; padding:1px 6px; box-shadow:0 0 0 1px rgba(0,0,0,.12); }
+.ann-heart{ position:absolute; display:grid; place-items:center; background:#fff; color:var(--lbc-ink); font-size:15px; line-height:1; transition:transform .2s ease; }
+.ann-heart svg{ width:16px; height:16px; }
+.ann:hover .ann-heart{ transform:scale(1.12); }
+.ann-b{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.ann-b p{ margin:0; }
+.ann-t{ font-size:15px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+.ann-p{ font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
+.ann-s{ font-size:12.5px; line-height:1.35; color:var(--lbc-grey); }
+
+/* Leboncoin */
+.ann.lbc .ann-pic{ border-radius:16px; background:#F4F6F7; }
+.ann.lbc .ann-heart{ top:8px; right:8px; width:32px; height:32px; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.ann.lbc .ann-p{ margin-top:2px; }
+.ann-ship{ display:inline-flex; align-items:center; gap:5px; align-self:flex-start; margin:3px 0 2px !important; font-size:12px; font-weight:600; color:var(--lbc-ink); background:#FCEBE2; border-radius:6px; padding:2px 7px; }
+.ann-ship::before{ content:""; width:7px; height:7px; border-radius:50%; background:var(--lbc); }
+.ann-urg{ position:absolute; left:8px; top:8px; font-size:11px; font-weight:700; color:#fff; background:var(--lbc); border-radius:6px; padding:2px 7px; }
+
+/* Vinted */
+.ann.vin{ color:var(--vin-ink); gap:6px; }
+.ann.vin .ann-pic{ aspect-ratio:4 / 3; border-radius:4px; background:#F2F2F2; }
+.ann.vin .ann-heart{ right:8px; bottom:8px; height:26px; padding:0 8px; gap:4px; display:inline-flex; border-radius:13px; font-size:12px; font-weight:600; color:var(--vin-grey); box-shadow:0 1px 3px rgba(0,0,0,.15); }
+.ann.vin .ann-heart svg{ width:13px; height:13px; }
+.ann.vin .ann-fake{ bottom:auto; top:8px; }
+.ann.vin .ann-t{ font-size:13.5px; font-weight:400; color:var(--vin-grey); }
+.ann.vin .ann-s{ color:var(--vin-grey); font-size:12.5px; }
+.ann.vin .ann-p{ font-size:14.5px; font-weight:400; color:var(--vin-ink); }
+.ann-incl{ display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:600; color:var(--vin); }
+.ann-incl svg{ width:13px; height:13px; flex:none; }
+
+/* Vue liste : photo à gauche */
+.ann.row{ display:grid; grid-template-columns:var(--pw, 132px) minmax(0, 1fr); align-items:start; column-gap:14px; }
+.ann.row .ann-pic{ aspect-ratio:auto; height:var(--ph, 100px); padding:8px 12px; }
+.ann.row.lbc .ann-pic{ border-radius:12px; }
+.ann.row .ann-heart{ width:26px; height:26px; top:6px; right:6px; }
+.ann.vin.row .ann-heart{ width:auto; top:auto; right:6px; bottom:6px; height:22px; }
+
+/* Étiquette de plateforme, en couleur de la marque, sans logo */
+.pf{ display:inline-flex; align-items:center; font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:11px; font-weight:700; line-height:1; color:#fff; border-radius:4px; padding:3px 6px; }
+.pf.lbc{ background:#EC5A13; }
+.pf.vin{ background:#007782; }
+.pf.ebay{ background:#3665F3; }
