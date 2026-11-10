@@ -127,6 +127,9 @@ Décisions déjà prises :
 - Chaque page raconte son projet avec sa propre structure : ne pas recopier l'enchaînement de Videntis (refus d'Etienne sur la
   première version de Deal Hunter, trop proche). Deal Hunter suit le trajet d'une annonce en huit étapes, avec une annonce
   collante qui change d'état ; choix en bifurcations, incidents en « signalements » placés à l'étape concernée.
+  Signalements (`article.rep`) : bandeau noir « 🚩 Signalement n°X » (rose pour un souci encore ouvert), date, état, ruban de chantier
+  jaune et noir ; paragraphes étiquetés Ce qui arrivait / Pourquoi / Correctif ; légende `.rep-key` en tête du trajet et drapeau 🚩
+  sur les points de la frise des étapes concernées (posé par le script). Numérotés dans l'ordre de la page : en ajouter un impose de renuméroter.
 - Modèle de départ : la page Videntis (`videntis.astro`). Gabarit `Base.astro` + `SiteHeader` (variante sous-page : transparente sur la
   bande de couleur, fond papier dès qu'on défile) + `SiteFooter`. Styles propres à la page dans `src/styles/<slug>.css`.
 - Mise en page en bandes pleine largeur : `.band.b-yellow | b-blue | b-pink | b-ink | b-green | b-paper`, contenu dans `.wrap`

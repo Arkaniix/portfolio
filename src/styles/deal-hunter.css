@@ -541,15 +541,29 @@
 @keyframes dh-strike{ from{ transform:rotate(-35deg) scaleX(0); } to{ transform:rotate(-35deg) scaleX(1); } }
 .sieve span{ font-size:12.5px; font-weight:750; line-height:1.2; }
 
-/* Signalements : le bouton « Signaler » du bot, là où le bug s'est produit */
+/* Signalements : les soucis réels, là où ils se sont produits. Bandeau noir numéroté + ruban de chantier : reconnaissables d'un coup d'œil */
 .rep{
-  display:grid; grid-template-columns:130px minmax(0, 1fr); background:#fff; border:1.5px solid var(--ink); border-radius:10px; overflow:hidden; outline:none;
-  transition:transform .2s var(--ease), box-shadow .2s var(--ease);
+  position:relative; display:grid; grid-template-columns:130px minmax(0, 1fr); grid-template-rows:auto 1fr; background:#fff; border:2px solid var(--ink); border-radius:10px; overflow:hidden; outline:none;
+  box-shadow:0 4px 0 rgba(17, 18, 22, .2); transition:transform .2s var(--ease), box-shadow .2s var(--ease);
 }
 .rep:hover, .rep.play, .rep:focus-visible{ transform:translate(3px, -3px); box-shadow:-5px 5px 0 var(--ink); }
-.rep + .rep{ margin-top:14px; }
+.rep + .rep{ margin-top:16px; }
 .rep.open{ border-color:var(--pink-ink); }
 .rep.open:hover, .rep.open.play, .rep.open:focus-visible{ box-shadow:-5px 5px 0 var(--pink-ink); }
+.rep-bar{ grid-column:1 / -1; position:relative; margin:0 0 8px !important; display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; background:var(--ink); color:#fff; padding:7px 12px 7px 10px; }
+.rep.open .rep-bar{ background:var(--pink-ink); }
+.rep-bar::after{ content:""; position:absolute; left:0; right:0; top:100%; height:8px; background:repeating-linear-gradient(-45deg, var(--yellow) 0 9px, var(--ink) 9px 18px); transform-origin:left; }
+.stn.arr .rep-bar::after{ animation:tape-in .6s var(--ease) .25s both; }
+@keyframes tape-in{ from{ transform:scaleX(0); } }
+.rep-bar b{ font-family:var(--display); font-variation-settings:"wdth" 75, "wght" 820; font-size:16px; letter-spacing:.02em; text-transform:uppercase; color:var(--yellow); }
+.rep.open .rep-bar b{ color:#fff; }
+.rep-flag{ display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%; background:#fff; font-size:14px; line-height:1; flex:none; }
+.rep-key{ display:flex; align-items:center; gap:10px; margin:0 0 22px; font-size:14px; line-height:1.4; max-width:62em; }
+.rep-key .rep-flag{ background:var(--ink); box-shadow:0 0 0 3px var(--yellow); }
+.rep-key b{ background:var(--ink); color:var(--yellow); border-radius:4px; padding:0 6px; text-transform:uppercase; font-size:12.5px; letter-spacing:.04em; }
+/* La frise du suiveur : un drapeau sur les étapes qui ont un signalement */
+.fol-dots i{ position:relative; }
+.fol-dots li[data-rep] i::after{ content:"🚩"; position:absolute; top:-10px; right:-11px; font-size:12px; line-height:1; }
 .rep-art{ display:grid; place-items:center; padding:12px; border-right:1.5px dashed var(--ink-2); min-height:120px; }
 .rep-art .draw{ max-height:76px; width:auto; max-width:100%; transition:transform .3s var(--ease); }
 .rep:hover .rep-art .draw, .rep.play .rep-art .draw{ animation:dh-wob .6s ease both; }
@@ -563,12 +577,15 @@
 .term2 mark{ background:var(--pink-ink); color:#fff; border-radius:3px; padding:0 2px; }
 .term2 .bad{ color:var(--pink); }
 .term2 .good{ color:var(--green); }
-.rep-b{ padding:12px 16px 14px; display:flex; flex-direction:column; gap:7px; min-width:0; }
+.rep-b{ padding:8px 16px 14px; display:flex; flex-direction:column; gap:8px; min-width:0; }
 .rep-b p{ margin:0; font-size:14.5px; line-height:1.5; }
-.rep-h{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-weight:800; font-size:17px !important; line-height:1.25 !important; }
-.rep-k{ font-family:var(--mono); font-size:11px; font-weight:700; color:var(--pink-ink); border:1.5px solid var(--pink-ink); border-radius:4px; padding:1px 6px; }
-.rep-s{ margin-left:auto; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border:1.5px solid var(--ink); border-radius:999px; padding:1px 9px; background:var(--pink); }
+.rep-h{ font-family:var(--display); font-variation-settings:"wdth" 80, "wght" 800; font-size:21px !important; line-height:1.1 !important; }
+.rep-k{ font-family:var(--mono); font-size:11.5px; font-weight:700; color:rgba(255, 255, 255, .75); }
+.rep-s{ margin-left:auto; font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; border:1.5px solid #fff; border-radius:999px; padding:1px 10px; background:var(--pink); color:var(--ink); }
 .rep-s.ok{ background:var(--green); }
+.rep-s.ok::before{ content:"✓ "; }
+.rep-l{ display:inline-block; margin-right:6px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; line-height:1.5; border:1.5px solid var(--ink); border-radius:999px; padding:0 8px; vertical-align:1px; }
+.rep-l.bug{ background:var(--pink); } .rep-l.fix{ background:var(--green); } .rep-l.why{ background:var(--yellow); }
 
 /* 3 · ce que le bot lit */
 .reads{ list-style:none; margin:0 0 16px; padding:0; display:flex; flex-direction:column; border-top:1.5px solid var(--ink); }

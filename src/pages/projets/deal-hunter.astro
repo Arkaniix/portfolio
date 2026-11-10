@@ -244,6 +244,8 @@ const STEPS = [
         ))}
       </div>
 
+      <p class="rep-key"><span class="rep-flag" aria-hidden="true">🚩</span><span><b>Signalement</b>&nbsp;: un vrai souci rencontré pendant que le bot tournait, et ce que j’ai corrigé. Il y en a sept sur le trajet, à l’étape où ils se sont produits.</span></p>
+
       <div class="trip">
         <aside class="fol" id="fol" data-f="s1" data-n="1" aria-live="polite">
           <div class="fol-card">
@@ -275,19 +277,21 @@ const STEPS = [
               ))}
             </ul>
             <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°1</b><span class="rep-s ok">Corrigé</span></p>
               <span class="rep-art" data-bg="wood"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.laptop.svg} /></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé</span>La RTX du portable<span class="rep-s ok">Corrigé</span></p>
-                <p><b>Ce qui arrivait&nbsp;:</b> des PC portables passaient pour des cartes graphiques, avec des profits imaginaires. Le titre citait la carte du portable, évaluée comme une carte de bureau.</p>
-                <p><b>Correctif&nbsp;:</b> exclusion des mots (portable, laptop) et des gammes (Legion, Omen, Zephyrus…), plus la RTX 2050, qui n’existe qu’en portable.</p>
+                <p class="rep-h">La RTX du portable</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> des PC portables passaient pour des cartes graphiques, avec des profits imaginaires. Le titre citait la carte du portable, évaluée comme une carte de bureau.</p>
+                <p><b class="rep-l fix">Correctif</b> exclusion des mots (portable, laptop) et des gammes (Legion, Omen, Zephyrus…), plus la RTX 2050, qui n’existe qu’en portable.</p>
               </div>
             </article>
             <article class="rep open" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°2</b><span class="rep-k">Signalé le 27 mai 2026</span><span class="rep-s">Ouvert</span></p>
               <span class="rep-art rose"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.waterblock.svg} /></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé le 27 mai 2026</span>Le bloc à eau vendu comme une RTX 3080<span class="rep-s">Ouvert</span></p>
-                <p><b>Ce qui est arrivé&nbsp;:</b> un bloc de watercooling pour RTX 3080 et 3090, à 200&nbsp;€, est arrivé en «&nbsp;très bon deal&nbsp;»&nbsp;: revente ~306&nbsp;€, +95&nbsp;€ via Leboncoin. Haiku a reconnu un bloc à eau… et a conseillé d’acheter.</p>
-                <p><b>Pourquoi&nbsp;:</b> le titre ne disait jamais «&nbsp;water block&nbsp;», seule la description le disait, et les exclusions ne lisent que le titre. Haiku part des chiffres du bot&nbsp;: il a hérité de l’erreur.</p>
+                <p class="rep-h">Le bloc à eau vendu comme une RTX 3080</p>
+                <p><b class="rep-l bug">Ce qui est arrivé</b> un bloc de watercooling pour RTX 3080 et 3090, à 200&nbsp;€, est arrivé en «&nbsp;très bon deal&nbsp;»&nbsp;: revente ~306&nbsp;€, +95&nbsp;€ via Leboncoin. Haiku a reconnu un bloc à eau… et a conseillé d’acheter.</p>
+                <p><b class="rep-l why">Pourquoi</b> le titre ne disait jamais «&nbsp;water block&nbsp;», seule la description le disait, et les exclusions ne lisent que le titre. Haiku part des chiffres du bot&nbsp;: il a hérité de l’erreur.</p>
               </div>
             </article>
           </section>
@@ -307,11 +311,12 @@ const STEPS = [
             </ol>
             <p class="fams"><span>7 familles reconnues&nbsp;:</span>{FAMS.map((f) => <em>{f}</em>)}</p>
             <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°3</b><span class="rep-s ok">Corrigé</span></p>
               <span class="rep-art" data-bg="lined"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.glasses.svg} /></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé</span>Les lunettes Radeon<span class="rep-s ok">Corrigé</span></p>
-                <p><b>Ce qui arrivait&nbsp;:</b> des lunettes Ray-Ban «&nbsp;RX 5154&nbsp;» arrivaient comme cartes graphiques. «&nbsp;RX&nbsp;» suivi de quatre chiffres, c’est exactement le motif d’une Radeon.</p>
-                <p><b>Correctif&nbsp;:</b> lunettes, montures et Ray-Ban dans les exclusions. Un «&nbsp;RX&nbsp;» est refusé si le titre dit «&nbsp;Ray&nbsp;».</p>
+                <p class="rep-h">Les lunettes Radeon</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> des lunettes Ray-Ban «&nbsp;RX 5154&nbsp;» arrivaient comme cartes graphiques. «&nbsp;RX&nbsp;» suivi de quatre chiffres, c’est exactement le motif d’une Radeon.</p>
+                <p><b class="rep-l fix">Correctif</b> lunettes, montures et Ray-Ban dans les exclusions. Un «&nbsp;RX&nbsp;» est refusé si le titre dit «&nbsp;Ray&nbsp;».</p>
               </div>
             </article>
           </section>
@@ -328,11 +333,12 @@ const STEPS = [
             </ol>
             <p class="fp"><span>Empreinte&nbsp;:</span><code>{FP}</code><em>site, titre sans espaces ni ponctuation, prix arrondi à 5&nbsp;€</em></p>
             <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°4</b><span class="rep-s ok">Corrigé</span></p>
               <span class="rep-art" data-bg="mat"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={triple()} /></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé</span>Trois numéros, un seul objet<span class="rep-s ok">Corrigé</span></p>
-                <p><b>Ce qui arrivait&nbsp;:</b> une même carte déclenchait trois alertes d’affilée. Vinted publie parfois un objet sous plusieurs numéros, et la mémoire du bot ne connaissait que les numéros.</p>
-                <p><b>Correctif&nbsp;:</b> l’empreinte ci-dessus, gardée 2&nbsp;heures, même après un redémarrage.</p>
+                <p class="rep-h">Trois numéros, un seul objet</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> une même carte déclenchait trois alertes d’affilée. Vinted publie parfois un objet sous plusieurs numéros, et la mémoire du bot ne connaissait que les numéros.</p>
+                <p><b class="rep-l fix">Correctif</b> l’empreinte ci-dessus, gardée 2&nbsp;heures, même après un redémarrage.</p>
               </div>
             </article>
           </section>
@@ -370,11 +376,12 @@ const STEPS = [
               </div>
             </div>
             <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°5</b><span class="rep-k">Signalé en juin 2026</span><span class="rep-s ok">Corrigé</span></p>
               <span class="rep-art calc2" aria-hidden="true"><span>360</span><span class="bad">306</span><span class="bad">260</span><span class="good">306</span></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé en juin 2026</span>La décote comptée deux fois<span class="rep-s ok">Corrigé</span></p>
-                <p><b>Ce qui arrivait&nbsp;:</b> des reventes estimées trop basses, et des bonnes affaires inaperçues. La correction du port eBay (× 0,85) se faisait dans l’API Videntis, puis de nouveau dans le bot.</p>
-                <p><b>Correctif&nbsp;:</b> l’API donne la médiane brute des ventes confirmées, le bot corrige une seule fois (6&nbsp;juin 2026).</p>
+                <p class="rep-h">La décote comptée deux fois</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> des reventes estimées trop basses, et des bonnes affaires inaperçues. La correction du port eBay (× 0,85) se faisait dans l’API Videntis, puis de nouveau dans le bot.</p>
+                <p><b class="rep-l fix">Correctif</b> l’API donne la médiane brute des ventes confirmées, le bot corrige une seule fois (6&nbsp;juin 2026).</p>
               </div>
             </article>
           </section>
@@ -410,11 +417,12 @@ const STEPS = [
               </div>
             </div>
             <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°6</b><span class="rep-s ok">Corrigé</span></p>
               <span class="rep-art" data-bg="floor"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.jacket.svg} /></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé</span>La veste «&nbsp;HS&nbsp;»<span class="rep-s ok">Corrigé</span></p>
-                <p><b>Ce qui arrivait&nbsp;:</b> une veste dont le nom de modèle contient «&nbsp;HS&nbsp;» a été classée pièce en panne. Pour le détecteur, «&nbsp;HS&nbsp;» seul veut dire hors service.</p>
-                <p><b>Correctif&nbsp;:</b> des mots qui annulent tout passent avant la détection&nbsp;: vêtements, titres de jeux «&nbsp;of the dead&nbsp;», radio-cassette.</p>
+                <p class="rep-h">La veste «&nbsp;HS&nbsp;»</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> une veste dont le nom de modèle contient «&nbsp;HS&nbsp;» a été classée pièce en panne. Pour le détecteur, «&nbsp;HS&nbsp;» seul veut dire hors service.</p>
+                <p><b class="rep-l fix">Correctif</b> des mots qui annulent tout passent avant la détection&nbsp;: vêtements, titres de jeux «&nbsp;of the dead&nbsp;», radio-cassette.</p>
               </div>
             </article>
           </section>
@@ -524,11 +532,12 @@ const STEPS = [
               </div>
             </div>
             <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°7</b><span class="rep-k">Signalé en avril 2026</span><span class="rep-s ok">Corrigé</span></p>
               <span class="rep-art term2" aria-hidden="true"><code>titre&nbsp;: RTX 3080 <mark>\udc4d</mark> top état</code><code class="bad">→ Analyser&nbsp;: erreur d’encodage</code><code class="good">→ caractère orphelin retiré, appel OK</code></span>
               <div class="rep-b">
-                <p class="rep-h"><span class="rep-k">Signalé en avril 2026</span>Le demi-émoji qui faisait planter l’analyse<span class="rep-s ok">Corrigé</span></p>
-                <p><b>Ce qui arrivait&nbsp;:</b> certains clics sur «&nbsp;Analyser&nbsp;» échouaient. Des émojis mal stockés dans les annonces, coupés en deux moitiés, rendaient le texte invalide à l’envoi.</p>
-                <p><b>Correctif&nbsp;:</b> ces moitiés orphelines sont retirées de chaque champ avant l’appel, et des consignes elles-mêmes (30&nbsp;avril 2026).</p>
+                <p class="rep-h">Le demi-émoji qui faisait planter l’analyse</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> certains clics sur «&nbsp;Analyser&nbsp;» échouaient. Des émojis mal stockés dans les annonces, coupés en deux moitiés, rendaient le texte invalide à l’envoi.</p>
+                <p><b class="rep-l fix">Correctif</b> ces moitiés orphelines sont retirées de chaque champ avant l’appel, et des consignes elles-mêmes (30&nbsp;avril 2026).</p>
               </div>
             </article>
             <p class="stn-end">Fin du trajet&nbsp;: retour au message du début, et à celui qui achète.</p>
@@ -850,6 +859,12 @@ const STEPS = [
       }, { threshold: [0, .15] });
       each(stns, function (s) { mid.observe(s); if (reduce) s.classList.add("arr"); else arr.observe(s); });
     })();
+
+    // ---------- Signalements : un drapeau sur la frise pour chaque étape qui en a ----------
+    each(document.querySelectorAll(".stn"), function (st) {
+      var c = st.querySelectorAll(".rep").length, d = document.querySelector(".fol-dots li[data-n=\"" + st.getAttribute("data-n") + "\"]");
+      if (c && d) d.setAttribute("data-rep", c);
+    });
 
     // ---------- Survols : sur mobile, le toucher rejoue l'animation ----------
     each(document.querySelectorAll(".sieve li, .sal6 li, .fork, .rep, .ai-c"), function (el) {
