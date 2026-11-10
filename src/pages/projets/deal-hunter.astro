@@ -854,12 +854,6 @@ const STEPS = [
       each(stns, function (s) { mid.observe(s); if (reduce) s.classList.add("arr"); else arr.observe(s); });
     })();
 
-    // ---------- Signalements : un drapeau sur la frise pour chaque étape qui en a ----------
-    each(document.querySelectorAll(".stn"), function (st) {
-      var c = st.querySelectorAll(".rep").length, d = document.querySelector(".fol-dots li[data-n=\"" + st.getAttribute("data-n") + "\"]");
-      if (c && d) d.setAttribute("data-rep", c);
-    });
-
     // ---------- Survols : sur mobile, le toucher rejoue l'animation ----------
     each(document.querySelectorAll(".sieve li, .sal6 li, .fork, .rep, .ai-c"), function (el) {
       el.addEventListener("click", function () {
