@@ -4,7 +4,6 @@
 import Base from "../../layouts/Base.astro";
 import SiteHeader from "../../components/SiteHeader.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
-import DealHunterDemo from "../../components/DealHunterDemo.astro";
 import { PIC, SALON_ART, OUT_ART, triple } from "../../lib/dh-art";
 import { SAMPLES, PIPELINE, ME, OTHER, CHANNEL_INFO, LIVE_EXTRA, LIVE_ORDER } from "../../data/deal-hunter/samples";
 import market from "../../data/deal-hunter/demo-market.json";
@@ -12,6 +11,9 @@ import catalog from "../../data/videntis/gpu-catalog.json";
 import "../../scripts/deal-hunter-engine.js";
 import "../../scripts/annonce.js";
 import "../../scripts/dh-discord.js";
+import engineSrc from "../../scripts/deal-hunter-engine.js?raw";
+import annSrc from "../../scripts/annonce.js?raw";
+import dscSrc from "../../scripts/dh-discord.js?raw";
 import "../../styles/annonces.css";
 import "../../styles/projet.css";
 import "../../styles/deal-hunter.css";
@@ -134,7 +136,9 @@ const SALONS = [
   { k: "deals_other", art: "other", rule: "Tout le reste" },
 ];
 const SLOTS = SALONS.map((x) => x.k);
-const LIVE_CH = [...SLOTS, "bot-settings", "settings-etienne", "deals-forge", "bot-logs"];
+const LIVE_CH = [...SLOTS, "bot-settings", "settings-etienne"];
+// Données du moteur dans le navigateur (salon en direct, étape 7) : noms du catalogue GPU et marché inventé
+const DH_DATA = JSON.stringify({ catalog: (catalog as { name: string }[]).map((c) => ({ name: c.name })), market });
 const WHO_DEALS = ["s1", "s2", "s4", "s5"];
 // Étape 8 : les deux consignes de bot.py (_ANALYSIS_* et _HS_ANALYSIS_*), leur axe de jugement et leurs verdicts possibles
 const r1 = Math.round((S1.price / 306) * 100) / 100;     // ratio de l'analyse de s1 (210 € / 306 €), 0.69
@@ -180,7 +184,6 @@ const STEPS = [
           <p class="op-lead">Ces messages, Deal Hunter les postait dans ses salons Discord quelques instants après une annonce de matériel PC sur Leboncoin ou Vinted. <b>Voici tout ce qui se passe entre les deux.</b></p>
           <div class="op-go">
             <a class="vbtn primary" href="#trajet">Suivre une annonce ↓</a>
-            <a class="vbtn" href="#a-vous">Essayer avec la vôtre</a>
           </div>
         </div>
       </div>
@@ -547,17 +550,6 @@ const STEPS = [
     </div>
   </section>
 
-  <!-- ========== À vous ========== -->
-  <section class="band b-paper yours-band" id="a-vous" aria-labelledby="h-yours">
-    <div class="wrap">
-      <div class="yours">
-        <h2 id="h-yours" class="yours-h">À vous&nbsp;: passez une annonce dans le bot.</h2>
-        <p class="yours-p">Choisissez un exemple ou écrivez la vôtre&nbsp;; elle refait le trajet, étape par étape. Puis essayez «&nbsp;Et si…&nbsp;» pour voir la mémoire travailler.</p>
-        <DealHunterDemo />
-      </div>
-    </div>
-  </section>
-
   <!-- ========== Aujourd'hui ========== -->
   <section class="band b-paper now-band" aria-labelledby="h-now">
     <div class="wrap endg">
@@ -597,7 +589,9 @@ const STEPS = [
 
 <script type="application/json" id="live-data" set:html={JSON.stringify(LIVE)}></script>
 <script type="application/json" id="live-names" set:html={JSON.stringify(Object.fromEntries(LIVE_CH.map((c) => [c, CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c])))}></script>
-<script type="application/json" id="who-data" set:html={JSON.stringify({ me: ME, other: OTHER, deals: WHO_DEALS.map((sid) => bySid[sid]), pipeline: PIPELINE, channels: CHANNEL_INFO, pics: Object.fromEntries(Object.keys(PIC).map((k) => [k, PIC[k].bg])) })}></script>
+<script type="application/json" id="who-data" set:html={JSON.stringify({ me: ME, other: OTHER, deals: WHO_DEALS.map((sid) => bySid[sid]), pipeline: PIPELINE, channels: CHANNEL_INFO, pics: Object.fromEntries(Object.keys(PIC).map((k) => [k, PIC[k].bg])), art: Object.fromEntries(WHO_DEALS.map((sid) => [bySid[sid].pic, svgOf(bySid[sid].pic)])) })}></script>
+<script type="application/json" id="dh-data" set:html={DH_DATA}></script>
+<Fragment set:html={"<script>" + engineSrc + "</script><script>" + annSrc + "</script><script>" + dscSrc + "</script>"} />
 <script is:inline>
   (function () {
     var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -612,7 +606,7 @@ const STEPS = [
       var $ = function (id) { return document.getElementById(id); };
       var op = $("op"), E = window.DealHunterEngine, D = window.DHDiscord;
       var L = JSON.parse($("live-data").textContent), NAMES = JSON.parse($("live-names").textContent);
-      var raw = JSON.parse($("dhd-data").textContent);                 // catalogue et marché de la démo, déjà dans la page
+      var raw = JSON.parse($("dh-data").textContent);                  // catalogue GPU (noms) et marché inventé
       var data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
       var feeds = {}, chs = {}, cur = "deals_fire", timer = null, paused = false, seen = false, visible = false;
       var admin = JSON.parse(JSON.stringify(L.pipe)), me = JSON.parse(JSON.stringify(L.me));
@@ -891,7 +885,7 @@ const STEPS = [
     (function () {
       var E = window.DealHunterEngine, D = window.DHDiscord, W = JSON.parse(document.getElementById("who-data").textContent);
       if (!E) return;
-      var raw = JSON.parse(document.getElementById("dhd-data").textContent);
+      var raw = JSON.parse(document.getElementById("dh-data").textContent);
       var data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
       var users = { me: JSON.parse(JSON.stringify(W.me)), other: JSON.parse(JSON.stringify(W.other)) };
       var R = W.deals.map(function (s) {
@@ -901,8 +895,8 @@ const STEPS = [
       function eur(x) { var r = Math.round(x); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + " €"; }
       document.getElementById("who-deal").innerHTML = R.map(function (d, j) {
         var ev = d.r.ev, ch = W.channels[d.r.channel];
-        var art = document.querySelector("#dhd-lot .pv[data-k=\"" + d.s.pic + "\"]");
-        return "<div class=\"wd" + (j === 0 ? " on" : "") + "\"" + (j ? " aria-hidden=\"true\"" : "") + ">" + window.Annonce.html({ pl: d.s.platform, bg: W.pics[d.s.pic], pics: art ? art.outerHTML.replace(" pv on\"", "\"").replace(" pv\"", "\"") : "",
+
+        return "<div class=\"wd" + (j === 0 ? " on" : "") + "\"" + (j ? " aria-hidden=\"true\"" : "") + ">" + window.Annonce.html({ pl: d.s.platform, bg: W.pics[d.s.pic], pics: W.art[d.s.pic] || "",
             title: esc(d.s.title), price: d.s.price, city: d.s.city, zip: d.s.zip, ago: d.s.ago, brand: d.s.brand, cond: d.s.cond, likes: d.s.likes, ship: d.s.ship, row: true }) +
           "<p class=\"wd-r\"><span class=\"salpill c-" + ch.c + "\"># " + ch.name + "</span><b>" + eur(ev.best_profit) + "</b> de profit net</p></div>";
       }).join("");

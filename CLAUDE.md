@@ -145,7 +145,9 @@ Décisions déjà prises :
   - `src/scripts/videntis-engine.js` : code porté du produit (reconnaissance du modèle, règles d'intention, verdict),
     avec `src/data/videntis/` (catalogue GPU et règles réels, marché inventé) ; `VidentisDemo.astro` l'utilise.
   - `src/scripts/deal-hunter-engine.js` : filtres, modèle, profit, pour pièces, arnaque, empreintes et routage portés du bot
-    (sans les collecteurs), avec `src/data/deal-hunter/` ; `DealHunterDemo.astro` et la page l'utilisent ; dessins dans `src/lib/dh-art.ts`.
+    (sans les collecteurs), avec `src/data/deal-hunter/` ; la page l'inclut en ligne (avec annonce.js, dh-discord.js et `#dh-data` :
+    noms du catalogue GPU, marché inventé) ; dessins dans `src/lib/dh-art.ts`. La section « À vous » (démo à saisie libre) a été retirée
+    à la demande d'Etienne (novembre 2026), comme les salons #deals-forge et #bot-logs du salon en direct.
 - Captures réelles dans `src/assets/<slug>/`, affichées avec `<Image>` d'`astro:assets` ; bandeau et e-mail masqués.
 - Aperçu à commenter : un artifact autonome tiré de `dist` (CSS en ligne, polices et images en data URI, liens réécrits vers
   le site en ligne), republié sous le même fichier pour garder l'adresse.
