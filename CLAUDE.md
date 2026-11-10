@@ -16,6 +16,10 @@ Langue du site et des échanges : français. Etienne veut des retours directs et
   Chaque commit sur `main` est redéployé, les autres branches ont une adresse d'aperçu. `wrangler.jsonc` lance le build
   (`npm run build`) et ne publie que `dist/` : les fichiers du dépôt (CLAUDE.md, README…) ne sont plus servis.
 - L'adresse publique est écrite une seule fois, dans `astro.config.mjs` (`site`) ; `canonical`, `og:url` et `og:image` en découlent.
+- Le dépôt Arkaniix/portfolio est PUBLIC : ce fichier, les commentaires et les messages de commit ne doivent rien contenir de
+  sensible (fonctionnement des collecteurs, raison de l'arrêt de Deal Hunter, nom du second chasseur, données personnelles).
+- `src/pages/404.astro` : page servie par Cloudflare pour toute adresse inconnue (`assets.not_found_handling: "404-page"` dans
+  `wrangler.jsonc`), en `noindex`.
 - `public/_headers` : en-têtes de sécurité (CSP minimale, HSTS, nosniff…) et cache long des polices et de `/_astro/`.
 - Polices hébergées dans `public/fonts/` (licence OFL) : Anybody (variable wdth 50–150, wght 100–900), Schibsted Grotesk (wght 400–900), La Belle Aurore (manuscrite).
 - `public/og.png` (1200×630), `favicon.svg`, `apple-touch-icon.png`.
@@ -82,7 +86,7 @@ mais toujours compréhensible : chaque animation doit raconter quelque chose de 
 - **Videntis** : SaaS B2B d'intelligence tarifaire pour le matériel informatique d'occasion, conçu, codé et opéré seul.
   Ramène les annonces (Leboncoin, Vinted, eBay) au bon modèle et en tire un prix de référence. Python, FastAPI, PostgreSQL, React, Stripe, Claude Haiku.
   Prêt mais pas encore en production (novembre 2026). Site public : videntis-corp.fr (Lens, Estimator, verdicts FONCER / NÉGOCIER / TENTER / PASSER,
-  formules Free, Standard, Pro). Ne jamais montrer les collecteurs côté serveur (proxys, contournement des protections anti-robots).
+  formules Free, Standard, Pro). Ne jamais montrer les collecteurs côté serveur, ni décrire leur fonctionnement.
   Les fiches du Repair Guide sont rédigées par Claude (à dire comme tel). Pas de photos de cartes : les annonces de démo sont dessinées (`src/lib/listing-art.ts`).
 - **Deal Hunter** : bot Discord, module de Videntis, à l'arrêt aujourd'hui (novembre 2026). Il lisait les nouvelles annonces Leboncoin et Vinted
   (eBay n'est jamais une source, seulement un canal de revente dans le calcul), écartait le bruit (lots, boîtes vides, portables, échanges,

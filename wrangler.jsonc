@@ -7,7 +7,9 @@
   "compatibility_date": "2026-10-01",
   "build": { "command": "npm run build" },
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    // Adresse inconnue : sert dist/404.html (page src/pages/404.astro) avec le statut 404
+    "not_found_handling": "404-page"
   },
   // Aperçus de branche (Worker Previews) : bloc obligatoire, vide car les aperçus n'ont besoin
   // d'aucun réglage propre (pas de variables, secrets ni liaisons).

@@ -189,7 +189,7 @@ const STEPS = [
       </div>
       <div class="dsc dsc-win op wait" id="op">
         <nav class="dsc-rail" aria-hidden="true"><span class="dsc-srv on">DH</span><span class="dsc-sep"></span><span class="dsc-srv add">+</span></nav>
-        <aside class="dsc-side" aria-label="Salons du serveur">
+        <nav class="dsc-side" aria-label="Salons du serveur">
           <p class="dsc-sname">Deal Hunter<span aria-hidden="true">⌄</span></p>
           <ul class="dsc-chs">
             <li class="dsc-cat">Deals</li>
@@ -198,7 +198,7 @@ const STEPS = [
             {LIVE_CH.slice(6).map((c) => <li><button type="button" class="dsc-ch" data-ch={c}><i>#</i><span>{c}</span><b class="dsc-badge" hidden>0</b></button></li>)}
           </ul>
           <div class="dsc-me"><span class="msg-av">E</span><p>{ME.username}<span>En ligne</span></p></div>
-        </aside>
+        </nav>
         <div class="dsc-main">
           <p class="dsc-bar"><button type="button" class="dsc-menu" aria-label="Afficher les salons"><span aria-hidden="true">☰</span><b class="dsc-badge" hidden>0</b></button><i>#</i><b id="op-chn">deals-fire</b></p>
           <div class="dsc-feeds">
@@ -213,11 +213,11 @@ const STEPS = [
           </div>
           <p class="dsc-input"><i>+</i><span class="dsc-in-t">Envoyer un message dans #<span id="op-in">deals-fire</span></span></p>
         </div>
-        <aside class="dsc-mem" aria-label="Membres">
+        <div class="dsc-mem">
           <p class="dsc-cat">En ligne — 2</p>
           <p class="dsc-mbr"><span class="msg-av">DH</span>Deal Hunter<span class="botp">APP</span></p>
           <p class="dsc-mbr"><span class="msg-av me">E</span>{ME.username}</p>
-        </aside>
+        </div>
         <p class="op-toast" id="op-toast" role="status" hidden></p>
         <div class="dsc-modal" id="op-modal" hidden>
           <form class="dsc-mod" id="op-form">
@@ -250,7 +250,7 @@ const STEPS = [
       <p class="rep-key"><span class="rep-flag" aria-hidden="true">🚩</span><span><b>Signalement</b>&nbsp;: un vrai souci rencontré pendant que le bot tournait, et ce que j’ai corrigé. Il y en a sept sur le trajet, à l’étape où ils se sont produits.</span></p>
 
       <div class="trip">
-        <aside class="fol" id="fol" data-f="s1" data-n="1" aria-live="polite">
+        <div class="fol" id="fol" data-f="s1" data-n="1" aria-live="polite">
           <div class="fol-card">
             {FOLLOW.map((f) => <Fragment set:html={f.ann} />)}
           </div>
@@ -258,7 +258,7 @@ const STEPS = [
           <div class="fol-st">
             {FOLLOW.map((f) => f.states.map((h, i) => <p class="fs" data-f={f.sid} data-n={i + 1} data-stop={i + 1 > f.last ? "1" : undefined} set:html={h} />))}
           </div>
-        </aside>
+        </div>
 
         <div class="stns">
           <!-- 1 -->

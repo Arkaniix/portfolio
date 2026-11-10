@@ -83,8 +83,8 @@ const g0 = HERO_JS[0].g;
           <li>Python</li><li>FastAPI</li><li>PostgreSQL</li><li>React</li><li>TypeScript</li><li>Stripe</li><li>Claude Haiku</li><li>Docker</li>
         </ul>
       </div>
-      <div class="stamp-scene" id="hs" aria-hidden="true">
-        <div class="lot-wrap">
+      <div class="stamp-scene" id="hs">
+        <div class="lot-wrap" aria-hidden="true">
           <article class={"lot pl-" + HERO[0].pl} style={`--rot:${HERO[0].rot}deg`}>
             <div class="lot-photo" data-bg={GPUS[0].bg}>
               {GPUS.map((v, i) => <svg class={"draw gpu-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={gpuArt(v.art)} />)}
@@ -105,13 +105,14 @@ const g0 = HERO_JS[0].g;
           <div class="stamp hit st-neg" id="hs-stamp">Négocier</div>
         </div>
         <div class="rack-row">
-          <ul class="rack">
+          <ul class="rack" aria-hidden="true">
             <li class="stamp mini st-go" data-v="go">Foncer</li>
             <li class="stamp mini st-neg lit" data-v="neg">Négocier</li>
             <li class="stamp mini st-try" data-v="try">Tenter</li>
             <li class="stamp mini st-pass" data-v="pass">Passer</li>
           </ul>
-          <button type="button" class="replay" id="hs-next" aria-hidden="false">Autre annonce <span aria-hidden="true">↻</span></button>
+          <button type="button" class="replay" id="hs-next">Autre annonce <span aria-hidden="true">↻</span></button>
+          <p class="sr-only" id="hs-say" aria-live="polite"></p>
         </div>
       </div>
     </div>
@@ -482,7 +483,13 @@ const g0 = HERO_JS[0].g;
       hsTimers.push(setTimeout(go, EXIT));
     }
     var armed = true;                                 // l'annonce se rejouera depuis le début à la prochaine arrivée
-    $("hs-next").addEventListener("click", function () { armed = false; next(); });
+    $("hs-next").addEventListener("click", function () {
+      armed = false; next();
+      // La scène est décorative (masquée aux lecteurs d'écran) : le bouton annonce en texte l'annonce qui arrive
+      setTimeout(function () {                        // une fois la nouvelle annonce en place
+        var s = SC[sc]; $("hs-say").textContent = "Annonce inventée : " + s.model + " à " + $("hs-price").textContent + ". Verdict : " + s.label + ".";
+      }, reduce ? 0 : EXIT + 30);
+    });
     setScene(0);
     sizeCard();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(sizeCard);
