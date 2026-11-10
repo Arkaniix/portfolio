@@ -732,27 +732,21 @@
 .ai-mk{ position:absolute; top:-6px; bottom:-6px; left:var(--x); width:3px; margin-left:-1.5px; background:var(--ink); border-radius:2px; }
 .ai-mk b{ position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:12px; font-weight:800; padding:1px 7px; border-radius:999px; white-space:nowrap; }
 .stn.arr .ai-mk{ animation:mk-in .9s var(--ease) .5s both; }
-.ai-c:hover .ai-mk, .ai-c.play .ai-mk{ animation:mk-in2 .9s var(--ease) both; }
 @keyframes mk-in{ from{ left:0; } }
-@keyframes mk-in2{ from{ left:0; } }
 /* Réparateur : l'accolade couvre les niveaux retenus par la réponse */
 .ai-ax.steps .ai-tr span:not(.in){ opacity:.45; }
 .ai-ax.steps .ai-tr span.z-dead:not(.in){ opacity:.35; }
 .ai-br{ position:absolute; left:var(--a); right:var(--b); top:-15px; height:9px; border:2px solid var(--ink); border-bottom:0; border-radius:6px 6px 0 0; }
 .ai-br b{ position:absolute; bottom:calc(100% + 1px); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:12px; font-weight:800; padding:1px 7px; border-radius:999px; white-space:nowrap; }
 .stn.arr .ai-br{ animation:br-in .5s var(--ease) .5s both; }
-.ai-c:hover .ai-br, .ai-c.play .ai-br{ animation:br-in2 .5s var(--ease) both; }
 @keyframes br-in{ from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(-30px -60px 0 -60px); } }
-@keyframes br-in2{ from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(-30px -60px 0 -60px); } }
 .ai-ax.steps .ai-tr{ margin-top:30px; }
 /* Verdicts possibles : celui de la réponse est tamponné */
 .ai-v{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
 .ai-v li{ font-size:11.5px; font-weight:800; border:1.5px dashed var(--rule); color:var(--ink-2); border-radius:999px; padding:3px 9px; }
 .ai-v li.on{ border:1.5px solid var(--ink); background:var(--ink); color:var(--ac); transform:rotate(-2deg); box-shadow:-3px 3px 0 var(--ac); }
 .stn.arr .ai-v li.on{ animation:v-stamp .45s cubic-bezier(.3, 1.5, .5, 1) 1.1s both; }
-.ai-c:hover .ai-v li.on, .ai-c.play .ai-v li.on{ animation:v-stamp2 .45s cubic-bezier(.3, 1.5, .5, 1) .3s both; }
 @keyframes v-stamp{ from{ opacity:0; transform:scale(1.6) rotate(-8deg); } }
-@keyframes v-stamp2{ from{ opacity:0; transform:scale(1.6) rotate(-8deg); } }
 /* La réponse dans Discord : repliée, se déplie au clic */
 .ai-rep{ position:relative; max-height:184px; overflow:hidden; border-radius:10px; margin-top:4px; transition:max-height .45s var(--ease); }
 .ai-rep::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:56px; background:linear-gradient(transparent, #313338); pointer-events:none; transition:opacity .3s ease; }
