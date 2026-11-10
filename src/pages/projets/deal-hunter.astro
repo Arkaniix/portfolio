@@ -136,6 +136,20 @@ const SALONS = [
 const SLOTS = SALONS.map((x) => x.k);
 const LIVE_CH = [...SLOTS, "bot-settings", "settings-etienne", "deals-forge", "bot-logs"];
 const WHO_DEALS = ["s1", "s2", "s4", "s5"];
+// Étape 8 : les deux consignes de bot.py (_ANALYSIS_* et _HS_ANALYSIS_*), leur axe de jugement et leurs verdicts possibles
+const r1 = Math.round((S1.price / 306) * 100) / 100;     // ratio de l'analyse de s1 (210 € / 306 €), 0.69
+const AI8 = [
+  { sid: "s1", k: "k-rev", role: "Revendeur", q: "Je le revends avec quelle marge ?", ch: "deals_fire", more: "et les 4 autres salons",
+    quote: "💰 TRÈS BON DEAL  GeForce RTX 3080", sections: 4,
+    icon: `<path d="M4 13.5 13.5 4H23v9.5L13.5 23z" fill="var(--green)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/><circle cx="18.5" cy="8.5" r="1.8" fill="var(--ink)"/><path d="M16 15.5a3.2 3.2 0 1 1 0-3.6M10 13.2h4.6M10 15.3h4.2" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linecap="round"/>`,
+    axis: { label: "Ratio prix / revente", zones: [["SUSPECT", 35, "z-bad"], ["ATTENTION", 20, "z-mid"], ["PLAUSIBLE", 45, "z-ok"]], ticks: ["0,35", "0,55"], mark: r1, markTxt: String(r1).replace(".", ",") },
+    verdicts: ["ACHETER IMMÉDIATEMENT", "BON DEAL", "avis en une phrase", "ARNAQUE PROBABLE"] },
+  { sid: "s2", k: "k-fix", role: "Réparateur", q: "Ça se répare ? Pour combien ?", ch: "deals_hs", more: "seulement",
+    quote: "🔥 ÉNORME DEAL  GeForce RTX 3070", sections: 6,
+    icon: `<path d="M5 23l8.6-8.6" stroke="var(--ink)" stroke-width="4.5" stroke-linecap="round"/><path d="M5 23l8.6-8.6" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round"/><path d="M13 13.2l3.6-3.6c-1-2.6.4-5.3 3-5.7l-1.8 2.6.6 2.4 2.4.6 2.6-1.8c-.4 2.6-3.1 4-5.7 3L15.1 14.4z" fill="var(--yellow)" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/>`,
+    axis: { label: "Réparabilité", steps: [["FACILE", "z-ok"], ["MODÉRÉ", "z-mid"], ["EXPERT", "z-bad"], ["IRRÉPARABLE", "z-dead"]], span: [0, 2], spanTxt: "pâte et pads" },
+    verdicts: ["RÉPARABLE PROBABLEMENT", "RÉCUPÉRABLE EN PIÈCES", "PROBABLEMENT SCAM", "À FUIR"] },
+];
 
 const STEPS = [
   { id: "publiee", q: "Une annonce est publiée", short: "Publiée" },
@@ -458,12 +472,39 @@ const STEPS = [
           <!-- 8 -->
           <section class="stn" id="analyser" data-n="8" aria-labelledby="q8">
             <header class="stn-h"><span class="stn-n">8</span><h2 id="q8">{STEPS[7].q}</h2></header>
-            <p class="stn-p">Claude Haiku lit l’annonce et sa photo, seulement au clic. Consigne de revendeur dans les salons, de réparateur dans #deals-hs. Réponses écrites pour la démo, au format exact du bot.</p>
+            <p class="stn-p">Claude Haiku lit l’annonce et sa photo, seulement au clic. Le même bouton change de consigne selon le salon&nbsp;: un revendeur partout, un réparateur dans #deals-hs. Réponses écrites pour la démo, au format exact du bot.</p>
+            <div class="ai-fork" aria-hidden="true"><span class="dsc ai-btn"><span class="mb mb-pri">🔍 Analyser</span></span></div>
             <div class="ai2">
-              {[["s1", "Revendeur"], ["s2", "Réparateur"]].map(([sid, k]) => (
-                <div class="ai-c" tabindex="0">
-                  <p class="ai-k">Consigne {k.toLowerCase()} · {bySid[sid].title}</p>
-                  <div class="dsc ai-box" set:html={D.analysis({ sections: bySid[sid].ai!.slice(0, k === "Revendeur" ? 3 : 4), quote: (sid === "s1" ? "💰 TRÈS BON DEAL  GeForce RTX 3080" : "🔥 ÉNORME DEAL  GeForce RTX 3070") })} />
+              {AI8.map((c) => (
+                <div class={"ai-c " + c.k} tabindex="0">
+                  <p class="ai-in"><span class={"salpill c-" + CHANNEL_INFO[c.ch].c}># {CHANNEL_INFO[c.ch].name}</span><span>{c.more}</span></p>
+                  <p class="ai-role"><svg viewBox="0 0 28 28" aria-hidden="true" set:html={c.icon} />Consigne {c.role.toLowerCase()}</p>
+                  <p class="ai-q">{c.q}</p>
+                  {c.axis.zones ? (
+                    <div class="ai-ax" style={`--x:${Math.min(c.axis.mark, 1) * 100}%`}>
+                      <p class="ai-axl">{c.axis.label}</p>
+                      <div class="ai-tr">
+                        {c.axis.zones.map(([t, w, z]: any) => <span class={z} style={`flex:${w}`}>{t}</span>)}
+                        <i class="ai-mk"><b>{c.axis.markTxt}</b></i>
+                      </div>
+                      <p class="ai-tk"><span style="left:35%">{c.axis.ticks[0]}</span><span style="left:55%">{c.axis.ticks[1]}</span></p>
+                      <p class="ai-zl" aria-hidden="true">{c.axis.zones.map(([t, w]: any, i: number) => <span style={`left:${c.axis.zones.slice(0, i).reduce((x: number, z: any) => x + z[1], 0) + w / 2}%`}>{t}</span>)}</p>
+                    </div>
+                  ) : (
+                    <div class="ai-ax steps" style={`--a:${c.axis.span[0] * 25}%;--b:${(4 - c.axis.span[1]) * 25}%`}>
+                      <p class="ai-axl">{c.axis.label}</p>
+                      <div class="ai-tr">
+                        {c.axis.steps.map(([t, z]: any, i: number) => <span class={z + (i >= c.axis.span[0] && i < c.axis.span[1] ? " in" : "")}>{t}</span>)}
+                        <i class="ai-br"><b>{c.axis.spanTxt}</b></i>
+                      </div>
+                    </div>
+                  )}
+                  <p class="ai-axl">Verdicts possibles</p>
+                  <ul class="ai-v">{c.verdicts.map((v, i) => <li class={i === 0 ? "on" : ""}>{v}</li>)}</ul>
+                  <div class="ai-rep">
+                    <div class="dsc ai-box" set:html={D.analysis({ sections: bySid[c.sid].ai!.slice(0, c.sections), quote: c.quote })} />
+                  </div>
+                  <button type="button" class="ai-more" aria-expanded="false">Réponse complète</button>
                 </div>
               ))}
             </div>
@@ -815,6 +856,18 @@ const STEPS = [
       el.addEventListener("click", function () {
         el.classList.remove("play"); void el.offsetWidth; el.classList.add("play");
         clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove("play"); }, 1600);
+      });
+    });
+
+    // ---------- Étape 8 : déplier la réponse de Haiku ----------
+    each(document.querySelectorAll(".ai-more"), function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var rep = b.previousElementSibling, open = b.getAttribute("aria-expanded") !== "true";
+        rep.style.maxHeight = (open ? rep.scrollHeight : rep.offsetHeight) + "px";
+        void rep.offsetHeight;
+        rep.classList.toggle("open", open); rep.style.maxHeight = open ? rep.scrollHeight + "px" : "";
+        b.setAttribute("aria-expanded", String(open)); b.textContent = open ? "Réduire" : "Réponse complète";
       });
     });
 

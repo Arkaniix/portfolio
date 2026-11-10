@@ -121,6 +121,9 @@ Décisions déjà prises :
   `DHDiscord.bindPanel` gère ces commandes, `DHDiscord.patch` met le panneau à jour sur place (transitions, pas de remplacement).
   Étape 7 : variante `compact` (embed réduit au statut et aux seuils), un seul panneau affiché ; les deux résultats servent d'onglets.
   Les quatre annonces y sont empilées et passent en fondu : hauteur constante (vérifiée) quel que soit l'onglet.
+- Étape 8 (« Analyser ») : un bouton, deux consignes de bot.py (revendeur partout, réparateur dans #deals-hs). Chaque carte montre
+  son axe de jugement (ratio prix/revente et seuils 0,35 / 0,55 ; échelle FACILE → IRRÉPARABLE), ses verdicts possibles (celui de la
+  réponse tamponné) et la réponse dans Discord, repliée. Classes `k-rev` / `k-fix` (`.rep` est déjà pris par les signalements).
 - Chaque page raconte son projet avec sa propre structure : ne pas recopier l'enchaînement de Videntis (refus d'Etienne sur la
   première version de Deal Hunter, trop proche). Deal Hunter suit le trajet d'une annonce en huit étapes, avec une annonce
   collante qui change d'état ; choix en bifurcations, incidents en « signalements » placés à l'étape concernée.

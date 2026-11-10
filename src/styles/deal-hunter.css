@@ -696,13 +696,74 @@
 .who-note{ margin:14px 0 22px; font-size:13.5px; line-height:1.5; color:var(--ink-2); max-width:52em; }
 
 /* 8 · Analyser */
-.ai2{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:18px; }
-.ai-c{ min-width:0; outline:none; transition:transform .2s var(--ease); }
-.ai-c:hover, .ai-c.play{ transform:translateY(-3px); }
-.ai-k{ margin:0 0 6px; font-size:12.5px; font-weight:800; }
-.ai-box{ border-radius:10px; overflow:hidden; box-shadow:0 0 0 1.5px var(--ink); padding:6px 0 10px; }
+/* Étape 8 : un bouton, deux consignes. Arbre au-dessus, puis pour chacune son axe de jugement, ses verdicts et sa réponse */
+.ai-fork{ position:relative; display:flex; justify-content:center; height:64px; }
+.ai-btn{ position:relative; z-index:1; background:transparent; height:34px; }
+.ai-btn .mb{ cursor:default; box-shadow:0 0 0 1.5px var(--ink); }
+.ai-fork::before{ content:""; position:absolute; left:50%; top:34px; height:16px; border-left:2px solid var(--ink); transform-origin:top; }
+.ai-fork::after{ content:""; position:absolute; left:calc(25% - 3px); right:calc(25% - 3px); top:50px; height:14px; border:2px solid var(--ink); border-bottom:0; border-radius:8px 8px 0 0; }
+.stn.arr .ai-fork::before{ animation:fk-stem .25s ease .2s both; }
+.stn.arr .ai-fork::after{ animation:fk-bar .35s var(--ease) .4s both; }
+@keyframes fk-stem{ from{ transform:scaleY(0); } }
+@keyframes fk-bar{ from{ clip-path:inset(0 50% 0 50%); } to{ clip-path:inset(0 0 0 0); } }
+.ai2{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:18px; align-items:start; }
+.ai-c{ --ac:var(--green); min-width:0; outline:none; display:flex; flex-direction:column; gap:8px; background:#fff; border:1.5px solid var(--ink); border-radius:12px; padding:12px 14px 14px; box-shadow:0 4px 0 rgba(17, 18, 22, .2), inset 0 6px 0 var(--ac); transition:transform .2s var(--ease), box-shadow .2s var(--ease); }
+.ai-c.k-fix{ --ac:var(--yellow); }
+.ai-c:hover, .ai-c:focus-visible, .ai-c.play{ transform:translate(3px, -3px); box-shadow:-5px 5px 0 var(--ink), inset 0 6px 0 var(--ac); }
+.ai-c p{ margin:0; }
+.ai-in{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin-top:6px !important; font-size:13px; font-weight:700; color:var(--ink-2); }
+.ai-role{ display:flex; align-items:center; gap:8px; font-family:var(--display); font-variation-settings:"wdth" 70, "wght" 820; font-size:26px; line-height:1.05; }
+.ai-role svg{ width:30px; height:30px; flex:none; }
+.ai-q{ font-size:16.5px; font-weight:800; line-height:1.3; }
+.ai-axl{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-2); margin-top:4px !important; }
+.ai-ax{ display:flex; flex-direction:column; gap:5px; }
+.ai-tr{ position:relative; display:flex; height:30px; border:1.5px solid var(--ink); border-radius:7px; margin-top:16px; }
+.ai-tr span{ display:grid; place-items:center; min-width:0; overflow:hidden; font-size:10px; font-weight:800; white-space:nowrap; }
+.ai-ax.steps .ai-tr span{ flex:1; }
+.ai-ax:not(.steps) .ai-tr span:last-of-type{ justify-items:end; padding-right:8px; }
+.ai-tr span + span{ border-left:1.5px solid var(--ink); }
+.ai-tr span:first-child{ border-radius:5px 0 0 5px; } .ai-tr span:last-of-type{ border-radius:0 5px 5px 0; }
+.z-ok{ background:var(--green); } .z-mid{ background:var(--yellow); } .z-bad{ background:var(--pink); } .z-dead{ background:var(--ink); color:#fff; }
+.ai-tk{ position:relative; height:14px; font-size:11px; font-weight:700; color:var(--ink-2); }
+.ai-tk span{ position:absolute; top:0; transform:translateX(-50%); }
+.ai-zl{ display:none; position:relative; height:14px; font-size:10px; font-weight:800; }
+.ai-zl span{ position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; }
+/* Revendeur : le curseur se pose sur le ratio de l'annonce */
+.ai-mk{ position:absolute; top:-6px; bottom:-6px; left:var(--x); width:3px; margin-left:-1.5px; background:var(--ink); border-radius:2px; }
+.ai-mk b{ position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:12px; font-weight:800; padding:1px 7px; border-radius:999px; white-space:nowrap; }
+.stn.arr .ai-mk{ animation:mk-in .9s var(--ease) .5s both; }
+.ai-c:hover .ai-mk, .ai-c.play .ai-mk{ animation:mk-in2 .9s var(--ease) both; }
+@keyframes mk-in{ from{ left:0; } }
+@keyframes mk-in2{ from{ left:0; } }
+/* Réparateur : l'accolade couvre les niveaux retenus par la réponse */
+.ai-ax.steps .ai-tr span:not(.in){ opacity:.45; }
+.ai-ax.steps .ai-tr span.z-dead:not(.in){ opacity:.35; }
+.ai-br{ position:absolute; left:var(--a); right:var(--b); top:-15px; height:9px; border:2px solid var(--ink); border-bottom:0; border-radius:6px 6px 0 0; }
+.ai-br b{ position:absolute; bottom:calc(100% + 1px); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:12px; font-weight:800; padding:1px 7px; border-radius:999px; white-space:nowrap; }
+.stn.arr .ai-br{ animation:br-in .5s var(--ease) .5s both; }
+.ai-c:hover .ai-br, .ai-c.play .ai-br{ animation:br-in2 .5s var(--ease) both; }
+@keyframes br-in{ from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(-30px -60px 0 -60px); } }
+@keyframes br-in2{ from{ clip-path:inset(0 100% 0 0); } to{ clip-path:inset(-30px -60px 0 -60px); } }
+.ai-ax.steps .ai-tr{ margin-top:30px; }
+/* Verdicts possibles : celui de la réponse est tamponné */
+.ai-v{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
+.ai-v li{ font-size:11.5px; font-weight:800; border:1.5px dashed var(--rule); color:var(--ink-2); border-radius:999px; padding:3px 9px; }
+.ai-v li.on{ border:1.5px solid var(--ink); background:var(--ink); color:var(--ac); transform:rotate(-2deg); box-shadow:-3px 3px 0 var(--ac); }
+.stn.arr .ai-v li.on{ animation:v-stamp .45s cubic-bezier(.3, 1.5, .5, 1) 1.1s both; }
+.ai-c:hover .ai-v li.on, .ai-c.play .ai-v li.on{ animation:v-stamp2 .45s cubic-bezier(.3, 1.5, .5, 1) .3s both; }
+@keyframes v-stamp{ from{ opacity:0; transform:scale(1.6) rotate(-8deg); } }
+@keyframes v-stamp2{ from{ opacity:0; transform:scale(1.6) rotate(-8deg); } }
+/* La réponse dans Discord : repliée, se déplie au clic */
+.ai-rep{ position:relative; max-height:184px; overflow:hidden; border-radius:10px; margin-top:4px; transition:max-height .45s var(--ease); }
+.ai-rep::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:56px; background:linear-gradient(transparent, #313338); pointer-events:none; transition:opacity .3s ease; }
+.ai-rep.open::after{ opacity:0; }
+.ai-box{ border-radius:10px; overflow:hidden; box-shadow:inset 0 0 0 1.5px var(--ink); padding:6px 0 10px; }
 .ai-box .msg{ padding-right:12px; }
 .ai-c .ai-l{ min-height:0; }
+.ai-more{ appearance:none; font:inherit; align-self:flex-start; cursor:pointer; border:1.5px solid var(--ink); border-radius:999px; background:#fff; color:var(--ink); padding:4px 12px; font-size:13px; font-weight:800; transition:transform .18s var(--ease), box-shadow .18s var(--ease); }
+.ai-more::after{ content:" ▾"; }
+.ai-more[aria-expanded="true"]::after{ content:" ▴"; }
+.ai-more:hover{ transform:translate(2px, -2px); box-shadow:-3px 3px 0 var(--ink); }
 .quota{ display:flex; flex-direction:column; gap:8px; margin-bottom:22px; }
 .quota p{ margin:0; display:grid; grid-template-columns:44px 210px minmax(0, 1fr); align-items:center; gap:10px; }
 .quota b{ font-family:var(--display); font-variation-settings:"wdth" 80, "wght" 850; font-size:30px; line-height:1; text-align:right; }
@@ -784,6 +845,13 @@
   .dhd-form{ display:flex; align-items:stretch; }
   .who-deals{ grid-template-columns:minmax(0, 1fr); grid-template-areas:"tabs" "deal" "bot"; }
   .two, .ai2{ grid-template-columns:minmax(0, 1fr); }
+  .ai-fork{ height:auto; margin-bottom:12px; }
+  .ai-tr span{ font-size:9.5px; }
+  .ai-ax.steps .ai-tr span{ font-size:9px; letter-spacing:-.02em; }
+  /* Sur téléphone, la zone ATTENTION est trop étroite : les noms des zones passent sous la barre */
+  .ai-ax:not(.steps) .ai-tr span{ font-size:0; }
+  .ai-zl{ display:block !important; }
+  .ai-fork::before, .ai-fork::after{ display:none; }
 }
 @media (max-width: 600px){
   .op.dsc-win{ grid-template-columns:minmax(0, 1fr); height:560px; box-shadow:0 0 0 1.5px var(--ink), -5px 5px 0 var(--ink); }
