@@ -62,7 +62,7 @@ function fmtP(p: number, pl: string) { return pl === "lbc" ? p + "\u00a0€" : p
 const HERO_JS = HERO.map(({ g, ...s }) => ({ ...s, bg: GPUS[g].bg, g: geo(s.p, s.ref) }));
 const g0 = HERO_JS[0].g;
 ---
-<Base title="Videntis, le juste prix du matériel d’occasion" description={description} themeColor="#FFD93B">
+<Base title="Videntis, le juste prix du matériel d’occasion" description={description} themeColor="#FFD93B" ogImage="/og-videntis.png" ogImageAlt="Videntis : une annonce de RTX 3080 Ti dessinée, tamponnée « Négocier » (annonce inventée).">
 <SiteHeader />
 
 <main class="v">

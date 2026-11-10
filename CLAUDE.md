@@ -19,6 +19,9 @@ Langue du site et des échanges : français. Etienne veut des retours directs et
 - `public/_headers` : en-têtes de sécurité (CSP minimale, HSTS, nosniff…) et cache long des polices et de `/_astro/`.
 - Polices hébergées dans `public/fonts/` (licence OFL) : Anybody (variable wdth 50–150, wght 100–900), Schibsted Grotesk (wght 400–900), La Belle Aurore (manuscrite).
 - `public/og.png` (1200×630), `favicon.svg`, `apple-touch-icon.png`.
+- Images de partage par projet : `public/og-videntis.png` et `public/og-deal-hunter.png` (1200×630, prop `ogImage` et `ogImageAlt`
+  de `Base.astro`). Composées avec Playwright à partir des vrais éléments des pages (scène du verdict de Videntis, message #deals-fire)
+  sur la couleur de la page : à refaire si ces éléments changent. LinkedIn garde l'ancien aperçu en cache (Post Inspector pour rafraîchir).
 
 ## Direction artistique (à respecter sur toutes les pages)
 
