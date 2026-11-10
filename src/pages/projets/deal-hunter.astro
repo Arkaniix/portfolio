@@ -1,0 +1,975 @@
+---
+// Page projet Deal Hunter : le trajet d'une annonce, de sa publication au message du bot.
+// Faits tirés du dépôt Arkaniix/deal-hunter et des réglages relevés dans le salon ; annonces et prix de démo inventés.
+import Base from "../../layouts/Base.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import { PIC, SALON_ART, OUT_ART, triple } from "../../lib/dh-art";
+import { SAMPLES, PIPELINE, ME, OTHER, CHANNEL_INFO, LIVE_EXTRA, LIVE_ORDER } from "../../data/deal-hunter/samples";
+import market from "../../data/deal-hunter/demo-market.json";
+import catalog from "../../data/videntis/gpu-catalog.json";
+import "../../scripts/deal-hunter-engine.js";
+import "../../scripts/annonce.js";
+import "../../scripts/dh-discord.js";
+import engineSrc from "../../scripts/deal-hunter-engine.js?raw";
+import annSrc from "../../scripts/annonce.js?raw";
+import dscSrc from "../../scripts/dh-discord.js?raw";
+import "../../styles/annonces.css";
+import "../../styles/projet.css";
+import "../../styles/deal-hunter.css";
+
+const E = (globalThis as any).DealHunterEngine;
+const A = (globalThis as any).Annonce;
+const D = (globalThis as any).DHDiscord;
+const svgOf = (k: string, cls = "draw") => `<svg class="${cls}" viewBox="0 0 176 100" aria-hidden="true">${PIC[k].svg}</svg>`;
+const tokHtml = (t: string[][]) => t.map(([w, k]) => `<span class="tkn ${k}">${esc(w)}</span>`).join(" ");
+const data = { index: E.buildModelIndex(catalog as { name: string }[]), market: market.gpu, cpu: market.cpu };
+const PL: Record<string, string> = { leboncoin: "Leboncoin", vinted: "Vinted" };
+const CHN: Record<string, string> = { lbc: "Leboncoin", vinted: "Vinted", ebay: "eBay" };
+const NB = " ";
+function esc(s: string) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+const eur = (x: number) => Math.round(x).toLocaleString("fr-FR") + NB + "€";
+const seur = (x: number) => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(Math.round(x)).toLocaleString("fr-FR") + NB + "€";
+const run = (title: string, price: number, extra: Record<string, any> = {}) =>
+  E.processAd({ ad_id: "p" + title.length + "-" + price, title, price_eur: price, platform: "leboncoin", description: "", ...extra }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
+
+const description =
+  "Deal Hunter, le bot Discord qui triait les nouvelles annonces de matériel PC : le trajet d’une annonce, des filtres au profit net, du salon à l’analyse de Claude Haiku. Démo interactive.";
+
+const bySid = Object.fromEntries(SAMPLES.map((s) => [s.id, s]));
+const S1 = SAMPLES[0];
+const R1 = E.processAd({ ad_id: "s1", title: S1.title, price_eur: S1.price, platform: "leboncoin", description: S1.description }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
+const ev1 = R1.ev;
+const HERO_MSG = `<div class="lv" data-i="0">` + D.deal({ ev: ev1, ad: R1.ad, city: S1.city, ago: S1.ago, who: [ME.username], mine: true, thumb: { bg: PIC["gpu-fe"].bg, svg: svgOf("gpu-fe") } }) + `</div>`;
+
+// ---------- Le salon en direct de l'en-tête : chaque annonce passe par le vrai code, dans l'ordre LIVE_ORDER ----------
+// Les annonces partent brutes dans la page : le navigateur les passe au vrai code (deal-hunter-engine.js), avec les réglages
+// des panneaux #bot-settings et #settings-etienne tels que le visiteur les a laissés. La RTX 3080 revient à 189 € (baisse de prix).
+const LIVE_SRC: Record<string, any> = Object.fromEntries([...SAMPLES, ...LIVE_EXTRA].map((x) => [x.id, x]));
+const quoteOf = (ev: any) => (ev.price_drop ? "📉 BAISSE DE PRIX" : D.VERDICT[ev.verdict.k]) + "  " + (ev.matched_model ? ev.matched_model.name : "");
+const LIVE_ADS = LIVE_ORDER.map((key) => {
+  const [sid, drop] = key.split("@"), x = LIVE_SRC[sid];
+  return { id: x.id, title: x.title, price: drop ? +drop : x.price, platform: x.platform, description: x.description || "", condition: x.condition || null,
+    city: x.city, ago: drop ? "il y a 1 min" : x.ago, pic: x.pic, hs: !!x.aiHs, ai: drop ? x.aiDrop : x.ai };
+});
+const LIVE = {
+  first: { id: "s1", title: S1.title, price: S1.price, platform: S1.platform, description: S1.description, ch: "deals_fire", ai: S1.ai, hs: false, quote: quoteOf(ev1) },
+  ads: LIVE_ADS,
+  pics: Object.fromEntries([...new Set(LIVE_ADS.map((x) => x.pic))].map((k) => [k, { bg: PIC[k].bg, svg: svgOf(k) }])),
+  pipe: { lbc_enabled: true, vinted_enabled: true, max_price: PIPELINE.max_price, min_profit_fire: PIPELINE.min_profit_fire },
+  me: ME,
+};
+const ADMIN_MSG = `<div class="lv-adm">` + D.adminPanel(LIVE.pipe, { reports: 0 }) + `</div>`;
+const ME_MSG = `<div class="lv-me">` + D.panel(ME, { time: "Aujourd’hui à 09:12" }) + `</div>`;
+const annOf = (s: any, title: string, extra: Record<string, any> = {}) => A.html({ pl: s.platform, bg: PIC[s.pic].bg, art: svgOf(s.pic), title, price: s.price, city: s.city, zip: s.zip, ago: s.ago, brand: s.brand, cond: s.cond, likes: s.likes, ship: s.ship, ...extra });
+
+// Mots du titre : m = modèle lu, x = cause de l'exclusion, r = signal de panne, n = le reste
+function tokens(title: string, r: any) {
+  const ex = r.steps[0] && !r.steps[0].ok ? r.steps[0] : null;
+  const model = r.steps[1] && r.steps[1].ok ? r.steps[1] : null;
+  const risk = r.steps.find((x: any) => x.k === "risk");
+  const tokWords = model ? E.normalize(model.token).split(" ") : [];
+  const hsWords = risk && risk.hs && risk.hs.is_hs ? E.normalize(risk.hs.signals.join(" ")).replace(/[^a-z0-9 ]/g, " ") : "";
+  return title.split(" ").map((w) => {
+    const n = E.normalize(w).replace(/[^a-z0-9]/g, "");
+    let k = "n";
+    if (ex && ex.hit && E.normalize(ex.hit).split(/[\s-]+/).some((h: string) => h && n.indexOf(h.replace(/[^a-z0-9]/g, "")) === 0)) k = "x";
+    else if (n && tokWords.some((t: string) => t === n || (n.length > 2 && n.indexOf(t) === 0 && t.length > 2) || n === t.replace(/\s/g, ""))) k = "m";
+    else if (n && hsWords && hsWords.indexOf(n) !== -1 && n.length > 2) k = "r";
+    return [w, k];
+  });
+}
+
+// ---------- L'annonce suivie : son état à chacune des huit étapes ----------
+const AI_LINE: Record<string, string> = { s1: "ACHETER IMMÉDIATEMENT", s2: "RÉPARABLE PROBABLEMENT", s3: "ARNAQUE PROBABLE, NE PAS ACHETER" };
+const FOLLOW = [
+  { sid: "s1", short: "RTX 3080 FE" }, { sid: "s2", short: "RTX 3070 en panne" },
+  { sid: "s3", short: "RTX 4090 neuve" }, { sid: "s7", short: "Lunettes RX" },
+].map(({ sid, short }) => {
+  const s = bySid[sid];
+  const r = E.processAd({ ad_id: s.id, title: s.title, price_eur: s.price, platform: s.platform, description: s.description || "", condition: s.condition || null }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
+  const step = (k: string) => r.steps.find((x: any) => x.k === k);
+  const stop = '<span class="fs-stop">Arrêtée à l’étape 2&nbsp;: elle ne va pas plus loin.</span>';
+  const ex = step("exclude"), mo = step("model"), ri = step("risk"), ro = step("route"), ev = r.ev;
+  const ch = ro ? CHANNEL_INFO[ro.channel] : null;
+  const states = [
+    `<b>${PL[s.platform]}${s.city ? " · " + esc(s.city) : ""}</b>, ${eur(s.price)}&nbsp;: sous le plafond de 500&nbsp;€, elle est lue.`,
+    ex.ok ? `<span class="fs-ok">Rien à écarter.</span> Ni lot, ni portable, ni boîte vide.` : `<span class="fs-no">Écartée&nbsp;:</span> ${esc(ex.why)}. Aucun message.`,
+    mo ? `Lu dans le titre&nbsp;: <code>${esc(mo.token)}</code> → <b>${esc(mo.name)}</b>` : stop,
+    mo ? `<span class="fs-ok">Première fois.</span> Gardée 7&nbsp;jours avec son prix.` : stop,
+    ev ? `Revente ~${eur(ev.realistic_sell_price)}, <b>${seur(ev.best_profit)}</b> via ${CHN[ev.best_channel]} <span class="vp v-${ev.verdict.k}">${ev.verdict.v}</span>` : stop,
+    ri ? (ri.hs && ri.hs.is_hs ? `<span class="fs-warn">Pour pièces&nbsp;:</span> ${esc(ri.hs.signals.slice(0, 2).join(", "))}.`
+      : ri.suspect ? `<span class="fs-no">Suspecte&nbsp;:</span> ${ri.flags.length} drapeaux, dont un prix à ${String(Math.round(ri.ratio * 100) / 100).replace(".", ",")} de la revente.`
+      : `<span class="fs-ok">Rien à signaler.</span> Prix à ${String(Math.round(ri.ratio * 100) / 100).replace(".", ",")} de la revente.`) : stop,
+    ch ? `<span class="salpill c-${ch.c}">#&nbsp;${ch.name}</span> <span class="at">@${ME.username}</span> mentionné.` : stop,
+    AI_LINE[sid] ? `Clic sur «&nbsp;Analyser&nbsp;», Haiku répond&nbsp;: <b>${AI_LINE[sid]}</b>` : stop,
+  ];
+  const t = tokens(s.title, r);
+  return { sid, short, pic: s.pic, ann: annOf(s, tokHtml(t), { cls: "fol-ann" + (sid === "s1" ? " on" : ""), attrs: ` data-f="${sid}"` }), states, last: r.stop ? 2 : 8 };
+});
+
+// ---------- Étape 1 : ce qui arrive ----------
+const FLOW = [
+  { t: "RTX 3080 Founders Edition", p: 210, pl: "leboncoin" }, { t: "PC complet RTX 4070", p: 900, pl: "leboncoin" }, { t: "Ryzen 7 5800X", p: 95, pl: "vinted" },
+  { t: "RTX 4080 Super neuve", p: 780, pl: "vinted" }, { t: "Kit DDR4 2x16 Go", p: 110, pl: "vinted" }, { t: "RX 6700 XT", p: 230, pl: "leboncoin" },
+];
+// ---------- Étape 3 : quatre titres, ce que le bot en lit ----------
+const READS = ["RTX 3080 Founders Edition comme neuve", "Ryzen 7 5800X, très bon état", "Kit 2x16 Go DDR4 3200 Corsair Vengeance", "GTX 1080 Ti Strix"].map((t) => {
+  const r = run(t, 95), m = r.steps[1];
+  // Génération trop ancienne : le modèle est bien lu, puis refusé ; on le marque comme cause du refus
+  const tk = m.ok ? tokens(t, r) : t.split(" ").map((w) => [w, m.token && E.normalize(m.token).split(" ").indexOf(E.normalize(w)) !== -1 ? "x" : "n"]);
+  return { t: tk, ok: m.ok, out: m.ok ? m.name : "Trop ancienne", fam: m.ok ? m.family : "RTX 20, RX 5000, Arc et plus récentes seulement" };
+});
+const FAMS = ["Cartes graphiques", "Processeurs", "Mémoire", "SSD", "Alimentations", "Cartes mères", "PC complets"];
+// ---------- Étape 4 : la mémoire ----------
+const FP = E.makeFingerprint("leboncoin", S1.title, 199);
+// ---------- Étape 5 : le calcul ----------
+const CH3 = ["lbc", "vinted", "ebay"].map((c) => ({ c, name: CHN[c], sub: c === "lbc" ? "main propre, sans frais" : (c === "vinted" ? "−5" : "−13") + NB + "%, port 8" + NB + "€", p: ev1.profits_by_channel[c].profit }));
+const TIERS = [["PAS RENTABLE", "bad", 0], ["PRIX CORRECT", "ok", 20], ["BON PRIX", "good", 50], ["TRÈS BON DEAL", "vgood", 80], ["ÉNORME DEAL", "huge", 100]] as const;
+// ---------- Étape 7 : les salons ----------
+const SALONS = [
+  { k: "deals_fire", art: "fire", rule: "Profit net d’au moins 50" + NB + "€" },
+  { k: "deals_price_drop", art: "drop", rule: "Prix baissé d’au moins 5" + NB + "%" },
+  { k: "deals_hs", art: "hs", rule: "Pour pièces, en panne" },
+  { k: "deals_suspect", art: "suspect", rule: "Prix trop beau, signaux d’arnaque" },
+  { k: "deals_not_rentable", art: "flat", rule: "Profit négatif" },
+  { k: "deals_other", art: "other", rule: "Tout le reste" },
+];
+const SLOTS = SALONS.map((x) => x.k);
+const LIVE_CH = [...SLOTS, "bot-settings", "settings-etienne"];
+// Données du moteur dans le navigateur (salon en direct, étape 7) : noms du catalogue GPU et marché inventé
+const DH_DATA = JSON.stringify({ catalog: (catalog as { name: string }[]).map((c) => ({ name: c.name })), market });
+const WHO_DEALS = ["s1", "s2", "s4", "s5"];
+// Étape 8 : les deux consignes de bot.py (_ANALYSIS_* et _HS_ANALYSIS_*), leur axe de jugement et leurs verdicts possibles
+const r1 = Math.round((S1.price / 306) * 100) / 100;     // ratio de l'analyse de s1 (210 € / 306 €), 0.69
+const AI8 = [
+  { sid: "s1", k: "k-rev", role: "Revendeur", q: "Je le revends avec quelle marge ?", ch: "deals_fire", more: "et les 4 autres salons",
+    quote: "💰 TRÈS BON DEAL  GeForce RTX 3080", sections: 4,
+    icon: `<path d="M4 13.5 13.5 4H23v9.5L13.5 23z" fill="var(--green)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/><circle cx="18.5" cy="8.5" r="1.8" fill="var(--ink)"/><path d="M16 15.5a3.2 3.2 0 1 1 0-3.6M10 13.2h4.6M10 15.3h4.2" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-linecap="round"/>`,
+    axis: { label: "Ratio prix / revente", zones: [["SUSPECT", 35, "z-bad"], ["ATTENTION", 20, "z-mid"], ["PLAUSIBLE", 45, "z-ok"]], ticks: ["0,35", "0,55"], mark: r1, markTxt: String(r1).replace(".", ",") },
+    verdicts: ["ACHETER IMMÉDIATEMENT", "BON DEAL", "avis en une phrase", "ARNAQUE PROBABLE"] },
+  { sid: "s2", k: "k-fix", role: "Réparateur", q: "Ça se répare ? Pour combien ?", ch: "deals_hs", more: "seulement",
+    quote: "🔥 ÉNORME DEAL  GeForce RTX 3070", sections: 6,
+    icon: `<path d="M5 23l8.6-8.6" stroke="var(--ink)" stroke-width="4.5" stroke-linecap="round"/><path d="M5 23l8.6-8.6" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round"/><path d="M13 13.2l3.6-3.6c-1-2.6.4-5.3 3-5.7l-1.8 2.6.6 2.4 2.4.6 2.6-1.8c-.4 2.6-3.1 4-5.7 3L15.1 14.4z" fill="var(--yellow)" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/>`,
+    axis: { label: "Réparabilité", steps: [["FACILE", "z-ok"], ["MODÉRÉ", "z-mid"], ["EXPERT", "z-bad"], ["IRRÉPARABLE", "z-dead"]], span: [0, 2], spanTxt: "pâte et pads" },
+    verdicts: ["RÉPARABLE PROBABLEMENT", "RÉCUPÉRABLE EN PIÈCES", "PROBABLEMENT SCAM", "À FUIR"] },
+];
+
+const STEPS = [
+  { id: "publiee", q: "Une annonce est publiée", short: "Publiée" },
+  { id: "ecartee", q: "Faut-il l’écarter ?", short: "Écartée ?" },
+  { id: "modele", q: "Quel modèle ?", short: "Modèle" },
+  { id: "vue", q: "Déjà vue ?", short: "Déjà vue ?" },
+  { id: "profit", q: "Combien ça rapporte ?", short: "Profit" },
+  { id: "risque", q: "En panne ? Arnaque ?", short: "Panne, arnaque" },
+  { id: "salon", q: "Quel salon, qui prévenir ?", short: "Salon" },
+  { id: "analyser", q: "Et si on clique sur « Analyser » ?", short: "Analyser" },
+];
+---
+<Base title="Deal Hunter, le bot qui trie les bonnes affaires" description={description} themeColor="#FF4F9A" ogImage="/og-deal-hunter.png" ogImageAlt="Deal Hunter : un message du bot dans le salon #deals-fire, une RTX 3080 à 210 € avec +96 € de profit net (annonce inventée).">
+<SiteHeader />
+
+<main class="v dh">
+
+  <!-- ========== En-tête : le salon Discord, au moment où le message arrive ========== -->
+  <section class="band b-pink dh-open" aria-labelledby="dh-title">
+    <div class="wrap">
+      <noscript><style>.op.wait .lv .msg{ opacity:1 !important; }</style></noscript>
+      <div class="op-top">
+        <div class="op-ttl">
+          <p class="op-k">Projet 2 · Module de Videntis · Bot Discord, à l’arrêt aujourd’hui</p>
+          <h1 id="dh-title" class="op-name">Deal Hunter</h1>
+        </div>
+        <div class="op-side">
+          <p class="op-lead">Ces messages, Deal Hunter les postait dans ses salons Discord quelques instants après une annonce de matériel PC sur Leboncoin ou Vinted. <b>Voici tout ce qui se passe entre les deux.</b></p>
+          <div class="op-go">
+            <a class="vbtn primary" href="#trajet">Suivre une annonce ↓</a>
+          </div>
+        </div>
+      </div>
+      <div class="dsc dsc-win op wait" id="op">
+        <nav class="dsc-rail" aria-hidden="true"><span class="dsc-srv on">DH</span><span class="dsc-sep"></span><span class="dsc-srv add">+</span></nav>
+        <nav class="dsc-side" aria-label="Salons du serveur">
+          <p class="dsc-sname">Deal Hunter<span aria-hidden="true">⌄</span></p>
+          <ul class="dsc-chs">
+            <li class="dsc-cat">Deals</li>
+            {SLOTS.map((k) => <li><button type="button" class={"dsc-ch" + (k === "deals_fire" ? " on" : "")} data-ch={k}><i>#</i><span>{CHANNEL_INFO[k].name}</span><b class="dsc-badge" hidden>0</b></button></li>)}
+            <li class="dsc-cat">Bot</li>
+            {LIVE_CH.slice(6).map((c) => <li><button type="button" class="dsc-ch" data-ch={c}><i>#</i><span>{c}</span><b class="dsc-badge" hidden>0</b></button></li>)}
+          </ul>
+          <div class="dsc-me"><span class="msg-av">E</span><p>{ME.username}<span>En ligne</span></p></div>
+        </nav>
+        <div class="dsc-main">
+          <p class="dsc-bar"><button type="button" class="dsc-menu" aria-label="Afficher les salons"><span aria-hidden="true">☰</span><b class="dsc-badge" hidden>0</b></button><i>#</i><b id="op-chn">deals-fire</b></p>
+          <div class="dsc-feeds">
+            {LIVE_CH.map((c) => (
+              <div class={"dsc-feed" + (c === "deals_fire" ? " on" : "")} data-ch={c}>
+                <div class="dsc-hello"><span aria-hidden="true">#</span><p class="dh1">Bienvenue dans #{CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c} !</p><p>C’est le début du salon #{CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c}.</p></div>
+                {c === "deals_fire" && <Fragment><p class="dsc-day">Aujourd’hui</p><Fragment set:html={HERO_MSG} /></Fragment>}
+                {c === "bot-settings" && <Fragment><p class="dsc-day">Aujourd’hui</p><Fragment set:html={ADMIN_MSG} /></Fragment>}
+                {c === "settings-etienne" && <Fragment><p class="dsc-day">Aujourd’hui</p><Fragment set:html={ME_MSG} /></Fragment>}
+              </div>
+            ))}
+          </div>
+          <p class="dsc-input"><i>+</i><span class="dsc-in-t">Envoyer un message dans #<span id="op-in">deals-fire</span></span></p>
+        </div>
+        <div class="dsc-mem">
+          <p class="dsc-cat">En ligne — 2</p>
+          <p class="dsc-mbr"><span class="msg-av">DH</span>Deal Hunter<span class="botp">APP</span></p>
+          <p class="dsc-mbr"><span class="msg-av me">E</span>{ME.username}</p>
+        </div>
+        <p class="op-toast" id="op-toast" role="status" hidden></p>
+        <div class="dsc-modal" id="op-modal" hidden>
+          <form class="dsc-mod" id="op-form">
+            <p class="dsc-mod-t">Signaler cette annonce</p>
+            <label><span>Raison (facultatif)</span><textarea id="op-why" maxlength="500" rows="3" placeholder="Photo trompeuse, modèle incorrect, prix incohérent, scam..."></textarea></label>
+            <p class="dsc-mod-b"><button type="button" class="dsc-cancel" id="op-cancel">Annuler</button><button type="submit" class="mb mb-pri">Envoyer</button></p>
+          </form>
+        </div>
+      </div>
+      <div class="op-live" id="op-live">
+        <p><span class="lv-dot" aria-hidden="true"></span><b id="lv-st">Bot en chasse</b> · <span id="lv-read">1</span> annonces lues · <span id="lv-post">1</span> postées · <span id="lv-out">0</span> écartées</p>
+        <button type="button" class="lv-btn" id="lv-pause">Pause</button>
+      </div>
+      <p class="op-note">Salon redessiné d’après mes captures, aux couleurs de Discord mais sans son logo. Les annonces arrivent à intervalles aléatoires et passent, dans votre navigateur, par le vrai code du bot&nbsp;; elles, leurs prix et les réponses de Haiku sont inventés. Cliquez sur les salons, les boutons, et changez les réglages de #bot-settings ou #settings-etienne&nbsp;: les annonces suivantes en tiennent compte. Le code et ses 901 tests restent&nbsp;; le bot, lui, ne tourne plus.</p>
+    </div>
+  </section>
+
+  <!-- ========== Le trajet ========== -->
+  <section class="band b-paper trip-band" id="trajet" aria-label="Le trajet d’une annonce">
+    <div class="wrap">
+      <div class="pick" role="tablist" aria-label="Annonce à suivre">
+        <span class="pick-k">Suivre&nbsp;:</span>
+        {FOLLOW.map((f, i) => (
+          <button type="button" role="tab" class={"pk" + (i === 0 ? " on" : "")} data-f={f.sid} aria-selected={i === 0 ? "true" : "false"}>
+            <span class="pk-pic" data-bg={PIC[f.pic].bg}><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC[f.pic].svg} /></span>{f.short}
+          </button>
+        ))}
+      </div>
+
+      <p class="rep-key"><span class="rep-flag" aria-hidden="true">🚩</span><span><b>Signalement</b>&nbsp;: un vrai souci rencontré pendant que le bot tournait, et ce que j’ai corrigé. Il y en a sept sur le trajet, à l’étape où ils se sont produits.</span></p>
+
+      <div class="trip">
+        <div class="fol" id="fol" data-f="s1" data-n="1" aria-live="polite">
+          <div class="fol-card">
+            {FOLLOW.map((f) => <Fragment set:html={f.ann} />)}
+          </div>
+          <ol class="fol-dots" aria-hidden="true">{STEPS.map((s, i) => <li data-n={i + 1}><i>{i + 1}</i><span>{s.short}</span></li>)}</ol>
+          <div class="fol-st">
+            {FOLLOW.map((f) => f.states.map((h, i) => <p class="fs" data-f={f.sid} data-n={i + 1} data-stop={i + 1 > f.last ? "1" : undefined} set:html={h} />))}
+          </div>
+        </div>
+
+        <div class="stns">
+          <!-- 1 -->
+          <section class="stn" id="publiee" data-n="1" aria-labelledby="q1">
+            <header class="stn-h"><span class="stn-n">1</span><h2 id="q1">{STEPS[0].q}</h2></header>
+            <p class="stn-p">Le bot lisait les nouvelles annonces de matériel PC sur Leboncoin et Vinted. Au-dessus du prix maximum réglé dans #bot-settings, 500&nbsp;€, il ne va pas plus loin. Et quand plus aucun chasseur n’est en chasse, il se met en pause.</p>
+            <ul class="flow" aria-label="Annonces qui arrivent (inventées)">
+              {FLOW.map((x, i) => <li class={A.key(x.pl) + (x.p > 500 ? " over" : "")} style={`--i:${i}`}><span class={"pf " + A.key(x.pl)}>{PL[x.pl]}</span><b>{x.t}</b><span class="fl-p">{A.euros(x.p, x.pl === "vinted")}</span>{x.p > 500 && <em>au-dessus de 500&nbsp;€</em>}</li>)}
+            </ul>
+          </section>
+
+          <!-- 2 -->
+          <section class="stn" id="ecartee" data-n="2" aria-labelledby="q2">
+            <header class="stn-h"><span class="stn-n">2</span><h2 id="q2">{STEPS[1].q}</h2></header>
+            <p class="stn-p">Avant tout calcul, le titre passe au crible. Sur Vinted, le même tri existe en allemand, italien, espagnol, néerlandais et portugais.</p>
+            <ul class="sieve">
+              {[["lot", "Lots et packs"], ["box", "Boîtes vides"], ["laptop", "PC portables"], ["swap", "Échanges"], ["mug", "Goodies"], ["fan", "Ventilateurs, câbles"], ["glasses", "Lunettes « RX »"], ["old", "Vieilles générations"]].map(([k, t], i) => (
+                <li tabindex="0" style={`--d:${(i * 0.08).toFixed(2)}s`}><svg class="draw" viewBox="0 0 64 64" aria-hidden="true" set:html={OUT_ART[k]} /><span>{t}</span></li>
+              ))}
+            </ul>
+            <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°1</b><span class="rep-s ok">Corrigé</span></p>
+              <span class="rep-art" data-bg="wood"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.laptop.svg} /></span>
+              <div class="rep-b">
+                <p class="rep-h">La RTX du portable</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> des PC portables passaient pour des cartes graphiques, avec des profits imaginaires. Le titre citait la carte du portable, évaluée comme une carte de bureau.</p>
+                <p><b class="rep-l fix">Correctif</b> exclusion des mots (portable, laptop) et des gammes (Legion, Omen, Zephyrus…), plus la RTX 2050, qui n’existe qu’en portable.</p>
+              </div>
+            </article>
+            <article class="rep open" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°2</b><span class="rep-k">Signalé le 27 mai 2026</span><span class="rep-s">Ouvert</span></p>
+              <span class="rep-art rose"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.waterblock.svg} /></span>
+              <div class="rep-b">
+                <p class="rep-h">Le bloc à eau vendu comme une RTX 3080</p>
+                <p><b class="rep-l bug">Ce qui est arrivé</b> un bloc de watercooling pour RTX 3080 et 3090, à 200&nbsp;€, est arrivé en «&nbsp;très bon deal&nbsp;»&nbsp;: revente ~306&nbsp;€, +95&nbsp;€ via Leboncoin. Haiku a reconnu un bloc à eau… et a conseillé d’acheter.</p>
+                <p><b class="rep-l why">Pourquoi</b> le titre ne disait jamais «&nbsp;water block&nbsp;», seule la description le disait, et les exclusions ne lisent que le titre. Haiku part des chiffres du bot&nbsp;: il a hérité de l’erreur.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 3 -->
+          <section class="stn" id="modele" data-n="3" aria-labelledby="q3">
+            <header class="stn-h"><span class="stn-n">3</span><h2 id="q3">{STEPS[2].q}</h2></header>
+            <p class="stn-p">Le bot cherche dans le titre le modèle qui donnera un prix&nbsp;: motifs pour les cartes graphiques, processeurs, mémoire et SSD, alias du catalogue Videntis pour les alimentations et les cartes mères.</p>
+            <ol class="reads">
+              {READS.map((r, i) => (
+                <li class={r.ok ? "" : "ko"} style={`--i:${i}`}>
+                  <p class="rd-t">{r.t.map(([w, k], j) => <Fragment>{j > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
+                  <span class="rd-a" aria-hidden="true">→</span>
+                  <p class="rd-o"><b>{r.out}</b><span>{r.fam}</span></p>
+                </li>
+              ))}
+            </ol>
+            <p class="fams"><span>7 familles reconnues&nbsp;:</span>{FAMS.map((f) => <em>{f}</em>)}</p>
+            <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°3</b><span class="rep-s ok">Corrigé</span></p>
+              <span class="rep-art" data-bg="lined"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.glasses.svg} /></span>
+              <div class="rep-b">
+                <p class="rep-h">Les lunettes Radeon</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> des lunettes Ray-Ban «&nbsp;RX 5154&nbsp;» arrivaient comme cartes graphiques. «&nbsp;RX&nbsp;» suivi de quatre chiffres, c’est exactement le motif d’une Radeon.</p>
+                <p><b class="rep-l fix">Correctif</b> lunettes, montures et Ray-Ban dans les exclusions. Un «&nbsp;RX&nbsp;» est refusé si le titre dit «&nbsp;Ray&nbsp;».</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 4 -->
+          <section class="stn" id="vue" data-n="4" aria-labelledby="q4">
+            <header class="stn-h"><span class="stn-n">4</span><h2 id="q4">{STEPS[3].q}</h2><span class="src">Branché sur <b>SQLite</b>, sur la machine du bot</span></header>
+            <p class="stn-p">Une annonce vue reste en mémoire 7&nbsp;jours, avec son prix. Elle ne repasse que si ce prix baisse d’au moins 5&nbsp;%.</p>
+            <ol class="days">
+              <li style="--i:0"><span class="dy">Lundi</span><b>210&nbsp;€</b><em class="go">Postée dans #deals-fire</em></li>
+              <li style="--i:1"><span class="dy">Mardi</span><b>210&nbsp;€</b><em>Relue, rien de neuf&nbsp;: silence</em></li>
+              <li style="--i:2"><span class="dy">Jeudi</span><b>199&nbsp;€ <small>−5,2&nbsp;%</small></b><em class="go">Repostée dans #deals-price-drop</em></li>
+              <li style="--i:3"><span class="dy">Jeudi</span><b>199&nbsp;€ <small>autre numéro</small></b><em>Même empreinte&nbsp;: ignorée</em></li>
+            </ol>
+            <p class="fp"><span>Empreinte&nbsp;:</span><code>{FP}</code><em>site, titre sans espaces ni ponctuation, prix arrondi à 5&nbsp;€</em></p>
+            <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°4</b><span class="rep-s ok">Corrigé</span></p>
+              <span class="rep-art" data-bg="mat"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={triple()} /></span>
+              <div class="rep-b">
+                <p class="rep-h">Trois numéros, un seul objet</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> une même carte déclenchait trois alertes d’affilée. Vinted publie parfois un objet sous plusieurs numéros, et la mémoire du bot ne connaissait que les numéros.</p>
+                <p><b class="rep-l fix">Correctif</b> l’empreinte ci-dessus, gardée 2&nbsp;heures, même après un redémarrage.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 5 -->
+          <section class="stn" id="profit" data-n="5" aria-labelledby="q5">
+            <header class="stn-h"><span class="stn-n">5</span><h2 id="q5">{STEPS[4].q}</h2><span class="src">Branché sur <b>la référence Videntis</b>, PostgreSQL en lecture seule, rechargée toutes les 30&nbsp;min</span></header>
+            <div class="calc">
+              <p class="cl-row" style="--i:0"><span>Ventes confirmées sur Videntis, médiane</span><b>{eur(ev1.market_median)}</b></p>
+              <p class="cl-row" style="--i:1"><span>Revue à la baisse&nbsp;: −15&nbsp;% à partir de 300&nbsp;€ (−20&nbsp;% à partir de 150&nbsp;€, −25&nbsp;% en dessous)</span><b>{eur(ev1.realistic_sell_price)}</b></p>
+              <ul class="cl-ch">
+                {CH3.map((c, i) => (
+                  <li class={c.c === ev1.best_channel ? "best" : ""} style={`--i:${i + 2}`}>
+                    <span class="cl-n">{c.name}<em>{c.sub}</em></span>
+                    <span class="cl-bar"><i style={`--w:${Math.max(0, c.p) / 110}`}></i></span>
+                    <b>{seur(c.p)}</b>
+                  </li>
+                ))}
+              </ul>
+              <p class="cl-note">Un modèle avec moins de 3 ventes confirmées sur 90&nbsp;jours n’a pas de référence&nbsp;: «&nbsp;pas de référence&nbsp;», sans profit.</p>
+            </div>
+            <div class="tiers" aria-label="Paliers du verdict, en euros de profit net">
+              {TIERS.map(([v, k, from]) => <span class={"tier v-" + k + (ev1.verdict.k === k ? " on" : "")}><b>{v}</b><em>{from === 0 ? "moins de 20" : "dès " + from}{NB}€</em></span>)}
+            </div>
+            <div class="forks">
+              <div class="fork" tabindex="0">
+                <p class="fk-q">Une bonne affaire, c’est un pourcentage ou des euros&nbsp;?</p>
+                <p class="fk-y"><b>Des euros de profit net</b><span>15&nbsp;% sous la médiane d’une carte à 100&nbsp;€, c’est 15&nbsp;€&nbsp;: le port en mange plus de la moitié.</span></p>
+                <p class="fk-n"><s>Un pourcentage sous la médiane</s><span>Il ne vaut pas la même chose à 100&nbsp;€ et à 600&nbsp;€.</span></p>
+              </div>
+              <div class="fork" tabindex="0">
+                <p class="fk-q">Quel prix de référence&nbsp;?</p>
+                <p class="fk-y"><b>Les ventes confirmées de Videntis</b><span>Ce que les cartes ont réellement fait.</span></p>
+                <p class="fk-n"><s>Les prix demandés en ligne</s><span>Un prix demandé n’est pas un prix de vente.</span></p>
+              </div>
+            </div>
+            <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°5</b><span class="rep-k">Signalé en juin 2026</span><span class="rep-s ok">Corrigé</span></p>
+              <span class="rep-art calc2" aria-hidden="true"><span>360</span><span class="bad">306</span><span class="bad">260</span><span class="good">306</span></span>
+              <div class="rep-b">
+                <p class="rep-h">La décote comptée deux fois</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> des reventes estimées trop basses, et des bonnes affaires inaperçues. La correction du port eBay (× 0,85) se faisait dans l’API Videntis, puis de nouveau dans le bot.</p>
+                <p><b class="rep-l fix">Correctif</b> l’API donne la médiane brute des ventes confirmées, le bot corrige une seule fois (6&nbsp;juin 2026).</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 6 -->
+          <section class="stn" id="risque" data-n="6" aria-labelledby="q6">
+            <header class="stn-h"><span class="stn-n">6</span><h2 id="q6">{STEPS[5].q}</h2></header>
+            <div class="two">
+              <div class="hs">
+                <p class="two-k">Pour pièces</p>
+                <ul class="hsl">
+                  <li class="y"><q>Elle démarre puis <mark>écran noir</mark></q><span>Pour pièces</span></li>
+                  <li class="n"><q>RTX 3060 <mark>sans défaut</mark></q><span>Négation&nbsp;: ignoré</span></li>
+                  <li class="n"><q>Veste noire <mark>HS</mark></q><span>Vêtement&nbsp;: ignoré</span></li>
+                  <li class="y"><q>État Leboncoin «&nbsp;<mark>pour pièces</mark>&nbsp;»</q><span>Pour pièces</span></li>
+                </ul>
+                <p class="two-p">Mots de panne en français et en anglais, négations comprises. L’annonce n’est pas jetée&nbsp;: elle a son salon.</p>
+              </div>
+              <div class="sc">
+                <p class="two-k">Arnaque</p>
+                <div class="ratio">
+                  <span class="r-z r1">fort</span><span class="r-z r2">faible</span><span class="r-z r3">aucun drapeau</span><span class="r-t" style="--x:.35">0,35</span><span class="r-t" style="--x:.5">0,50</span>
+                  <i class="r-m" style="--x:.27"><b>0,27</b></i>
+                </div>
+                <p class="two-p">Prix divisé par la revente&nbsp;: sous 0,35, drapeau fort&nbsp;; jusqu’à 0,50, drapeau faible. Plus deux signaux&nbsp;: langue étrangère, et 600&nbsp;€ de revente ou plus sur Vinted. Suspecte avec un drapeau de prix, ou deux autres signaux. Testé seulement à partir de 100&nbsp;€ de revente.</p>
+              </div>
+            </div>
+            <div class="forks">
+              <div class="fork" tabindex="0">
+                <p class="fk-q">Une annonce «&nbsp;pour pièces&nbsp;», on la jette&nbsp;?</p>
+                <p class="fk-y"><b>On la garde, dans son salon</b><span>Une carte à réparer peut être la meilleure marge. Haiku y répond en réparateur.</span></p>
+                <p class="fk-n"><s>On l’écarte avec les lots</s><span>On jetterait les cartes réparables avec les boîtes vides.</span></p>
+              </div>
+            </div>
+            <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°6</b><span class="rep-s ok">Corrigé</span></p>
+              <span class="rep-art" data-bg="floor"><svg class="draw" viewBox="0 0 176 100" aria-hidden="true" set:html={PIC.jacket.svg} /></span>
+              <div class="rep-b">
+                <p class="rep-h">La veste «&nbsp;HS&nbsp;»</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> une veste dont le nom de modèle contient «&nbsp;HS&nbsp;» a été classée pièce en panne. Pour le détecteur, «&nbsp;HS&nbsp;» seul veut dire hors service.</p>
+                <p><b class="rep-l fix">Correctif</b> des mots qui annulent tout passent avant la détection&nbsp;: vêtements, titres de jeux «&nbsp;of the dead&nbsp;», radio-cassette.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 7 -->
+          <section class="stn" id="salon" data-n="7" aria-labelledby="q7">
+            <header class="stn-h"><span class="stn-n">7</span><h2 id="q7">{STEPS[6].q}</h2><span class="src">Branché sur <b>les règles Forge</b>, désactivées par défaut</span></header>
+            <p class="stn-p">Chaque annonce reconnue est postée dans l’un des six salons. Quand plusieurs règles collent, l’ordre tranche&nbsp;: pour pièces, puis suspecte, puis baisse de prix, puis profit.</p>
+            <ul class="sal6">
+              {SALONS.map((x, i) => (
+                <li class={"c-" + CHANNEL_INFO[x.k].c} tabindex="0" style={`--i:${i}`}>
+                  <svg class="draw" viewBox="0 0 120 80" aria-hidden="true" set:html={SALON_ART[x.art]} />
+                  <b>#&nbsp;{CHANNEL_INFO[x.k].name}</b><span>{x.rule}</span>
+                </li>
+              ))}
+            </ul>
+            <p class="stn-p">La mention, elle, dépend du panneau de chaque chasseur. Changez les réglages&nbsp;: elles se recalculent.</p>
+            <div class="who" id="who">
+              <div class="who-deals">
+                <div class="who-tabs" role="tablist" aria-label="Annonce">
+                  {WHO_DEALS.map((sid, i) => (
+                    <button type="button" role="tab" class={"wtab" + (i === 0 ? " on" : "")} aria-selected={i === 0 ? "true" : "false"} data-sid={sid}><span>{bySid[sid].title}</span></button>
+                  ))}
+                </div>
+                <p class="who-bot" id="who-bot"></p>
+                <div class="who-deal" id="who-deal"></div>
+              </div>
+              <div class="who-res" role="tablist" aria-label="Panneau affiché">
+                {[["me", ME], ["other", OTHER]].map(([key, u]: any, i) => (
+                  <button type="button" role="tab" class="hunt-res" data-res={key} aria-selected={i === 0 ? "true" : "false"} aria-controls={"hunt-" + key}>
+                    <span class="hunt-tag">{u.username}</span><span class="hunt-t"></span>
+                  </button>
+                ))}
+              </div>
+              <div class="hunts">
+                {[["me", ME], ["other", OTHER]].map(([key, u]: any, i) => (
+                  <div class={"hunt" + (i === 0 ? " on" : "")} data-u={key} id={"hunt-" + key} role="tabpanel" aria-hidden={i === 0 ? "false" : "true"}>
+                    <div class="dsc hunt-d" set:html={D.panel(u, { compact: true })} />
+                    <p class="hunt-x"><button type="button" class="hunt-off">Fermer Discord ({u.username})</button><span class="hunt-n" aria-live="polite"></span></p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p class="who-note">Réglages de départ&nbsp;: les miens, relevés dans mon panneau (présence mise à ON pour la démo), et pour le second chasseur les valeurs par défaut du code. Panneaux réduits au statut et aux seuils&nbsp;: le panneau complet est dans #settings-etienne, en haut de page. Fermer Discord ne coupe la présence que si Auto-OFF est actif, et ne la rallume jamais.</p>
+            <div class="forks">
+              <div class="fork" tabindex="0">
+                <p class="fk-q">Tout poster, ou trier avant&nbsp;?</p>
+                <p class="fk-y"><b>Tout poster, ne mentionner que l’utile</b><span>Rien n’est perdu, on peut fouiller un salon. Seul ce qui passe vos seuils fait sonner le téléphone.</span></p>
+                <p class="fk-n"><s>N’envoyer que les bonnes affaires</s><span>Impossible ensuite de voir ce que le tri a laissé passer.</span></p>
+              </div>
+            </div>
+            <p class="stn-p small">Sous chaque message, «&nbsp;Signaler&nbsp;» fige le contexte (verdict, profit, signaux) dans la liste de #bot-settings. Les signalements de cette page viennent de là.</p>
+          </section>
+
+          <!-- 8 -->
+          <section class="stn" id="analyser" data-n="8" aria-labelledby="q8">
+            <header class="stn-h"><span class="stn-n">8</span><h2 id="q8">{STEPS[7].q}</h2></header>
+            <p class="stn-p">Claude Haiku lit l’annonce et sa photo, seulement au clic. Le même bouton change de consigne selon le salon&nbsp;: un revendeur partout, un réparateur dans #deals-hs. Réponses écrites pour la démo, au format exact du bot.</p>
+            <div class="ai-fork" aria-hidden="true"><span class="dsc ai-btn"><span class="mb mb-pri">🔍 Analyser</span></span></div>
+            <div class="ai2">
+              {AI8.map((c) => (
+                <div class={"ai-c " + c.k} tabindex="0">
+                  <p class="ai-in"><span class={"salpill c-" + CHANNEL_INFO[c.ch].c}># {CHANNEL_INFO[c.ch].name}</span><span>{c.more}</span></p>
+                  <p class="ai-role"><svg viewBox="0 0 28 28" aria-hidden="true" set:html={c.icon} />Consigne {c.role.toLowerCase()}</p>
+                  <p class="ai-q">{c.q}</p>
+                  {c.axis.zones ? (
+                    <div class="ai-ax" style={`--x:${Math.min(c.axis.mark, 1) * 100}%`}>
+                      <p class="ai-axl">{c.axis.label}</p>
+                      <div class="ai-tr">
+                        {c.axis.zones.map(([t, w, z]: any) => <span class={z} style={`flex:${w}`}>{t}</span>)}
+                        <i class="ai-mk"><b>{c.axis.markTxt}</b></i>
+                      </div>
+                      <p class="ai-tk"><span style="left:35%">{c.axis.ticks[0]}</span><span style="left:55%">{c.axis.ticks[1]}</span></p>
+                      <p class="ai-zl" aria-hidden="true">{c.axis.zones.map(([t, w]: any, i: number) => <span style={`left:${c.axis.zones.slice(0, i).reduce((x: number, z: any) => x + z[1], 0) + w / 2}%`}>{t}</span>)}</p>
+                    </div>
+                  ) : (
+                    <div class="ai-ax steps" style={`--a:${c.axis.span[0] * 25}%;--b:${(4 - c.axis.span[1]) * 25}%`}>
+                      <p class="ai-axl">{c.axis.label}</p>
+                      <div class="ai-tr">
+                        {c.axis.steps.map(([t, z]: any, i: number) => <span class={z + (i >= c.axis.span[0] && i < c.axis.span[1] ? " in" : "")}>{t}</span>)}
+                        <i class="ai-br"><b>{c.axis.spanTxt}</b></i>
+                      </div>
+                    </div>
+                  )}
+                  <p class="ai-axl">Verdicts possibles</p>
+                  <ul class="ai-v">{c.verdicts.map((v, i) => <li class={i === 0 ? "on" : ""}>{v}</li>)}</ul>
+                  <div class="ai-rep">
+                    <div class="dsc ai-box" set:html={D.analysis({ sections: bySid[c.sid].ai!.slice(0, c.sections), quote: c.quote })} />
+                  </div>
+                  <button type="button" class="ai-more" aria-expanded="false">Réponse complète</button>
+                </div>
+              ))}
+            </div>
+            <div class="quota" aria-label="Limites d’appels">
+              {[["20", "appels par heure"], ["50", "par jour"], ["5", "par personne et par heure"]].map(([n, t], i) => <p style={`--i:${i}`}><b>{n}</b><span>{t}</span></p>)}
+            </div>
+            <div class="forks">
+              <div class="fork" tabindex="0">
+                <p class="fk-q">L’IA lit-elle chaque annonce&nbsp;?</p>
+                <p class="fk-y"><b>Non, seulement au clic</b><span>La traduction automatique des annonces a aussi été coupée, le 30&nbsp;mars 2026, pour son coût.</span></p>
+                <p class="fk-n"><s>Haiku sur chaque annonce, avant le tri</s><span>On paierait des analyses que personne n’ouvre.</span></p>
+              </div>
+              <div class="fork" tabindex="0">
+                <p class="fk-q">L’IA réestime-t-elle la revente&nbsp;?</p>
+                <p class="fk-y"><b>Non, elle part des chiffres du bot</b><span>Elle reçoit la revente corrigée et des règles fixes (ratio 0,55 et 0,35), et juge le vendeur et la photo.</span></p>
+                <p class="fk-n"><s>Laisser l’IA estimer le prix</s><span>Elle ne voit pas les ventes&nbsp;: elle inventerait un prix.</span></p>
+              </div>
+            </div>
+            <article class="rep" tabindex="0">
+              <p class="rep-bar"><span class="rep-flag" aria-hidden="true">🚩</span><b>Signalement n°7</b><span class="rep-k">Signalé en avril 2026</span><span class="rep-s ok">Corrigé</span></p>
+              <span class="rep-art term2" aria-hidden="true"><code>titre&nbsp;: RTX 3080 <mark>\udc4d</mark> top état</code><code class="bad">→ Analyser&nbsp;: erreur d’encodage</code><code class="good">→ caractère orphelin retiré, appel OK</code></span>
+              <div class="rep-b">
+                <p class="rep-h">Le demi-émoji qui faisait planter l’analyse</p>
+                <p><b class="rep-l bug">Ce qui arrivait</b> certains clics sur «&nbsp;Analyser&nbsp;» échouaient. Des émojis mal stockés dans les annonces, coupés en deux moitiés, rendaient le texte invalide à l’envoi.</p>
+                <p><b class="rep-l fix">Correctif</b> ces moitiés orphelines sont retirées de chaque champ avant l’appel, et des consignes elles-mêmes (30&nbsp;avril 2026).</p>
+              </div>
+            </article>
+            <p class="stn-end">Fin du trajet&nbsp;: retour au message du début, et à celui qui achète.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Aujourd'hui ========== -->
+  <section class="band b-paper now-band" aria-labelledby="h-now">
+    <div class="wrap endg">
+      <div class="now-txt">
+        <h2 id="h-now" class="now-h">Aujourd’hui, le bot est à l’arrêt.</h2>
+        <ul class="now-l">
+          <li class="ok"><b>Ce qui marchait</b>Le trajet ci-dessus, de bout en bout, couvert par 901 tests automatisés.</li>
+          <li class="wire"><b>Ce qui était branché</b>Forge&nbsp;: des règles propres à chaque chasseur, écrites dans la console de Videntis.</li>
+          <li class="open"><b>Ce qui reste ouvert</b>Les exclusions qui ne lisent que le titre (le bloc à eau, étape 2).</li>
+          <li class="next"><b>La suite</b>Les alertes de prix doivent revenir dans Videntis, sur cette base.</li>
+        </ul>
+        <p class="now-stack">Python, asyncio, discord.py, SQLite, PostgreSQL (lecture seule), Claude Haiku, pytest.</p>
+        <p class="now-links"><a href="/projets/videntis/">← Videntis, le projet principal</a><a href="/">Retour à l’accueil</a></p>
+      </div>
+      <figure class="forge" id="forge">
+        <figcaption class="nx-k2">Une règle Forge, pour l’exemple</figcaption>
+        <div class="rule">
+          <span class="pred" style="--i:0"><em>catégorie</em><b>=</b><i>carte graphique</i></span>
+          <span class="pred" style="--i:1"><em>prix</em><b>≤</b><i>300&nbsp;€</i></span>
+          <span class="pred" style="--i:2"><em>marge</em><b>≥</b><i>60&nbsp;€</i></span>
+          <span class="pred" style="--i:3"><em>titre</em><b>ne contient pas</b><i>«&nbsp;pour pièces&nbsp;»</i></span>
+        </div>
+        <p class="rule-to"><span>→</span><b># deals-forge</b><em>@{ME.username}</em></p>
+        <div class="ops" aria-label="Les dix opérateurs">
+          {["=", "≠", ">", "≥", "<", "≤", "dans", "hors de", "contient", "ne contient pas"].map((o) => <span>{o}</span>)}
+        </div>
+        <ul class="rule-modes">
+          <li><b>Essai</b>, par défaut&nbsp;: la règle note ce qu’elle aurait envoyé, sans rien poster.</li>
+          <li><b>Envoi</b>&nbsp;: elle poste à la place du tri, dans son salon. Si l’envoi échoue, le tri classique reprend.</li>
+          <li>Un champ absent fait échouer la règle&nbsp;: mieux vaut rater une annonce qu’alerter à tort.</li>
+        </ul>
+      </figure>
+    </div>
+    <div class="wrap"><SiteFooter /></div>
+  </section>
+</main>
+
+<script type="application/json" id="live-data" set:html={JSON.stringify(LIVE)}></script>
+<script type="application/json" id="live-names" set:html={JSON.stringify(Object.fromEntries(LIVE_CH.map((c) => [c, CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c])))}></script>
+<script type="application/json" id="who-data" set:html={JSON.stringify({ me: ME, other: OTHER, deals: WHO_DEALS.map((sid) => bySid[sid]), pipeline: PIPELINE, channels: CHANNEL_INFO, pics: Object.fromEntries(Object.keys(PIC).map((k) => [k, PIC[k].bg])), art: Object.fromEntries(WHO_DEALS.map((sid) => [bySid[sid].pic, svgOf(bySid[sid].pic)])) })}></script>
+<script type="application/json" id="dh-data" set:html={DH_DATA}></script>
+<Fragment set:html={"<script>" + engineSrc + "</script><script>" + annSrc + "</script><script>" + dscSrc + "</script>"} />
+<script is:inline>
+  (function () {
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function each(l, f) { Array.prototype.forEach.call(l, f); }
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    // ---------- En-tête : le salon en direct ----------
+    // Les annonces arrivent à intervalles aléatoires. Chacune passe dans le navigateur par le vrai code du bot
+    // (filtres, modèle, profit, mémoire, salon, mentions), avec les réglages laissés dans #bot-settings et #settings-etienne.
+    // « Analyser », « Signaler », la liste des signalements et les panneaux répondent comme le bot (bot.py, report_view.py, settings.py, user_panel.py).
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var op = $("op"), E = window.DealHunterEngine, D = window.DHDiscord;
+      var L = JSON.parse($("live-data").textContent), NAMES = JSON.parse($("live-names").textContent);
+      var raw = JSON.parse($("dh-data").textContent);                  // catalogue GPU (noms) et marché inventé
+      var data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
+      var feeds = {}, chs = {}, cur = "deals_fire", timer = null, paused = false, seen = false, visible = false;
+      var admin = JSON.parse(JSON.stringify(L.pipe)), me = JSON.parse(JSON.stringify(L.me));
+      var state, idx, counts, posts, analyses = 0, reports = [], reportSeq = 0, pending = null, toastT = null;
+      each(op.querySelectorAll(".dsc-feed"), function (f) { feeds[f.getAttribute("data-ch")] = f; });
+      each(op.querySelectorAll(".dsc-side .dsc-ch"), function (b) { chs[b.getAttribute("data-ch")] = b; });
+      function pad(n) { return String(n).padStart(2, "0"); }
+      function now() { var d = new Date(); return "Aujourd’hui à " + d.getHours() + ":" + pad(d.getMinutes()); }
+      function sqlNow() { var d = new Date(); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) + " " + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds()); }
+      function stamp(root) { each(root.querySelectorAll(".msg-h time"), function (t) { t.textContent = now(); }); }
+      function quote(ev) { return (ev.price_drop ? "📉 BAISSE DE PRIX" : D.VERDICT[ev.verdict.k]) + "  " + (ev.matched_model ? ev.matched_model.name : ""); }
+      function atBottom(f) { return f.scrollHeight - f.scrollTop - f.clientHeight < 60; }
+      function toBottom(f, smooth) { f.scrollTo({ top: f.scrollHeight, behavior: smooth && !reduce ? "smooth" : "auto" }); }
+      function frag(html) { var b = document.createElement("div"); b.innerHTML = html; return b.firstElementChild; }
+      function append(ch, html, isNew) {
+        var f = feeds[ch], stick = atBottom(f), el = frag(html);
+        stamp(el);
+        if (isNew && !reduce) el.classList.add("new");
+        f.appendChild(el);
+        if (ch === cur && (stick || isNew)) toBottom(f, true);
+        return el;
+      }
+      function unread(ch, mention) {
+        if (ch === cur) return;
+        chs[ch].classList.add("unr");
+        if (mention) chs[ch].setAttribute("data-m", +(chs[ch].getAttribute("data-m") || 0) + 1);
+        badges();
+      }
+      function badges() {
+        var other = 0;
+        Object.keys(chs).forEach(function (k) {
+          var b = chs[k].querySelector(".dsc-badge"), n = +(chs[k].getAttribute("data-m") || 0);
+          b.hidden = !n; b.textContent = n; if (k !== cur) other += n;
+        });
+        var mb = op.querySelector(".dsc-menu .dsc-badge"); mb.hidden = !other; mb.textContent = other;
+      }
+      function show(ch) {
+        cur = ch;
+        Object.keys(chs).forEach(function (k) { chs[k].classList.toggle("on", k === ch); });
+        Object.keys(feeds).forEach(function (k) { feeds[k].classList.toggle("on", k === ch); });
+        chs[ch].classList.remove("unr"); chs[ch].setAttribute("data-m", "0");
+        $("op-chn").textContent = NAMES[ch]; $("op-in").textContent = NAMES[ch];
+        op.classList.remove("drawer"); badges(); toBottom(feeds[ch], false);
+      }
+      function status() {
+        $("lv-read").textContent = counts.read; $("lv-post").textContent = counts.post; $("lv-out").textContent = counts.out;
+        var done = idx >= L.ads.length;
+        $("lv-st").textContent = done ? "Plus de nouvelles annonces pour l’instant" : paused ? "Bot en pause" : "Bot en chasse";
+        $("op-live").classList.toggle("off", done || paused);
+        $("lv-pause").textContent = done ? "Rejouer" : paused ? "Reprendre" : "Pause";
+      }
+      // Une annonce de plus : le killswitch d'une plateforme la fait sauter avant toute lecture
+      function post(isNew) {
+        while (idx < L.ads.length) {
+          var a = L.ads[idx++];
+          if (!admin[a.platform === "vinted" ? "vinted_enabled" : "lbc_enabled"]) continue;
+          counts.read++;
+          var r = E.processAd({ ad_id: a.id, title: a.title, price_eur: a.price, platform: a.platform, description: a.description, condition: a.condition }, data, state, admin, [me]);
+          if (r.stop) { counts.out++; return; }
+          counts.post++;
+          var who = r.who.filter(function (w) { return w.pinged; }).map(function (w) { return w.name; });
+          var n = posts.length;
+          posts.push({ id: a.id, title: a.title, price: a.price, ch: r.channel, ai: a.ai, hs: a.hs, quote: quote(r.ev) });
+          append(r.channel, "<div class=\"lv\" data-i=\"" + n + "\">" + D.deal({ ev: r.ev, ad: r.ad, token: r.steps[1] && r.steps[1].token, city: a.city, ago: a.ago,
+            who: who, mine: who.length > 0, thumb: L.pics[a.pic] }) + "</div>", isNew);
+          unread(r.channel, who.length > 0);
+          return;
+        }
+      }
+      function schedule() {
+        clearTimeout(timer); timer = null;
+        if (paused || !visible || idx >= L.ads.length) { status(); return; }
+        timer = setTimeout(function () { post(true); status(); schedule(); }, 1800 + Math.random() * 3400);
+        status();
+      }
+      // Mémoire neuve : la première annonce (celle de l'en-tête) est déjà passée
+      function start() {
+        state = { seen: {}, sent: {} }; idx = 0; counts = { read: 1, post: 1, out: 0 }; posts = [L.first];
+        var f = L.first;
+        E.processAd({ ad_id: f.id, title: f.title, price_eur: f.price, platform: f.platform, description: f.description }, data, state, admin, [me]);
+      }
+      function reset() {
+        clearTimeout(timer);
+        Object.keys(feeds).forEach(function (k) { each(feeds[k].querySelectorAll(".lv:not([data-i=\"0\"]), .eph, .lv-rp"), function (n) { n.remove(); }); });
+        Object.keys(chs).forEach(function (k) { chs[k].classList.remove("unr"); chs[k].setAttribute("data-m", "0"); });
+        reports = []; drawAdmin(false); start(); show("deals_fire");
+      }
+      // Panneaux : #bot-settings est renvoyé (nouveau message) après un signalement, édité sur place après un réglage
+      function drawAdmin(resend) {
+        var box = feeds["bot-settings"].querySelector(".lv-adm"), t = box.querySelector(".msg-h time").textContent;
+        var html = D.adminPanel(admin, { reports: reports.length, time: resend ? now() : t });
+        if (resend) { box.remove(); append("bot-settings", "<div class=\"lv-adm\">" + html + "</div>", true); unread("bot-settings", false); }
+        else box.innerHTML = html;
+      }
+      // Réponses visibles par vous seul (messages éphémères de Discord)
+      function eph(inner, cls) {
+        return append(cur, "<div class=\"msg eph" + (cls ? " " + cls : "") + "\">" + D.head({}) + "<div class=\"msg-b\">" + inner +
+          "<p class=\"eph-n\"><span aria-hidden=\"true\">👁</span> Vous seul·e pouvez voir ceci · <button type=\"button\" class=\"eph-x\">Ignorer ce message</button></p></div></div>", true);
+      }
+      function say(text) { toBottom(feeds[cur], true); return eph("<p class=\"msg-c\">" + text + "</p>"); }
+      function toast(text) {
+        var t = $("op-toast"); t.textContent = text; t.hidden = false;
+        clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600);
+      }
+      function reportItems() {
+        return reports.map(function (r) { return { id: r.id, title: r.title, price: r.price, ch: NAMES[r.ch], by: me.username, reason: r.reason, ts: r.ts, i: r.i }; });
+      }
+      function drawList(el, sel) { el.querySelector(".lv-list").innerHTML = D.reports(reportItems(), sel); el.setAttribute("data-sel", sel == null ? "" : sel); }
+      function activeFor(id) { for (var k = 0; k < reports.length; k++) if (reports[k].adId === id) return reports[k]; return null; }
+
+      op.addEventListener("click", function (e) {
+        var t = e.target, b;
+        if ((b = t.closest(".dsc-side .dsc-ch"))) return show(b.getAttribute("data-ch"));
+        if (t.closest(".dsc-menu")) return op.classList.toggle("drawer");
+        if (op.classList.contains("drawer") && !t.closest(".dsc-side")) { op.classList.remove("drawer"); return; }
+        if ((b = t.closest(".eph-x"))) return b.closest(".eph").remove();
+        // Panneau de #bot-settings
+        if ((b = t.closest(".lv-adm button[data-a]"))) {
+          var k = b.getAttribute("data-a");
+          if (k === "reports") {
+            var el = eph("<div class=\"lv-list\"></div>", "lv-rl"); drawList(el, null); toBottom(feeds[cur], true); return;
+          }
+          admin[k] = !admin[k]; return drawAdmin(false);
+        }
+        // Liste des signalements
+        if ((b = t.closest(".lv-rl [data-a]")) && b.tagName === "BUTTON") {
+          var box = b.closest(".lv-rl"), a = b.getAttribute("data-a");
+          if (a === "close") { box.querySelector(".lv-list").innerHTML = "<p class=\"msg-c\">Fermé.</p>"; return; }
+          if (a === "goto") {
+            var target = op.querySelector(".lv[data-i=\"" + b.getAttribute("data-v") + "\"]");
+            if (!target) return say("Message introuvable.");
+            show(target.parentNode.getAttribute("data-ch"));
+            target.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+            target.classList.remove("hl"); void target.offsetWidth; target.classList.add("hl"); return;
+          }
+          if (a === "resolve") {
+            var sel = +box.getAttribute("data-sel");
+            reports = reports.filter(function (r) { return r.id !== sel; });
+            drawAdmin(true); drawList(box, null); return;
+          }
+        }
+        var lv = t.closest(".lv"); if (!lv) return;
+        var ev = posts[+lv.getAttribute("data-i")];
+        if (t.closest(".mb-link")) return toast("Lien désactivé : l’annonce est inventée.");
+        if (t.closest(".mb-pri")) {
+          if (analyses >= 5) return say("⚠️ Limite personnelle atteinte (" + analyses + "/5 analyses cette heure). Réessaie plus tard.");
+          analyses++;
+          var think = append(cur, "<div class=\"msg lv-rp\">" + D.head({}) + "<div class=\"msg-b\"><p class=\"think\">Deal Hunter réfléchit<span class=\"dots\"><i></i><i></i><i></i></span></p></div></div>", true);
+          setTimeout(function () {
+            var box = document.createElement("div"), f = think.parentNode, stick = atBottom(f);
+            box.innerHTML = D.analysis({ sections: ev.ai, quote: ev.quote, cls: "lv-rp" }) + "<p class=\"ai-tag lv-rp\">Réponse écrite pour la démo, au format exact du bot" + (ev.hs ? ", consigne réparateur" : "") + ".</p>";
+            think.replaceWith.apply(think, Array.prototype.slice.call(box.childNodes)); stamp(f);
+            if (stick) toBottom(f, true);
+          }, reduce ? 0 : 1100 + Math.random() * 900);
+          return;
+        }
+        if (t.closest(".mb-dan")) {
+          var ex = activeFor(ev.id);
+          if (ex) return say("⚠️ Cette annonce a déjà un signalement actif (par <span class=\"ment\">@" + me.username + "</span> le " + ex.ts + ").<br>Le signalement sera réactivable une fois résolu.");
+          pending = +lv.getAttribute("data-i"); $("op-why").value = ""; $("op-modal").hidden = false; $("op-why").focus({ preventScroll: true });
+        }
+      });
+      op.addEventListener("change", function (e) {
+        var s = e.target; if (s.tagName !== "SELECT") return;
+        var a = s.getAttribute("data-a");
+        if (a === "pick") return drawList(s.closest(".lv-rl"), s.value === "" ? null : +s.value);
+        admin[a] = +s.value; drawAdmin(false);
+      });
+      function closeModal() { $("op-modal").hidden = true; pending = null; }
+      $("op-cancel").addEventListener("click", closeModal);
+      $("op-modal").addEventListener("click", function (e) { if (e.target.id === "op-modal") closeModal(); });
+      op.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("op-modal").hidden) closeModal(); });
+      $("op-form").addEventListener("submit", function (e) {
+        e.preventDefault(); if (pending === null) return;
+        var p = posts[pending];
+        reports.push({ id: ++reportSeq, adId: p.id, title: p.title, price: p.price, ch: p.ch, reason: $("op-why").value.trim(), ts: sqlNow(), i: pending });
+        closeModal();
+        say("🚩 Signalement enregistré (#" + reportSeq + ").<br>Visible dans <code>#bot-settings</code> → <b>🚩 Voir détails</b>.");
+        drawAdmin(true);
+      });
+      $("lv-pause").addEventListener("click", function () {
+        if (idx >= L.ads.length) { reset(); paused = false; }
+        else paused = !paused;
+        if (reduce) { while (idx < L.ads.length) post(false); status(); return; }
+        schedule();
+      });
+      // Panneau perso de #settings-etienne : mêmes commandes que dans Discord ; les annonces suivantes en tiennent compte
+      D.bindPanel(feeds["settings-etienne"].querySelector(".lv-me"), { host: op, user: function () { return me; },
+        maxGlobal: function () { return admin.max_price; }, change: function () {}, say: function (t) { say(t); } });
+      start(); stamp(feeds.deals_fire); toBottom(feeds.deals_fire, false);
+      if (reduce || !("IntersectionObserver" in window)) {
+        op.classList.add("in");
+        while (idx < L.ads.length) post(false);
+        status(); return;
+      }
+      new IntersectionObserver(function (es) {
+        var e = es[0];
+        visible = e.isIntersecting;
+        if (visible && !seen && e.intersectionRatio >= .3) { seen = true; void op.offsetWidth; op.classList.add("in"); }
+        schedule();
+      }, { threshold: [0, .3] }).observe(op);
+      status();
+    })();
+
+    // ---------- Le trajet : l'étape lue fixe l'état de l'annonce suivie ----------
+    (function () {
+      var fol = document.getElementById("fol"), stns = document.querySelectorAll(".stn"), cur = 0, f = "s1";
+      var ps = document.querySelectorAll(".fs"), dots = fol.querySelectorAll(".fol-dots li");
+      function show() {
+        var n = cur || 1;
+        fol.setAttribute("data-n", n); fol.setAttribute("data-f", f);
+        each(ps, function (p) { p.classList.toggle("on", p.getAttribute("data-f") === f && +p.getAttribute("data-n") === n); });
+        each(stns, function (s) { s.classList.toggle("now", +s.getAttribute("data-n") === n); });
+        each(dots, function (d) { var k = +d.getAttribute("data-n"); d.className = k < n ? "past" : k === n ? "now" : ""; });
+        fol.classList.toggle("lit", n >= 3);
+        var stop = document.querySelector('.fs[data-f="' + f + '"][data-n="' + n + '"]');
+        fol.classList.toggle("stopped", !!(stop && stop.hasAttribute("data-stop")));
+        if (!reduce) { fol.classList.remove("tick"); void fol.offsetWidth; fol.classList.add("tick"); }
+      }
+      each(document.querySelectorAll(".pk"), function (b) {
+        b.addEventListener("click", function () {
+          f = b.getAttribute("data-f");
+          each(document.querySelectorAll(".pk"), function (o) { var on = o === b; o.classList.toggle("on", on); o.setAttribute("aria-selected", String(on)); });
+          each(fol.querySelectorAll(".fol-ann"), function (v) { v.classList.toggle("on", v.getAttribute("data-f") === f); });
+          show();
+        });
+      });
+      show();
+      if (!("IntersectionObserver" in window)) { each(stns, function (s) { s.classList.add("arr"); }); return; }
+      // Étape courante : celle qui traverse le milieu de l'écran
+      var vis = {};
+      var mid = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { vis[e.target.getAttribute("data-n")] = e.isIntersecting; });
+        var n = 0; for (var k = 1; k <= 8; k++) if (vis[k]) n = k;
+        if (n && n !== cur) { cur = n; show(); }
+      }, { rootMargin: "-45% 0px -50% 0px" });
+      // Animation d'arrivée de chaque étape : jouée en entier à chaque entrée à l'écran
+      var arr = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          var s = e.target;
+          if (e.isIntersecting && e.intersectionRatio >= .15) { if (!s.classList.contains("arr")) { void s.offsetWidth; s.classList.add("arr"); } }
+          else if (!e.isIntersecting) s.classList.remove("arr");
+        });
+      }, { threshold: [0, .15] });
+      each(stns, function (s) { mid.observe(s); if (reduce) s.classList.add("arr"); else arr.observe(s); });
+    })();
+
+    // ---------- Survols : sur mobile, le toucher rejoue l'animation ----------
+    each(document.querySelectorAll(".sieve li, .sal6 li, .fork, .rep, .ai-c"), function (el) {
+      el.addEventListener("click", function () {
+        el.classList.remove("play"); void el.offsetWidth; el.classList.add("play");
+        clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove("play"); }, 1600);
+      });
+    });
+
+    // ---------- Étape 8 : déplier la réponse de Haiku ----------
+    each(document.querySelectorAll(".ai-more"), function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var rep = b.previousElementSibling, open = b.getAttribute("aria-expanded") !== "true";
+        rep.style.maxHeight = (open ? rep.scrollHeight : rep.offsetHeight) + "px";
+        void rep.offsetHeight;
+        rep.classList.toggle("open", open); rep.style.maxHeight = open ? rep.scrollHeight + "px" : "";
+        b.setAttribute("aria-expanded", String(open)); b.textContent = open ? "Réduire" : "Réponse complète";
+      });
+    });
+
+    // ---------- Deux chasseurs : les mentions se recalculent ----------
+    // Les quatre annonces sont posées l'une sur l'autre et passent en fondu ; les panneaux sont mis à jour sur place.
+    (function () {
+      var E = window.DealHunterEngine, D = window.DHDiscord, W = JSON.parse(document.getElementById("who-data").textContent);
+      if (!E) return;
+      var raw = JSON.parse(document.getElementById("dh-data").textContent);
+      var data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
+      var users = { me: JSON.parse(JSON.stringify(W.me)), other: JSON.parse(JSON.stringify(W.other)) };
+      var R = W.deals.map(function (s) {
+        return { s: s, r: E.processAd({ ad_id: s.id, title: s.title, price_eur: s.price, platform: s.platform, description: s.description || "", condition: s.condition || null }, data, { seen: {}, sent: {} }, W.pipeline, [users.me]) };
+      });
+      var cur = 0, who = document.getElementById("who"), tabs = who.querySelectorAll(".wtab"), timer = null, steps = 0, touched = false, AUTO = 3600;
+      function eur(x) { var r = Math.round(x); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + " €"; }
+      document.getElementById("who-deal").innerHTML = R.map(function (d, j) {
+        var ev = d.r.ev, ch = W.channels[d.r.channel];
+
+        return "<div class=\"wd" + (j === 0 ? " on" : "") + "\"" + (j ? " aria-hidden=\"true\"" : "") + ">" + window.Annonce.html({ pl: d.s.platform, bg: W.pics[d.s.pic], pics: W.art[d.s.pic] || "",
+            title: esc(d.s.title), price: d.s.price, city: d.s.city, zip: d.s.zip, ago: d.s.ago, brand: d.s.brand, cond: d.s.cond, likes: d.s.likes, ship: d.s.ship, row: true }) +
+          "<p class=\"wd-r\"><span class=\"salpill c-" + ch.c + "\"># " + ch.name + "</span><b>" + eur(ev.best_profit) + "</b> de profit net</p></div>";
+      }).join("");
+      var cards = who.querySelectorAll(".wd");
+      function set(el, html) {                          // change le texte et rejoue un petit fondu, seulement s'il a changé
+        if (el.innerHTML === html) return;
+        el.innerHTML = html; el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip");
+      }
+      function render() {
+        var d = R[cur], ev = d.r.ev;
+        var off = users.me.presence === "OFF" && users.other.presence === "OFF";
+        var res = E.mentions([users.me, users.other], ev, d.r.channel);
+        set(document.getElementById("who-bot"), off ? "<b>Bot en pause</b>&nbsp;: plus personne ne chasse, les annonces ne sont même plus lues." : "<b>Bot en chasse</b>&nbsp;: au moins un chasseur est ON.");
+        who.classList.toggle("paused", off);
+        ["me", "other"].forEach(function (k, j) {
+          var box = who.querySelector("[data-res=\"" + k + "\"]"), r = res[j];
+          ["zz", "yes", "no"].forEach(function (c) { box.classList.toggle(c, c === (off ? "zz" : r.pinged ? "yes" : "no")); });
+          set(box.querySelector(".hunt-t"), off ? "Bot en pause&nbsp;: annonce jamais lue" : r.pinged ? "<b>@" + esc(r.name) + "</b> mentionné" : "Silencieux&nbsp;: " + esc(r.why));
+        });
+        each(cards, function (c, j) { c.classList.toggle("on", j === cur); if (j === cur) c.removeAttribute("aria-hidden"); else c.setAttribute("aria-hidden", "true"); });
+        each(tabs, function (t, j) { t.classList.toggle("on", j === cur); t.setAttribute("aria-selected", String(j === cur)); });
+      }
+      // Défilement automatique : un seul tour des quatre annonces à chaque arrivée, barre de progression sur l'onglet actif
+      function stop() { clearTimeout(timer); timer = null; who.classList.remove("auto"); }
+      function tick() {
+        who.classList.remove("auto"); void who.offsetWidth;
+        if (steps >= R.length) return stop();
+        who.classList.add("auto");
+        timer = setTimeout(function () { steps++; cur = (cur + 1) % R.length; render(); tick(); }, AUTO);
+      }
+      function interact() { touched = true; stop(); }
+      each(tabs, function (t, j) { t.addEventListener("click", function () { interact(); cur = j; render(); }); });
+      // Un panneau à la fois : les deux résultats restent côte à côte et servent d'onglets
+      each(who.querySelectorAll(".hunt-res"), function (b) {
+        b.addEventListener("click", function () {
+          var k = b.getAttribute("data-res");
+          each(who.querySelectorAll(".hunt-res"), function (x) { x.setAttribute("aria-selected", String(x === b)); });
+          each(who.querySelectorAll(".hunt"), function (h) { var on = h.getAttribute("data-u") === k; h.classList.toggle("on", on); h.setAttribute("aria-hidden", String(!on)); });
+        });
+      });
+      ["me", "other"].forEach(function (k) {
+        var col = who.querySelector(".hunt[data-u=\"" + k + "\"]"), box = col.querySelector(".hunt-d"), note = col.querySelector(".hunt-n");
+        function say(text) {
+          var old = box.querySelector(".eph"); if (old) old.remove();
+          box.insertAdjacentHTML("beforeend", "<div class=\"msg eph flip\">" + D.head({}) + "<div class=\"msg-b\"><p class=\"msg-c\">" + text +
+            "</p><p class=\"eph-n\"><span aria-hidden=\"true\">👁</span> Vous seul·e pouvez voir ceci · <button type=\"button\" class=\"eph-x\">Ignorer ce message</button></p></div></div>");
+          box.querySelector(".eph .msg-h time").textContent = "Aujourd’hui à " + new Date().getHours() + ":" + String(new Date().getMinutes()).padStart(2, "0");
+        }
+        box.addEventListener("click", function (e) { var x = e.target.closest(".eph-x"); if (x) x.closest(".eph").remove(); });
+        var ctl = D.bindPanel(box, { compact: true, host: col, user: function () { return users[k]; }, maxGlobal: function () { return W.pipeline.max_price; },
+          say: say, change: function () { interact(); set(note, ""); render(); } });
+        col.querySelector(".hunt-off").addEventListener("click", function () {
+          var u = users[k]; interact();
+          if (u.presence === "OFF") set(note, "Déjà OFF.");
+          else if (u.auto_off === false) set(note, "Auto-OFF désactivé&nbsp;: présence inchangée.");
+          else { u.presence = "OFF"; set(note, "Discord fermé&nbsp;: présence passée à OFF."); }
+          ctl.draw(); render();
+        });
+      });
+      render();
+      if (!reduce && "IntersectionObserver" in window) {
+        new IntersectionObserver(function (es) {
+          if (es[0].isIntersecting) { if (!touched && !timer) { steps = 0; tick(); } }
+          else stop();
+        }, { threshold: .3 }).observe(who);
+      }
+    })();
+
+    // ---------- Forge : la règle se construit à l'arrivée ----------
+    (function () {
+      var fg = document.getElementById("forge");
+      if (reduce || !("IntersectionObserver" in window)) { fg.classList.add("built"); return; }
+      var armed = true;
+      new IntersectionObserver(function (es) {
+        var e = es[0];
+        if (!e.isIntersecting) { if (!armed) { fg.classList.remove("built"); armed = true; } return; }
+        if (armed && e.intersectionRatio >= .35) { armed = false; void fg.offsetWidth; fg.classList.add("built"); }
+      }, { threshold: [0, .35] }).observe(fg);
+    })();
+  })();
+</script>
+</Base>

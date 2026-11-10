@@ -1,0 +1,626 @@
+---
+// Page projet Videntis — maquette v3 : démo fonctionnelle, en-tête animé, survols animés.
+import Base from "../../layouts/Base.astro";
+import SiteHeader from "../../components/SiteHeader.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import MethodPipe from "../../components/MethodPipe.astro";
+import VidentisDemo from "../../components/VidentisDemo.astro";
+import Draw from "../../components/Draw.astro";
+import { Image } from "astro:assets";
+import capVerdict from "../../assets/videntis/cap-verdict.png";
+import capMarche from "../../assets/videntis/cap-marche.png";
+import capScore from "../../assets/videntis/cap-score.png";
+import capPlans from "../../assets/videntis/cap-plans.png";
+import capRepair from "../../assets/videntis/cap-repair.png";
+import { gpuArt, GPUS } from "../../lib/listing-art";
+import "../../styles/projet.css";
+import "../../styles/annonces.css";
+import "../../styles/videntis.css";
+
+const description =
+  "Videntis, SaaS d’intelligence tarifaire pour le matériel PC d’occasion, conçu et codé seul : fonctions, démo interactive, architecture, méthode de travail et difficultés résolues.";
+
+const FAMILIES = [
+  { k: "gpu", n: 139, t: "Cartes graphiques" },
+  { k: "cpu", n: 127, t: "Processeurs" },
+  { k: "mobo", n: 203, t: "Cartes mères" },
+  { k: "psu", n: 149, t: "Alimentations" },
+  { k: "ssd", n: 42, t: "SSD" },
+  { k: "ram", n: 30, t: "Mémoire" },
+];
+const FEATURES = [
+  { k: "lens", t: "Lens", tag: "Extension Chrome", d: "Le verdict s’affiche sur l’annonce que vous regardez. Chaque annonce lue rapporte un crédit." },
+  { k: "estimator", t: "Estimateur", tag: "Achat ou revente", d: "Trois plateformes, cinq états : marge nette, verdict et escalier d’offres." },
+  { k: "catalogue", t: "Catalogue", tag: "690 modèles", d: "Chaque modèle avec sa médiane, sa tendance et sa liquidité." },
+  { k: "watchlist", t: "Watchlist", tag: "Suivi", d: "Les modèles qu’on surveille, toujours sous les yeux." },
+  { k: "stock", t: "Inventaire", tag: "Achats et ventes", d: "La marge réelle de chaque pièce, de l’achat à la revente." },
+  { k: "dashboard", t: "Tableau de bord", tag: "Vue d’ensemble", d: "Capital engagé, profit réalisé, stock à écouler." },
+  { k: "repair", t: "Repair Guide", tag: "37 pannes", d: "Causes probables, diagnostic pas à pas, réparations chiffrées. Fiches rédigées par Claude." },
+  { k: "community", t: "Communauté", tag: "Votes et missions", d: "Les utilisateurs confirment la nature des annonces, à la manière de Waze." },
+];
+
+// ---------- En-tête : quatre annonces inventées, une par verdict ----------
+// Chiffres tirés du moteur de la démo (demo-market.json, inventé) : revente nette, marge, offre maximale.
+const HERO = [
+  { t: [["rtx3080ti", "m"], ["12go", "g"], ["comme", "n"], ["neuf", "n"], ["!!!", "x"]], p: 420, pl: "lbc", meta: "Comme neuf · il y a 4 min",
+    model: "GeForce RTX 3080 Ti", v: "neg", label: "Négocier", ref: 457, pc: "+9 %", why: "+24 % après négo", rot: 2.5, g: 0 },
+  { t: [["MSI", "n"], ["RTX 3080", "m"], ["gaming", "n"], ["Z", "n"], ["trio", "n"], ["10Go", "g"]], p: 255, pl: "lbc", meta: "Bon état · il y a 12 min",
+    model: "GeForce RTX 3080", v: "go", label: "Foncer", ref: 340, pc: "+33 %", why: "à prendre tel quel", rot: -2, g: 1 },
+  { t: [["RTX 4070 Super", "m"], ["dual", "n"], ["OC,", "n"], ["facture", "n"]], p: 560, pl: "vin", meta: "Très bon état · il y a 1 h",
+    model: "GeForce RTX 4070 Super", v: "try", label: "Tenter", ref: 500, pc: "−11 %", why: "offre max 417 €", rot: 1.5, g: 2 },
+  { t: [["RX 6800 XT", "m"], ["16Go", "g"], ["ex-minage", "n"]], p: 450, pl: "ebay", meta: "État correct · il y a 2 h",
+    model: "Radeon RX 6800 XT", v: "pass", label: "Passer", ref: 360, pc: "−20 %", why: "il faudrait −33 %", rot: -1.5, g: 3 },
+];
+// Jauge : barre encre jusqu'au prix demandé, repère à la revente, écart vert (marge) ou rose (trop cher).
+const geo = (p: number, ref: number) => {
+  const max = Math.max(p, ref) * 1.15, P = p / max, Rr = ref / max;
+  return { p: +P.toFixed(3), r: +Rr.toFixed(3), a: +Math.min(P, Rr).toFixed(3), w: +Math.abs(P - Rr).toFixed(3), up: ref > p };
+};
+// Prix au format de chaque site : « 420 € » (Leboncoin), « 560,00 € » (Vinted), « 450,00 EUR » (eBay)
+const PLN: Record<string, string> = { lbc: "Leboncoin", vin: "Vinted", ebay: "eBay" };
+function fmtP(p: number, pl: string) { return pl === "lbc" ? p + "\u00a0€" : p.toFixed(2).replace(".", ",") + (pl === "ebay" ? "\u00a0EUR" : "\u00a0€"); }
+const HERO_JS = HERO.map(({ g, ...s }) => ({ ...s, bg: GPUS[g].bg, g: geo(s.p, s.ref) }));
+const g0 = HERO_JS[0].g;
+---
+<Base title="Videntis, le juste prix du matériel d’occasion" description={description} themeColor="#FFD93B" ogImage="/og-videntis.png" ogImageAlt="Videntis : une annonce de RTX 3080 Ti dessinée, tamponnée « Négocier » (annonce inventée).">
+<SiteHeader />
+
+<main class="v">
+
+  <!-- ========== En-tête ========== -->
+  <section class="band b-yellow v-hero" aria-labelledby="v-title">
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <p class="kicker">Projet 1 · SaaS B2B · 2025–2026</p>
+        <h1 id="v-title" class="v-h1">Videntis</h1>
+        <p class="lead">Le juste prix du matériel PC d’occasion. Videntis lit l’annonce, la ramène au bon modèle et tranche&nbsp;: foncer, négocier, tenter ou passer.</p>
+        <p class="status"><span class="dot" aria-hidden="true"></span>Prêt à lancer. Il manque une communauté.</p>
+        <div class="cta">
+          <a class="vbtn primary" href="#demo">Essayer la démo</a>
+          <a class="vbtn" href="https://videntis-corp.fr" rel="noopener">videntis-corp.fr <span aria-hidden="true">↗</span></a>
+        </div>
+        <ul class="stack" aria-label="Technologies">
+          <li>Python</li><li>FastAPI</li><li>PostgreSQL</li><li>React</li><li>TypeScript</li><li>Stripe</li><li>Claude Haiku</li><li>Docker</li>
+        </ul>
+      </div>
+      <div class="stamp-scene" id="hs">
+        <div class="lot-wrap" aria-hidden="true">
+          <article class={"lot pl-" + HERO[0].pl} style={`--rot:${HERO[0].rot}deg`}>
+            <div class="lot-photo" data-bg={GPUS[0].bg}>
+              {GPUS.map((v, i) => <svg class={"draw gpu-v" + (i === 0 ? " on" : "")} viewBox="0 0 176 100" aria-hidden="true" set:html={gpuArt(v.art)} />)}
+              <span>annonce inventée</span>
+              <b class={"pf " + HERO[0].pl} id="hs-pf">{PLN[HERO[0].pl]}</b>
+              <i class="lot-heart" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.5 8.1 3.6 4.5 7.1 4.5c2 0 3.5 1.1 4.9 2.9 1.4-1.8 2.9-2.9 4.9-2.9 3.5 0 5.6 3.6 4.4 6.8-1.8 4.6-9.3 9.2-9.3 9.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></i>
+            </div>
+            <p class="lot-title" id="hs-title">{HERO[0].t.map(([w, k], i) => <Fragment>{i > 0 && " "}<span class={"tkn " + k}>{w}</span></Fragment>)}</p>
+            <p class="lot-price" id="hs-price">{fmtP(HERO[0].p, HERO[0].pl)}</p>
+            <p class="lot-incl" id="hs-incl" hidden>{fmtP(HERO[0].p, "vin")}</p>
+            <p class="lot-meta" id="hs-meta">{HERO[0].meta}</p>
+            <p class="lot-model" id="hs-model">= {HERO[0].model}</p>
+            <div class="lot-gauge" id="hs-gauge" style={`--p:${g0.p};--r:${g0.r};--a:${g0.a};--w:${g0.w}`}>
+              <div class="g-track"><i class="g-bar"></i><i class={"g-gap" + (g0.up ? "" : " dn")}></i><i class="g-ref"></i></div>
+              <p class="g-note">revente <b id="hs-ref">{HERO[0].ref} €</b> <span class={"pc" + (g0.up ? "" : " dn")} id="hs-pc">{HERO[0].pc}</span> <span class="why" id="hs-why">{HERO[0].why}</span></p>
+            </div>
+          </article>
+          <div class="stamp hit st-neg" id="hs-stamp">Négocier</div>
+        </div>
+        <div class="rack-row">
+          <ul class="rack" aria-hidden="true">
+            <li class="stamp mini st-go" data-v="go">Foncer</li>
+            <li class="stamp mini st-neg lit" data-v="neg">Négocier</li>
+            <li class="stamp mini st-try" data-v="try">Tenter</li>
+            <li class="stamp mini st-pass" data-v="pass">Passer</li>
+          </ul>
+          <button type="button" class="replay" id="hs-next">Autre annonce <span aria-hidden="true">↻</span></button>
+          <p class="sr-only" id="hs-say" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+    <div class="wrap">
+      <ul class="facts">
+        <li><b>690</b><span>modèles reconnus</span><em>cartes graphiques, processeurs, cartes mères…</em></li>
+        <li><b>7&nbsp;918</b><span>écritures ramenées au bon modèle</span><em>« rtx3080ti », « 3080 ti founders »…</em></li>
+        <li><b>46&nbsp;211</b><span>prix de vente observés</span><em>sans garder une seule annonce</em></li>
+        <li><b>1&nbsp;100+</b><span>tests automatisés</span><em>sur l’API et l’extension</em></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ========== Fonctions ========== -->
+  <section class="band b-paper" aria-labelledby="h-fn">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-fn">Huit outils, une question&nbsp;: à quel prix&nbsp;?</h2>
+      <ul class="families" aria-label="Les six familles du catalogue">
+        {FAMILIES.map((f) => (
+          <li class="fam" tabindex="0"><Draw name={f.k} /><b>{f.n}</b><span>{f.t}</span></li>
+        ))}
+      </ul>
+      <ul class="features">
+        {FEATURES.map((f) => (
+          <li class={"feat f-" + f.k} tabindex="0"><div class="feat-art"><Draw name={f.k} /></div><p class="feat-tag">{f.tag}</p><h3>{f.t}</h3><p>{f.d}</p></li>
+        ))}
+      </ul>
+      <p class="also"><b>Et aussi</b> trois formules et des recharges de crédits · un support avec pièces jointes · export et suppression des données (RGPD)</p>
+    </div>
+  </section>
+
+  <!-- ========== Démo ========== -->
+  <section class="band b-blue" id="demo" aria-labelledby="h-demo">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-demo">Une annonce, un verdict.</h2>
+      <p class="intro">Choisissez une annonce ou écrivez la vôtre. Elle suit le vrai chemin de Videntis, avec le code du produit&nbsp;; seuls les prix de revente sont inventés.</p>
+      <VidentisDemo />
+    </div>
+  </section>
+
+  <!-- ========== Captures ========== -->
+  <section class="band b-paper" aria-labelledby="h-shots">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-shots">Le vrai produit.</h2>
+      <p class="intro">Captures de l’application, le 3 novembre 2026. Touchez une image pour l’agrandir.</p>
+      <div class="shots">
+        <figure class="shot s-main">
+          <button type="button" class="zoom" aria-label="Agrandir la capture de l’Estimateur">
+            <Image src={capVerdict} alt="L’Estimateur de Videntis : verdict Négocier pour une RTX 3080 Ti à 420 euros, 37 euros de marge nette, offre agressive conseillée à 376 euros." widths={[800, 1200, 1800, 2340]} sizes="(max-width: 1212px) 100vw, 1180px" />
+          </button>
+          <figcaption>L’Estimateur sur une RTX 3080 Ti à 420&nbsp;€&nbsp;: verdict, marge nette et escalier d’offres.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="zoom" aria-label="Agrandir la capture du positionnement de prix">
+            <Image src={capMarche} alt="Positionnement du prix : histogramme de 33 ventes, le prix demandé de 420 euros est moins cher que 70 % du marché." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
+          </button>
+          <figcaption>Le prix demandé parmi les ventes observées.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="zoom" aria-label="Agrandir la capture de la construction du score">
+            <Image src={capScore} alt="Construction du score : base 70, liquidité moins 5, ajustement de confiance plus 1, total 66 sur 100, confiance globale 77 %." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
+          </button>
+          <figcaption>Le score, expliqué signal par signal.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="zoom" aria-label="Agrandir la capture des formules">
+            <Image src={capPlans} alt="Les trois formules : Free gratuit, Standard 11,99 euros par mois, Pro 24,99 euros par mois, avec crédits mensuels, crédits Lens, historique de marché et inventaire." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
+          </button>
+          <figcaption>Trois formules, payées par Stripe.</figcaption>
+        </figure>
+        <figure class="shot">
+          <button type="button" class="zoom" aria-label="Agrandir la capture du Repair Guide">
+            <Image src={capRepair} alt="Repair Guide, ventilateurs hors service : sévérité, difficulté, taux de réussite, causes probables en pourcentage et étapes de diagnostic." widths={[600, 900, 1200, 1800]} sizes="(max-width: 860px) 100vw, 576px" />
+          </button>
+          <figcaption>Repair Guide&nbsp;: une panne, ses causes probables et le diagnostic pas à pas. Fiches rédigées par Claude.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Architecture ========== -->
+  <section class="band b-ink" aria-labelledby="h-archi">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-archi">Le plan.</h2>
+      <p class="intro">Touchez un bloc pour voir son rôle.</p>
+      <div class="plan" id="plan">
+        <svg class="wires" aria-hidden="true"></svg>
+        <div class="lane"><p class="lane-k">Chez l’utilisateur</p>
+          <button type="button" class="nd on" data-k="lens" id="n-lens"><b>Lens</b><span>extension Chrome</span></button>
+          <button type="button" class="nd" data-k="app" id="n-app"><b>Application</b><span>React</span></button>
+        </div>
+        <div class="lane lane-srv"><p class="lane-k">Serveur · VPS à Paris · Docker</p>
+          <button type="button" class="nd nd-y" data-k="api" id="n-api"><b>API</b><span>FastAPI, Pydantic</span></button>
+          <button type="button" class="nd" data-k="est" id="n-est"><b>Estimateur</b><span>marge et verdict</span></button>
+          <button type="button" class="nd nd-db" data-k="db" id="n-db"><b>PostgreSQL</b><span>prix observés</span></button>
+        </div>
+        <div class="lane"><p class="lane-k">Services</p>
+          <button type="button" class="nd nd-p" data-k="ai" id="n-ai"><b>Claude Haiku</b><span>tri des annonces</span></button>
+          <button type="button" class="nd nd-g" data-k="stripe" id="n-stripe"><b>Stripe</b><span>abonnements</span></button>
+          <button type="button" class="nd" data-k="mail" id="n-mail"><b>Brevo</b><span>e-mails</span></button>
+        </div>
+      </div>
+      <p class="plan-detail" id="plan-detail" aria-live="polite"><b>Lens</b> Lit l’annonce dans le navigateur, la ramène au bon modèle sur place et affiche le verdict par-dessus.</p>
+    </div>
+  </section>
+
+  <!-- ========== Méthode ========== -->
+  <section class="band b-paper" aria-labelledby="h-method">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-method">Comment je travaille.</h2>
+      <p class="intro">Avec des agents IA, en gardant la main sur chaque étape. Ça n’a pas toujours été le cas.</p>
+      <ol class="eras">
+        <li class="era"><Draw name="era-gpt" /><p class="era-k">2025</p><h3>ChatGPT sur mon PC</h3><p>Le code naissait dans la conversation. Je le recopiais sur le VPS, fichier par fichier.</p></li>
+        <li class="era"><Draw name="era-cc" /><p class="era-k">Janvier–février 2026</p><h3>Claude Code sur le VPS</h3><p>L’agent travaille dans le projet&nbsp;: il lit, modifie, lance les tests. Je passe de copiste à relecteur.</p></li>
+        <li class="era"><Draw name="era-lovable" /><p class="era-k">Avril 2026</p><h3>Lovable pour l’interface</h3><p>J’écris les briefs, Claude Code fait le serveur, Lovable l’interface. Je relis chaque diff.</p></li>
+        <li class="era"><Draw name="era-git" /><p class="era-k">30 avril 2026</p><h3>Tout passe sous Git</h3><p>450 commits sur l’API en quatre mois, une branche par chantier, un seul script de mise en ligne.</p></li>
+      </ol>
+      <h3 class="sub-h">Aujourd’hui, chaque fonctionnalité suit ces cinq étapes</h3>
+      <MethodPipe />
+    </div>
+  </section>
+
+  <!-- ========== Choix ========== -->
+  <section class="band b-pink" aria-labelledby="h-choix">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-choix">Six questions, six choix.</h2>
+      <div class="choices">
+        <article class="card">
+          <header class="qh"><span class="qn" aria-hidden="true">1</span><h3 class="q">Comment reconnaître le modèle dans un titre&nbsp;?</h3></header>
+          <p class="a">Avec des règles et un catalogue de 7&nbsp;918 écritures</p>
+          <p class="why">Le même titre donne toujours le même modèle&nbsp;: on peut le tester, et ça tourne dans le navigateur sans rien coûter.</p>
+          <p class="cut"><span>Écarté</span> demander à une IA pour chaque annonce&nbsp;: plus lent, payant, et pas toujours la même réponse.</p>
+        </article>
+        <article class="card">
+          <header class="qh"><span class="qn" aria-hidden="true">2</span><h3 class="q">Comment écarter les fausses annonces&nbsp;?</h3></header>
+          <p class="a">Des règles d’abord, puis Claude Haiku</p>
+          <p class="why">Recherches, boîtes vides, pièces en panne&nbsp;: les règles trient les cas nets, l’IA relit le reste pour environ 0,001&nbsp;$ l’annonce.</p>
+          <p class="cut"><span>Écarté</span> laisser l’IA estimer les prix&nbsp;: ils doivent venir de ventes réelles.</p>
+        </article>
+        <article class="card">
+          <header class="qh"><span class="qn" aria-hidden="true">3</span><h3 class="q">Quand une annonce <span class="nw">est-elle</span> une bonne affaire&nbsp;?</h3></header>
+          <p class="a">Quand la marge de revente le permet</p>
+          <p class="why">On compare le prix demandé au prix de revente, frais déduits, avant puis après la négociation habituelle de la plateforme.</p>
+          <p class="cut"><span>Écarté</span> comparer seulement le prix à la moyenne.</p>
+        </article>
+        <article class="card">
+          <header class="qh"><span class="qn" aria-hidden="true">4</span><h3 class="q">Quand créditer un abonné&nbsp;?</h3></header>
+          <p class="a">Seulement quand Stripe confirme le paiement</p>
+          <p class="why">Un seul signal crédite, la facture payée, au premier mois comme aux renouvellements. Reçu deux fois, il ne crédite qu’une fois.</p>
+          <p class="cut"><span>Écarté</span> créditer dès la fin du formulaire, avant d’être sûr d’être payé.</p>
+        </article>
+        <article class="card">
+          <header class="qh"><span class="qn" aria-hidden="true">5</span><h3 class="q">Comment protéger les données payantes&nbsp;?</h3></header>
+          <p class="a">Le serveur ne les envoie qu’aux comptes qui y ont droit</p>
+          <p class="why">Une donnée cachée à l’écran reste lisible dans le navigateur. Une donnée jamais envoyée, non.</p>
+          <p class="cut"><span>Écarté</span> tout envoyer et masquer dans l’interface.</p>
+        </article>
+        <article class="card">
+          <header class="qh"><span class="qn" aria-hidden="true">6</span><h3 class="q">Que garder des annonces&nbsp;?</h3></header>
+          <p class="a">Le modèle et le prix, rien d’autre</p>
+          <p class="why">Jamais le titre, la photo, l’adresse ou le vendeur&nbsp;: la loi protège les bases de données des sites d’annonces (art. L.341-1). Un prix enregistré n’est jamais modifié.</p>
+          <p class="cut"><span>Écarté</span> copier les annonces telles quelles.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Ce qui a cassé ========== -->
+  <section class="band b-ink" aria-labelledby="h-bugs">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-bugs">Ce qui a cassé, et comment je l’ai réparé.</h2>
+      <div class="incidents">
+        <article class="inc">
+          <p class="i-id">Lens · bug signalé</p>
+          <h3>Le faux « Ti »</h3>
+          <div class="dia" aria-hidden="true">
+            <p class="dia-l">Titre lu&nbsp;: <code>MSI RTX 3080 gaming Z trio</code></p>
+            <p class="dia-r"><span class="when">Avant</span><span class="tok bad">RTX 3080 Ti</span><span class="verd ko">✗ le nom le plus long gagnait</span></p>
+            <p class="dia-r"><span class="when">Après</span><span class="tok good">RTX 3080</span><span class="verd okk">✓ « Ti » absent du titre, refusé</span></p>
+          </div>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>Des RTX 3080 étaient rangées avec les 3080 Ti, plus chères&nbsp;: les prix des deux modèles étaient faussés.</dd></div>
+            <div><dt>La cause</dt><dd>La règle prenait le nom du catalogue le plus long qui ressemblait au titre. « RTX 3080 Ti » contient « RTX 3080 » et il est plus long&nbsp;: il gagnait.</dd></div>
+            <div><dt>La solution</dt><dd>Un modèle dont le suffixe (Ti, Super, XT) n’est pas dans le titre est refusé. Des tests vérifient les paires piège.</dd></div>
+          </dl>
+        </article>
+        <article class="inc">
+          <p class="i-id">Paiement · repéré en relisant le code</p>
+          <h3>Le double crédit</h3>
+          <div class="dia" aria-hidden="true">
+            <p class="dia-r"><span class="when">Avis</span><span class="tok">pas encore traité&nbsp;?</span><span class="verd okk">oui → +1 crédit</span></p>
+            <p class="dia-r"><span class="when">Doublon</span><span class="tok lockd">attend le verrou</span><span class="verd okk">déjà traité → rien</span></p>
+          </div>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>Stripe envoie parfois deux fois le même avis de paiement, au même instant. L’abonné aurait reçu ses crédits deux fois.</dd></div>
+            <div><dt>La cause</dt><dd>La base refusait bien d’enregistrer deux fois l’avis, mais trop tard&nbsp;: les deux traitements avaient déjà vu « pas encore traité » et crédité.</dd></div>
+            <div><dt>La solution</dt><dd>Un verrou par avis&nbsp;: le second attend la fin du premier, voit que c’est fait, et ne crédite pas.</dd></div>
+          </dl>
+        </article>
+        <article class="inc">
+          <p class="i-id">Lens · données</p>
+          <h3>L’annonce d’avant</h3>
+          <div class="dia" aria-hidden="true">
+            <p class="dia-r"><span class="when">Adresse</span><span class="tok">annonce n° 2841</span><span></span></p>
+            <p class="dia-r"><span class="when">Données</span><span class="tok bad">annonce n° 2790</span><span class="verd okk">≠ → lire l’écran</span></p>
+          </div>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>En passant d’une annonce à l’autre sur Leboncoin, Lens enregistrait parfois le prix de l’annonce précédente.</dd></div>
+            <div><dt>La cause</dt><dd>Le site change de page sans la recharger. Les données cachées dans la page restaient celles de la première annonce.</dd></div>
+            <div><dt>La solution</dt><dd>Lens compare le numéro de l’adresse à celui des données. S’ils diffèrent, il lit ce qui est affiché.</dd></div>
+          </dl>
+        </article>
+        <article class="inc">
+          <p class="i-id">Sécurité · incident, août 2026</p>
+          <h3>Deux clés à l’écran</h3>
+          <div class="dia dia-term" aria-hidden="true">
+            <code>$ docker compose config</code>
+            <code>  API_KEY: <mark>••••••••••••</mark></code>
+          </div>
+          <dl class="pcs">
+            <div><dt>Le problème</dt><dd>Pendant une session de travail, une commande a affiché deux clés secrètes en clair dans le terminal.</dd></div>
+            <div><dt>La cause</dt><dd>Cette commande affiche toute la configuration en remplaçant chaque variable par sa valeur, secrets compris.</dd></div>
+            <div><dt>La solution</dt><dd>Clés révoquées et remplacées. Ces commandes sont interdites sans filtre, et le contenu des fichiers est contrôlé avant chaque envoi sur GitHub.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Suite ========== -->
+  <section class="band b-green" aria-labelledby="h-next">
+    <div class="wrap">
+      <h2 class="v-h2" id="h-next">Prêt, pas encore lancé.</h2>
+      <p class="intro">Tout fonctionne, paiement compris. Ce qui manque, ce sont des utilisateurs&nbsp;: ce sont eux qui font tourner la boucle qui garde les prix frais.</p>
+
+      <figure class="nx-box nx-loopbox" id="nx-loop">
+        <figcaption class="nx-k">La boucle qui manque</figcaption>
+        <div class="loop">
+        <ol class="loop-l">
+          <li class="ln ln-1"><span class="ln-n">1</span><b>Lens lit l’annonce</b><span>L’extension reconnaît le modèle et relève le prix demandé.</span></li>
+          <li class="ln ln-2"><span class="ln-n">2</span><b>Le serveur revérifie</b><span>Il relit le titre lui-même, écarte lots, PC complets et prix aberrants.</span></li>
+          <li class="ln ln-3"><span class="ln-n">3</span><b>Un prix de plus</b><span>Compté moins qu’une vente confirmée. L’utilisateur gagne un crédit, le titre n’est pas gardé.</span></li>
+          <li class="ln ln-4"><span class="ln-n">4</span><b>Des prix plus frais</b><span>Plus de modèles couverts, des prix récents&nbsp;: la confiance monte, l’outil attire.</span></li>
+        </ol>
+        <span class="la la-1" aria-hidden="true">→</span><span class="la la-2" aria-hidden="true">→</span><span class="la la-3" aria-hidden="true">→</span><span class="la la-4" aria-hidden="true"><i>→</i><em>et la boucle repart</em></span>
+        </div>
+        <p class="nx-foot">Sans utilisateurs, la boucle ne tourne pas. Il manque du monde, pas du code.</p>
+      </figure>
+
+      <div class="nx-grid">
+        <figure class="nx-box" id="nx-meter">
+          <figcaption class="nx-k">La confiance, jamais 100&nbsp;%</figcaption>
+          <div class="mt" aria-hidden="true">
+            <div class="mt-scale"><i class="z z-lo"></i><i class="z z-mid"></i><i class="z z-hi"></i><i class="z z-cap"></i></div>
+            <div class="mt-ticks"><span style="left:10%">10</span><span style="left:50%">50</span><span style="left:75%">75</span><span style="left:95%">95</span></div>
+            <div class="mt-needle" id="mt-needle" style="--v:70"><b id="mt-val">70&nbsp;%</b></div>
+          </div>
+          <p class="mt-lvl"><span><i class="sw z-lo"></i>basse</span><span><i class="sw z-mid"></i>moyenne</span><span><i class="sw z-hi"></i>haute</span><span><i class="sw z-cap"></i>jamais au-delà de 95&nbsp;%</span></p>
+          <ul class="mt-f">
+            <li data-d="0"><span>Point de départ</span><em>sur 100</em><b>35</b></li>
+            <li data-d="24"><span>Ventes confirmées</span><em>de −18 à +32</em><b>+24</b></li>
+            <li data-d="8"><span>Fraîcheur</span><em>de −22 à +8</em><b>+8</b></li>
+            <li data-d="3"><span>Qualité des données</span><em>de −10 à +8</em><b>+3</b></li>
+          </ul>
+          <p class="mt-ex">Exemple&nbsp;: 30 ventes connues, la dernière il y a 2 jours → <b>70&nbsp;%, moyenne</b>.</p>
+          <p class="mt-down"><span class="stamp mini st-go">Foncer</span><span class="dn-arrow" aria-hidden="true">→</span><span class="stamp mini st-neg">Négocier</span> Confiance basse&nbsp;: le verdict descend d’un cran.</p>
+        </figure>
+        <div class="nx-road">
+          <p class="nx-k">Et maintenant</p>
+          <ol class="road">
+            <li class="rd rd-done"><span class="rd-k">Fait</span><p>Lens, estimateur, catalogue, inventaire, paiement Stripe.</p></li>
+            <li class="rd rd-now"><span class="rd-k">Maintenant</span><p>Réunir une communauté&nbsp;: je filme mes achats-reventes en vidéos courtes (TikTok, Instagram).</p></li>
+            <li class="rd"><span class="rd-k">Ensuite</span><p>Alertes de prix avec Deal Hunter, en cours.</p></li>
+            <li class="rd"><span class="rd-k">En réserve</span><p>Diagnostic de panne par IA (prêt, éteint) et simulateur de réparation (prévu).</p></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band b-paper v-end">
+    <div class="wrap end-grid">
+      <a class="nextcard" href="/projets/deal-hunter/"><span class="n-k">Projet suivant</span><b>Deal Hunter</b><span class="n-d">Le bot qui rangeait chaque nouvelle annonce dans un salon Discord.</span><span class="n-arrow" aria-hidden="true">→</span></a>
+      <a class="back" href="/">← Retour à l’accueil</a>
+    </div>
+    <div class="wrap"><SiteFooter /></div>
+  </section>
+</main>
+
+<dialog class="lightbox" id="lightbox"><button type="button" class="lb-close" aria-label="Fermer">×</button><img alt="" /></dialog>
+
+<script type="application/json" id="hs-data" set:html={JSON.stringify(HERO_JS)}></script>
+<script is:inline>
+  (function () {
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // ---------- En-tête : une annonce arrive, son titre est lu, le tampon tombe ----------
+    // Chaque annonce : elle tombe, son titre est lu, le modèle et la jauge de prix apparaissent,
+    // le tampon tombe. Elle reste affichée, puis sort de côté avec son tampon avant que la suivante
+    // ne tombe : le contenu ne change jamais sous les yeux.
+    var SC = JSON.parse(document.getElementById("hs-data").textContent);
+    var CLS = { go: "st-go", neg: "st-neg", try: "st-try", pass: "st-pass" };
+    var hs = document.getElementById("hs"), lot = hs.querySelector(".lot"), photo = hs.querySelector(".lot-photo");
+    var arts = photo.querySelectorAll(".gpu-v"), gauge = document.getElementById("hs-gauge");
+    var hT = document.getElementById("hs-title"), hStamp = document.getElementById("hs-stamp");
+    var rack = hs.querySelectorAll(".rack li"), sc = 0, hsTimers = [];
+    function $(id) { return document.getElementById(id); }
+    function fill(i) {                                // contenu de la carte seulement
+      var s = SC[i];
+      hT.innerHTML = s.t.map(function (w) { return "<span class=\"tkn " + w[1] + "\">" + w[0] + "</span>"; }).join(" ");
+      var PLN = { lbc: "Leboncoin", vin: "Vinted", ebay: "eBay" }, c2 = function (x) { return x.toFixed(2).replace(".", ","); };
+      $("hs-price").textContent = s.pl === "lbc" ? s.p + "\u00a0€" : c2(s.p) + (s.pl === "ebay" ? "\u00a0EUR" : "\u00a0€");
+      $("hs-incl").hidden = s.pl !== "vin";                 // Vinted : prix avec la protection acheteurs (0,70 € + 5 %)
+      $("hs-incl").textContent = c2(s.p + 0.7 + s.p * 0.05) + "\u00a0€ incl.";
+      $("hs-pf").textContent = PLN[s.pl]; $("hs-pf").className = "pf " + s.pl;
+      lot.className = lot.className.replace(/\bpl-\w+/, "pl-" + s.pl);
+      $("hs-meta").textContent = s.meta;
+      $("hs-model").textContent = "= " + s.model;
+      $("hs-ref").textContent = s.ref + " €";
+      $("hs-pc").textContent = s.pc; $("hs-pc").className = "pc" + (s.g.up ? "" : " dn");
+      $("hs-why").textContent = s.why;
+    }
+    function setScene(i) {
+      var s = SC[i];
+      fill(i);
+      lot.style.setProperty("--rot", s.rot + "deg");
+      photo.setAttribute("data-bg", s.bg);
+      Array.prototype.forEach.call(arts, function (a, k) { a.classList.toggle("on", k === i); });
+      ["p", "r", "a", "w"].forEach(function (k) { gauge.style.setProperty("--" + k, s.g[k]); });
+      gauge.querySelector(".g-gap").className = "g-gap" + (s.g.up ? "" : " dn");
+      hStamp.className = "stamp hit " + CLS[s.v]; hStamp.textContent = s.label;
+    }
+    function rackOn(on) { Array.prototype.forEach.call(rack, function (li) { li.classList.toggle("lit", on && li.getAttribute("data-v") === SC[sc].v); }); }
+    // Toutes les cartes ont la hauteur de la plus haute : rien ne saute sous la carte d'une annonce à l'autre.
+    function sizeCard() {
+      lot.style.minHeight = "";
+      var h = 0;
+      for (var i = 0; i < SC.length; i++) { fill(i); h = Math.max(h, lot.offsetHeight); }
+      fill(sc);
+      if (hs.classList.contains("in") || hs.classList.contains("done")) Array.prototype.forEach.call(hT.querySelectorAll(".tkn"), function (t) { t.classList.add("lit"); });
+      lot.style.minHeight = h + "px";
+    }
+
+    var HOLD = 3000, EXIT = 480;
+    function stop() { hsTimers.forEach(clearTimeout); hsTimers = []; }
+    function reset() {                                // retour instantané au départ, carte invisible
+      hs.className = "stamp-scene pre notr"; rackOn(false);
+      void hs.offsetWidth; hs.classList.remove("notr");
+    }
+    function play() {                                 // joue l'annonce courante depuis le début
+      stop();
+      var toks = hT.querySelectorAll(".tkn");
+      if (reduce) { hs.className = "stamp-scene done"; Array.prototype.forEach.call(toks, function (t) { t.classList.add("lit"); }); rackOn(true); return; }
+      reset();
+      hsTimers.push(setTimeout(function () { hs.className = "stamp-scene in"; }, 60));
+      Array.prototype.forEach.call(toks, function (t, i) { hsTimers.push(setTimeout(function () { t.classList.add("lit"); }, 700 + i * 150)); });
+      var tEnd = 700 + toks.length * 150;
+      hsTimers.push(setTimeout(function () { hs.classList.add("model"); }, tEnd + 150));
+      hsTimers.push(setTimeout(function () { hs.classList.add("slam"); }, tEnd + 950));
+      hsTimers.push(setTimeout(function () { hs.classList.add("done"); rackOn(true); }, tEnd + 1300));
+      hsTimers.push(setTimeout(next, tEnd + 1300 + HOLD));
+    }
+    function next() {                                 // la carte tamponnée sort, la suivante tombe
+      stop();
+      var go = function () { sc = (sc + 1) % SC.length; setScene(sc); play(); };
+      if (reduce) return go();
+      hs.classList.add("out"); rackOn(false);
+      hsTimers.push(setTimeout(go, EXIT));
+    }
+    var armed = true;                                 // l'annonce se rejouera depuis le début à la prochaine arrivée
+    $("hs-next").addEventListener("click", function () {
+      armed = false; next();
+      // La scène est décorative (masquée aux lecteurs d'écran) : le bouton annonce en texte l'annonce qui arrive
+      setTimeout(function () {                        // une fois la nouvelle annonce en place
+        var s = SC[sc]; $("hs-say").textContent = "Annonce inventée : " + s.model + " à " + $("hs-price").textContent + ". Verdict : " + s.label + ".";
+      }, reduce ? 0 : EXIT + 30);
+    });
+    setScene(0);
+    sizeCard();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(sizeCard);
+    var rsz; addEventListener("resize", function () { clearTimeout(rsz); rsz = setTimeout(sizeCard, 150); });
+    if (!reduce) {
+      reset();                                        // pas d'état final visible avant le départ
+      hsTimers.push(setTimeout(play, 350));
+      // La boucle ne dépend pas de l'observateur. Il remet l'annonce au départ quand l'en-tête
+      // a complètement quitté l'écran, et la rejoue en entier quand il en montre au moins un quart.
+      if ("IntersectionObserver" in window) {
+        new IntersectionObserver(function (es) {
+          var e = es[0];
+          if (!e.isIntersecting) { if (!armed) { stop(); reset(); armed = true; } return; }
+          if (armed && e.intersectionRatio >= .25) { armed = false; play(); }
+        }, { threshold: [0, .25] }).observe(hs);
+      }
+    }
+
+    // ---------- Suite : la boucle tourne, la jauge de confiance se construit ----------
+    // Les deux se rejouent depuis le début à chaque arrivée ; hors écran, elles reviennent au départ.
+    // Sans observateur ou en mouvement réduit : état final, statique.
+    (function () {
+      var loopBox = document.getElementById("nx-loop"), meterBox = document.getElementById("nx-meter");
+      var nodes = loopBox.querySelectorAll(".ln"), arrows = loopBox.querySelectorAll(".la");
+      var needle = document.getElementById("mt-needle"), val = document.getElementById("mt-val");
+      var rows = meterBox.querySelectorAll(".mt-f li");
+      if (reduce || !("IntersectionObserver" in window)) return;
+      function each(list, fn) { Array.prototype.forEach.call(list, fn); }
+
+      var lt = null, step = 0;
+      function loopTick() {                          // nœud k, puis la flèche qui mène au suivant
+        var k = Math.floor(step / 2) % nodes.length;
+        each(nodes, function (n, i) { n.classList.toggle("on", i === k); });
+        each(arrows, function (a, i) { a.classList.toggle("on", step % 2 === 1 && i === k); });
+        step = (step + 1) % (nodes.length * 2);
+      }
+      function loopStart() { loopStop(); step = 0; loopTick(); lt = setInterval(loopTick, 750); }
+      function loopStop() { clearInterval(lt); lt = null; each(nodes, function (n) { n.classList.remove("on"); }); each(arrows, function (a) { a.classList.remove("on"); }); }
+
+      var mTimers = [], total = 0;
+      function setNeedle(v, instant) {
+        if (instant) { needle.style.transition = "none"; }
+        needle.style.setProperty("--v", v); val.textContent = v + " %";
+        if (instant) { void needle.offsetWidth; needle.style.transition = ""; }
+      }
+      function meterReset() { mTimers.forEach(clearTimeout); mTimers = []; each(rows, function (r) { r.classList.remove("on"); }); setNeedle(35, true); }
+      function meterPlay() {
+        meterReset(); total = 0;
+        each(rows, function (r, i) {
+          mTimers.push(setTimeout(function () { total += +r.getAttribute("data-d") || 0; r.classList.add("on"); setNeedle(35 + total); }, 300 + i * 750));
+        });
+      }
+      meterReset();                                  // départ silencieux : la section est loin sous la ligne de flottaison
+      function watch(el, start, stop) {
+        var armed = true;
+        new IntersectionObserver(function (es) {
+          var e = es[0];
+          if (!e.isIntersecting) { if (!armed) { stop(); armed = true; } return; }
+          if (armed && e.intersectionRatio >= .35) { armed = false; start(); }
+        }, { threshold: [0, .35] }).observe(el);
+      }
+      watch(loopBox, loopStart, loopStop);
+      watch(meterBox, meterPlay, meterReset);
+    })();
+
+    // ---------- Survol des fonctions : sur mobile, le toucher rejoue l'animation ----------
+    Array.prototype.forEach.call(document.querySelectorAll(".feat, .fam"), function (el) {
+      el.addEventListener("click", function () {
+        el.classList.remove("play"); void el.offsetWidth; el.classList.add("play");
+        clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove("play"); }, 1600);
+      });
+    });
+
+    // ---------- Agrandir une capture ----------
+    var lb = document.getElementById("lightbox"), lbImg = lb.querySelector("img");
+    Array.prototype.forEach.call(document.querySelectorAll(".zoom"), function (b) {
+      b.addEventListener("click", function () {
+        var img = b.querySelector("img");
+        lbImg.src = img.currentSrc || img.src; lbImg.alt = img.alt;
+        if (lb.showModal) lb.showModal();
+      });
+    });
+    lb.addEventListener("click", function (e) { if (e.target === lb || e.target.classList.contains("lb-close")) lb.close(); });
+
+    // ---------- Le plan : liaisons dessinées, détail du bloc choisi ----------
+    var TXT = {
+      lens: ["Lens", "Lit l’annonce dans le navigateur, la ramène au bon modèle sur place et affiche le verdict par-dessus."],
+      app: ["Application", "Tableau de bord, estimateur, catalogue, inventaire, guides. Écrite avec Lovable, relue diff par diff."],
+      api: ["API", "Reçoit les prix observés, vérifie les droits de chaque formule, sert l’application."],
+      est: ["Estimateur", "Choisit la meilleure référence (même état, même plateforme si assez de ventes) et calcule marge et verdict."],
+      db: ["PostgreSQL", "Les prix observés ne sont jamais modifiés. Aucun titre, adresse ou vendeur stocké."],
+      ai: ["Claude Haiku", "Relit chaque annonce pour confirmer que c’est une vraie vente. Seules les vraies ventes comptent dans les prix."],
+      stripe: ["Stripe", "Trois formules et des recharges. Seule la facture payée crédite."],
+      mail: ["Brevo", "Vérification de l’adresse, mot de passe oublié, paiements, support."]
+    };
+    var LINKS = [["n-lens", "n-api", "prix observés"], ["n-app", "n-api", "requêtes"], ["n-api", "n-est", ""], ["n-est", "n-db", ""], ["n-api", "n-ai", "tri"], ["n-stripe", "n-api", "paiements"], ["n-api", "n-mail", "e-mails"]];
+    var plan = document.getElementById("plan"), wires = plan.querySelector(".wires"), det = document.getElementById("plan-detail");
+    function box(el) { var r = el.getBoundingClientRect(), p = plan.getBoundingClientRect(); return { l: r.left - p.left, t: r.top - p.top, w: r.width, h: r.height }; }
+    function anchor(b, to) {
+      var cx = b.l + b.w / 2, cy = b.t + b.h / 2;
+      if (Math.abs(to.x - cx) > b.w / 2) return { x: to.x > cx ? b.l + b.w : b.l, y: cy };
+      return { x: cx, y: to.y > cy ? b.t + b.h : b.t };
+    }
+    var curK = "n-lens";
+    function hi() { Array.prototype.forEach.call(wires.querySelectorAll(".w"), function (w) { w.classList.toggle("hot", w.getAttribute("data-a") === curK || w.getAttribute("data-b") === curK); }); }
+    function draw() {
+      var p = plan.getBoundingClientRect(), html = "";
+      wires.setAttribute("viewBox", "0 0 " + p.width + " " + p.height);
+      if (getComputedStyle(wires).display === "none") return;
+      LINKS.forEach(function (l) {
+        var A0 = box(document.getElementById(l[0])), B0 = box(document.getElementById(l[1]));
+        var A = anchor(A0, { x: B0.l + B0.w / 2, y: B0.t + B0.h / 2 }), B = anchor(B0, { x: A0.l + A0.w / 2, y: A0.t + A0.h / 2 });
+        var mx = (A.x + B.x) / 2;
+        var d = Math.abs(A.x - B.x) < 2 ? "M" + A.x + " " + A.y + "L" + B.x + " " + B.y : "M" + A.x + " " + A.y + "C" + mx + " " + A.y + " " + mx + " " + B.y + " " + B.x + " " + B.y;
+        html += "<path d=\"" + d + "\" class=\"w\" data-a=\"" + l[0] + "\" data-b=\"" + l[1] + "\"/>";
+        if (l[2]) html += "<text x=\"" + mx + "\" y=\"" + ((A.y + B.y) / 2 - 8) + "\" text-anchor=\"middle\">" + l[2] + "</text>";
+      });
+      wires.innerHTML = html; hi();
+    }
+    Array.prototype.forEach.call(plan.querySelectorAll(".nd"), function (n) {
+      function show() {
+        Array.prototype.forEach.call(plan.querySelectorAll(".nd"), function (o) { o.classList.toggle("on", o === n); });
+        var t = TXT[n.getAttribute("data-k")]; det.innerHTML = "<b>" + t[0] + "</b> " + t[1];
+        curK = n.id; hi();
+      }
+      n.addEventListener("click", show);
+      n.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") show(); });
+    });
+    draw();
+    window.addEventListener("resize", draw);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  })();
+</script>
+</Base>

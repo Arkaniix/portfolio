@@ -1,18 +1,26 @@
 # Portfolio Etienne Monat
 
-Site statique : aucune étape de build.
+Site statique construit avec Astro : aucune page n'envoie de JavaScript d'Astro, chaque page porte le sien.
 
-- `index.html` : la page d'accueil (styles et script inclus)
-- `fonts/` : Anybody, Schibsted Grotesk, La Belle Aurore (licence SIL OFL, fichiers LICENSE à côté)
-- `favicon.svg`, `apple-touch-icon.png` : icônes
-- `og.png` : image d'aperçu pour les partages (LinkedIn, messageries)
-- `_headers` : en-têtes de sécurité et de cache, lus par Cloudflare
+- `src/pages/` : une page par fichier. `index.astro` est l'accueil (styles et script propres à la page inclus).
+- `src/layouts/Base.astro` : le `<head>` commun (méta, partage, polices, styles partagés).
+- `src/components/` : en-tête et pied de page communs.
+- `src/styles/site.css` : polices, couleurs, base, en-tête, pied de page.
+- `public/` : copié tel quel (polices sous licence SIL OFL, icônes, `og.png`, `robots.txt`, `_headers`).
+
+## Travailler en local
+
+```sh
+npm install
+npm run dev       # http://localhost:4321
+npm run build     # produit dist/
+```
 
 ## Déploiement
 
-Hébergé sur Cloudflare (Worker à fichiers statiques, relié à ce dépôt) : chaque commit sur `main`
-est redéployé automatiquement. Aucune commande de build, répertoire racine `/`.
+Hébergé sur Cloudflare (Worker à fichiers statiques, relié à ce dépôt). Chaque commit sur `main` est redéployé
+automatiquement ; les autres branches ont une adresse d'aperçu. Le build est lancé par Wrangler (`wrangler.jsonc`,
+champ `build`) et seul `dist/` est publié.
 
-L'adresse publique est écrite à trois endroits de `index.html` (`canonical`, `og:url`, `og:image`),
-actuellement `https://etiennemonat.etiennemonat.workers.dev`. Si elle change (domaine à toi),
-remplace-la à ces trois endroits.
+L'adresse publique est écrite une seule fois, dans `astro.config.mjs` (`site`). Les balises `canonical`, `og:url`
+et `og:image` en découlent : c'est la seule ligne à changer le jour où un nom de domaine arrive.

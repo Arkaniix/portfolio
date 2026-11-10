@@ -1,0 +1,97 @@
+/* Pages projet : gabarit commun (bandes de couleur, titres, boutons, en-tête, chiffres, carte « Projet suivant »).
+   Importé avant la feuille propre à chaque page. */
+
+.v{ display:block; }
+.band{
+  overflow-x:clip;
+  margin-left:calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  margin-right:calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:clamp(64px, 8vw, 112px);
+}
+.wrap{ max-width:1180px; margin-inline:auto; }
+.b-yellow{ background:var(--yellow); color:var(--ink); }
+.b-paper{ background:var(--paper); color:var(--ink); }
+.b-blue{ background:var(--blue); color:#fff; }
+.b-pink{ background:var(--pink); color:var(--ink); }
+.b-ink{ background:var(--ink); color:#fff; }
+.b-green{ background:var(--green); color:var(--ink); }
+
+.v-h1{
+  margin:0; font-family:var(--display); font-weight:inherit;
+  font-size:clamp(88px, 15vw, 196px); line-height:.8; letter-spacing:-.015em;
+  font-variation-settings:"wdth" 64, "wght" 820;
+}
+.v-h2{
+  margin:0 0 14px; font-family:var(--display); font-weight:inherit;
+  font-size:clamp(38px, 5.8vw, 80px); line-height:.95;
+  font-variation-settings:"wdth" 72, "wght" 820; text-wrap:balance;
+}
+.intro{ margin:0 0 clamp(26px, 3.6vw, 40px); font-size:clamp(17px, 1.6vw, 19px); line-height:1.5; max-width:36em; }
+/* Les jambages hauts du titre (interligne .8) débordent d'environ un dixième de sa taille : la marge le compense. */
+.kicker{ margin:0 0 calc(clamp(88px, 15vw, 196px) * .1 + 18px); font-size:14px; font-weight:750; }
+.mono, code{ font-family:var(--mono); }
+code{ font-size:.92em; }
+.draw{ display:block; width:100%; height:auto; overflow:visible; }
+
+/* ---------- Boutons ---------- */
+.vbtn{
+  display:inline-flex; align-items:center; gap:8px; min-height:48px; padding:0 20px;
+  border:2px solid var(--ink); border-radius:6px; color:var(--ink); background:transparent;
+  font-weight:750; font-size:15px; text-decoration:none;
+  transition:transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.vbtn:hover{ transform:translate(3px, -3px); box-shadow:-5px 5px 0 var(--ink); }
+.vbtn.primary{ background:var(--ink); color:var(--yellow); }
+.vbtn.primary:hover{ box-shadow:-5px 5px 0 var(--blue); }
+
+/* ---------- En-tête ---------- */
+.v-hero{ padding-top:calc(64px + env(safe-area-inset-top, 0px) + clamp(36px, 5vw, 72px)); }
+.hero-grid{ display:grid; grid-template-columns:minmax(0, 6fr) minmax(0, 5fr); gap:clamp(28px, 5vw, 72px); align-items:center; }
+.lead{ margin:22px 0 0; font-size:clamp(18px, 1.8vw, 22px); line-height:1.45; max-width:28em; }
+.status{ display:flex; align-items:center; gap:10px; margin:16px 0 0; font-weight:750; font-size:16px; }
+.status .dot{ flex:none; width:11px; height:11px; border-radius:50%; background:var(--green); border:2px solid var(--ink); }
+.cta{ display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+.stack{ list-style:none; margin:22px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:7px; }
+.stack li{ border:1.5px solid var(--ink); border-radius:999px; padding:3px 11px; font-size:13.5px; font-weight:700; }
+
+/* « Photos » de vendeur : un drap, un bureau en bois, un tapis de découpe, un papier ligné, un sol de garage.
+   Sélecteur doublé : le décor l'emporte sur le fond du cadre de chaque page, quel que soit l'ordre des feuilles. */
+[data-bg][data-bg="sheet"]{ background:linear-gradient(118deg, transparent 46%, rgba(17,18,22,.07) 48%, transparent 53%), linear-gradient(64deg, transparent 70%, rgba(17,18,22,.05) 72%, transparent 76%), #EEF0F5; }
+[data-bg][data-bg="wood"]{ background:repeating-linear-gradient(4deg, #E9D9BF 0 10px, #E3CFB0 10px 12px, #EBDDC5 12px 19px); }
+[data-bg][data-bg="mat"]{ background:linear-gradient(rgba(17,18,22,.09) 1px, transparent 1px) 0 0 / 16px 16px, linear-gradient(90deg, rgba(17,18,22,.09) 1px, transparent 1px) 0 0 / 16px 16px, #DCEFE6; }
+[data-bg][data-bg="lined"]{ background:linear-gradient(90deg, transparent 22px, rgba(216,27,106,.35) 22px 23.5px, transparent 23.5px), repeating-linear-gradient(transparent 0 15px, rgba(43,69,255,.18) 15px 16.5px), #FBFAF4; }
+[data-bg][data-bg="floor"]{ background:radial-gradient(rgba(17,18,22,.16) 1px, transparent 1.6px) 0 0 / 9px 9px, radial-gradient(rgba(17,18,22,.08) 1px, transparent 1.6px) 4px 5px / 13px 13px, #E2E0DA; }
+
+/* ---------- Chiffres ---------- */
+.facts{ list-style:none; margin:clamp(44px, 6vw, 68px) 0 0; padding:0; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; }
+.facts li{ background:#fff; border:1.5px solid var(--ink); border-radius:10px; padding:14px 18px 16px; box-shadow:0 4px 0 rgba(17,18,22,.2); display:flex; flex-direction:column; gap:2px; min-width:0; }
+.facts b{ font-family:var(--display); font-weight:inherit; font-variation-settings:"wdth" 70, "wght" 830; font-size:clamp(34px, 3.6vw, 48px); line-height:1; font-variant-numeric:tabular-nums; }
+.facts span{ font-size:15px; font-weight:750; line-height:1.25; }
+.facts em{ font-style:normal; font-size:13px; color:var(--ink-2); line-height:1.35; margin-top:2px; }
+
+/* ---------- Fin ---------- */
+.v-end{ padding-bottom:40px; }
+.end-grid{ display:flex; flex-direction:column; align-items:flex-start; gap:22px; margin-bottom:clamp(56px, 8vw, 96px); }
+.nextcard{
+  position:relative; display:flex; flex-direction:column; gap:6px; width:100%; max-width:720px; text-decoration:none; color:var(--ink);
+  background:var(--pink); border:1.5px solid var(--ink); border-radius:14px; padding:22px 72px 24px 24px; box-shadow:0 5px 0 rgba(17,18,22,.25);
+  transition:transform .22s var(--ease), box-shadow .22s var(--ease);
+}
+.nextcard:hover{ transform:translate(4px, -4px); box-shadow:-7px 7px 0 var(--ink); }
+.n-k{ font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.nextcard b{ font-family:var(--display); font-weight:inherit; font-variation-settings:"wdth" 72, "wght" 830; font-size:clamp(40px, 5vw, 64px); line-height:.95; }
+.n-d{ font-size:16px; max-width:30em; }
+.n-arrow{ position:absolute; right:22px; top:50%; transform:translateY(-50%); font-size:40px; font-weight:800; transition:transform .22s var(--ease); }
+.nextcard:hover .n-arrow{ transform:translate(6px, -50%); }
+.back{ font-weight:750; color:var(--ink); text-underline-offset:5px; }
+
+@media (max-width: 860px){
+  .hero-grid{ grid-template-columns:minmax(0, 1fr); }
+  .facts{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px){
+  .facts b{ font-size:34px; }
+  .nextcard{ padding-right:56px; }
+}

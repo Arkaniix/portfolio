@@ -1,0 +1,17 @@
+// Cloudflare : Worker à fichiers statiques relié au dépôt GitHub.
+// Le build Astro est lancé par Wrangler lui-même (champ "build"), avant chaque déploiement ou aperçu :
+// aucune commande de build à régler dans le tableau de bord. Les dépendances sont installées par
+// Cloudflare à partir de package-lock.json. Seul le dossier construit (dist/) est publié.
+{
+  "name": "etiennemonat",
+  "compatibility_date": "2026-10-01",
+  "build": { "command": "npm run build" },
+  "assets": {
+    "directory": "./dist",
+    // Adresse inconnue : sert dist/404.html (page src/pages/404.astro) avec le statut 404
+    "not_found_handling": "404-page"
+  },
+  // Aperçus de branche (Worker Previews) : bloc obligatoire, vide car les aperçus n'ont besoin
+  // d'aucun réglage propre (pas de variables, secrets ni liaisons).
+  "previews": {}
+}

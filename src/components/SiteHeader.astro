@@ -1,0 +1,38 @@
+---
+// En-tête commun. Sur l'accueil, les boutons pilotent la scène (data-goto) ;
+// sur les autres pages, ce sont des liens vers l'accueil.
+interface Props { home?: boolean }
+const { home = false } = Astro.props;
+---
+{home ? (
+<header class="top" id="top">
+  <div class="container">
+    <button class="brand" type="button" data-goto="0">Etienne Monat</button>
+    <nav aria-label="Navigation principale">
+      <button type="button" data-goto="1">Projets</button>
+      <a class="opt" href="#parcours">Parcours</a>
+      <button type="button" data-goto="4">Contact</button>
+    </nav>
+  </div>
+</header>
+) : (
+<header class="top sub" id="top">
+  <div class="container">
+    <a class="brand" href="/">Etienne Monat</a>
+    <nav aria-label="Navigation principale">
+      <a href="/">Projets</a>
+      <a class="opt" href="/#parcours">Parcours</a>
+      <a href="/#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+<script is:inline>
+  // Pages projet : en-tête transparent sur la bande de couleur, fond papier dès qu'on défile.
+  (function () {
+    var top = document.getElementById("top");
+    function upd() { top.classList.toggle("solid", window.scrollY > 8); }
+    window.addEventListener("scroll", upd, { passive: true });
+    upd();
+  })();
+</script>
+)}

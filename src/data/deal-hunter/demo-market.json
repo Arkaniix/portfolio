@@ -1,0 +1,267 @@
+{
+ "gpu": {
+  "geforce rtx 3080": {
+   "model_id": 1,
+   "name": "GeForce RTX 3080",
+   "median_price": 360,
+   "composite_price": 360,
+   "sample_size": 41,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "geforce rtx 3070": {
+   "model_id": 2,
+   "name": "GeForce RTX 3070",
+   "median_price": 255,
+   "composite_price": 255,
+   "sample_size": 38,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "geforce rtx 4090": {
+   "model_id": 3,
+   "name": "GeForce RTX 4090",
+   "median_price": 1500,
+   "composite_price": 1500,
+   "sample_size": 22,
+   "new_price_eur": 1800,
+   "p25": null
+  },
+  "geforce rtx 3060 ti": {
+   "model_id": 4,
+   "name": "GeForce RTX 3060 Ti",
+   "median_price": 210,
+   "composite_price": 210,
+   "sample_size": 47,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "geforce rtx 3080 ti": {
+   "model_id": 5,
+   "name": "GeForce RTX 3080 Ti",
+   "median_price": 450,
+   "composite_price": 450,
+   "sample_size": 33,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "geforce rtx 3090": {
+   "model_id": 6,
+   "name": "GeForce RTX 3090",
+   "median_price": 600,
+   "composite_price": 600,
+   "sample_size": 19,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "geforce rtx 4060": {
+   "model_id": 7,
+   "name": "GeForce RTX 4060",
+   "median_price": 230,
+   "composite_price": 230,
+   "sample_size": 36,
+   "new_price_eur": 300,
+   "p25": null
+  },
+  "geforce rtx 4060 ti": {
+   "model_id": 8,
+   "name": "GeForce RTX 4060 Ti",
+   "median_price": 290,
+   "composite_price": 290,
+   "sample_size": 24,
+   "new_price_eur": 400,
+   "p25": null
+  },
+  "geforce rtx 4070": {
+   "model_id": 9,
+   "name": "GeForce RTX 4070",
+   "median_price": 420,
+   "composite_price": 420,
+   "sample_size": 29,
+   "new_price_eur": 580,
+   "p25": null
+  },
+  "geforce rtx 4070 super": {
+   "model_id": 10,
+   "name": "GeForce RTX 4070 Super",
+   "median_price": 480,
+   "composite_price": 480,
+   "sample_size": 17,
+   "new_price_eur": 620,
+   "p25": null
+  },
+  "geforce rtx 3060 12gb": {
+   "model_id": 11,
+   "name": "GeForce RTX 3060 12GB",
+   "median_price": 190,
+   "composite_price": 190,
+   "sample_size": 52,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "geforce rtx 3070 ti": {
+   "model_id": 12,
+   "name": "GeForce RTX 3070 Ti",
+   "median_price": 290,
+   "composite_price": 290,
+   "sample_size": 21,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "nvidia geforce rtx 2060": {
+   "model_id": 13,
+   "name": "NVIDIA GeForce RTX 2060",
+   "median_price": 140,
+   "composite_price": 140,
+   "sample_size": 31,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "nvidia geforce rtx 2070 super": {
+   "model_id": 14,
+   "name": "NVIDIA GeForce RTX 2070 Super",
+   "median_price": 190,
+   "composite_price": 190,
+   "sample_size": 26,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "nvidia geforce rtx 2080 ti": {
+   "model_id": 15,
+   "name": "NVIDIA GeForce RTX 2080 Ti",
+   "median_price": 300,
+   "composite_price": 300,
+   "sample_size": 14,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "nvidia geforce rtx 4080": {
+   "model_id": 16,
+   "name": "NVIDIA GeForce RTX 4080",
+   "median_price": 800,
+   "composite_price": 800,
+   "sample_size": 11,
+   "new_price_eur": 1100,
+   "p25": null
+  },
+  "radeon rx 6700 xt": {
+   "model_id": 17,
+   "name": "Radeon RX 6700 XT",
+   "median_price": 240,
+   "composite_price": 240,
+   "sample_size": 34,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "radeon rx 6800 xt": {
+   "model_id": 18,
+   "name": "Radeon RX 6800 XT",
+   "median_price": 340,
+   "composite_price": 340,
+   "sample_size": 27,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "radeon rx 7800 xt": {
+   "model_id": 19,
+   "name": "Radeon RX 7800 XT",
+   "median_price": 400,
+   "composite_price": 400,
+   "sample_size": 18,
+   "new_price_eur": 480,
+   "p25": null
+  },
+  "radeon rx 7900 xtx": {
+   "model_id": 20,
+   "name": "Radeon RX 7900 XTX",
+   "median_price": 650,
+   "composite_price": 650,
+   "sample_size": 9,
+   "new_price_eur": 900,
+   "p25": null
+  },
+  "amd radeon rx 6600": {
+   "model_id": 21,
+   "name": "AMD Radeon RX 6600",
+   "median_price": 150,
+   "composite_price": 150,
+   "sample_size": 40,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "intel arc b580": {
+   "model_id": 22,
+   "name": "Intel Arc B580",
+   "median_price": 220,
+   "composite_price": 220,
+   "sample_size": 8,
+   "new_price_eur": 280,
+   "p25": null
+  }
+ },
+ "cpu": {
+  "amd ryzen 5 5600x": {
+   "model_id": 100,
+   "name": "AMD Ryzen 5 5600X",
+   "median_price": 95,
+   "composite_price": 95,
+   "sample_size": 44,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "amd ryzen 7 5800x": {
+   "model_id": 101,
+   "name": "AMD Ryzen 7 5800X",
+   "median_price": 150,
+   "composite_price": 150,
+   "sample_size": 39,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "amd ryzen 7 5800x3d": {
+   "model_id": 102,
+   "name": "AMD Ryzen 7 5800X3D",
+   "median_price": 230,
+   "composite_price": 230,
+   "sample_size": 28,
+   "new_price_eur": null,
+   "p25": null
+  },
+  "amd ryzen 5 7600x": {
+   "model_id": 103,
+   "name": "AMD Ryzen 5 7600X",
+   "median_price": 160,
+   "composite_price": 160,
+   "sample_size": 21,
+   "new_price_eur": 210,
+   "p25": null
+  },
+  "intel core i5-12400f": {
+   "model_id": 104,
+   "name": "Intel Core i5-12400F",
+   "median_price": 95,
+   "composite_price": 95,
+   "sample_size": 35,
+   "new_price_eur": 130,
+   "p25": null
+  },
+  "intel core i7-12700k": {
+   "model_id": 105,
+   "name": "Intel Core i7-12700K",
+   "median_price": 210,
+   "composite_price": 210,
+   "sample_size": 23,
+   "new_price_eur": 290,
+   "p25": null
+  },
+  "intel core i5-13600k": {
+   "model_id": 106,
+   "name": "Intel Core i5-13600K",
+   "median_price": 220,
+   "composite_price": 220,
+   "sample_size": 19,
+   "new_price_eur": 300,
+   "p25": null
+  }
+ }
+}

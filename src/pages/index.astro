@@ -1,84 +1,12 @@
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Etienne Monat, développeur full-stack</title>
-<meta name="description" content="Développeur full-stack basé dans la Loire, disponible immédiatement. Videntis, Deal Hunter et recon : trois projets conçus et codés seul, de l’interface à la mise en production.">
-<meta name="author" content="Etienne Monat">
-<meta name="theme-color" content="#2B45FF">
-<link rel="canonical" href="https://etiennemonat.etiennemonat.workers.dev/">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preload" href="/fonts/anybody.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
-<meta property="og:type" content="website">
-<meta property="og:locale" content="fr_FR">
-<meta property="og:site_name" content="Etienne Monat">
-<meta property="og:title" content="Etienne Monat, développeur full-stack">
-<meta property="og:description" content="Développeur full-stack basé dans la Loire, disponible immédiatement. Videntis, Deal Hunter et recon : trois projets conçus et codés seul, de l’interface à la mise en production.">
-<meta property="og:url" content="https://etiennemonat.etiennemonat.workers.dev/">
-<meta property="og:image" content="https://etiennemonat.etiennemonat.workers.dev/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<style>
-/* Polices hébergées avec le site (licence SIL OFL, voir /fonts) */
-@font-face{ font-family:"Anybody"; src:url("/fonts/anybody.woff2") format("woff2"); font-weight:100 900; font-stretch:50% 150%; font-style:normal; font-display:swap; }
-@font-face{ font-family:"Schibsted Grotesk"; src:url("/fonts/schibsted-grotesk.woff2") format("woff2"); font-weight:400 900; font-style:normal; font-display:swap; }
-@font-face{ font-family:"La Belle Aurore"; src:url("/fonts/la-belle-aurore.woff2") format("woff2"); font-weight:400; font-style:normal; font-display:swap; }
-html, body{ margin:0; }
-:root{
-  /* Mise en page : cinq diapositives sur une scène collante (texte à gauche, animation à droite) : moi, trois projets, contact. Puis méthode et parcours. Thème unique et coloré, assumé. */
-  --paper:#F3F4F6;
-  --ink:#111216;
-  --ink-2:#4A4E57;
-  --rule:#D3D6DC;
-  --blue:#2B45FF;
-  --yellow:#FFD93B;
-  --pink:#FF4F9A;
-  --pink-ink:#D81B6A;
-  --green:#3DDC97;
-  --white:#FFFFFF;
-  --display:"Anybody", "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font:"Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono:ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --ease:cubic-bezier(.2,.8,.2,1);
-  color-scheme:light;
-}
-*,*::before,*::after{ box-sizing:border-box; }
-body{
-  background:var(--paper);
-  color:var(--ink);
-  font-family:var(--font);
-  font-size:16px;
-  line-height:1.55;
-  -webkit-font-smoothing:antialiased;
-  padding-left:max(16px, env(safe-area-inset-left, 0px));
-  padding-right:max(16px, env(safe-area-inset-right, 0px));
-  overflow-x:clip;
-}
-a{ color:inherit; }
-:focus-visible{ outline:3px solid var(--pink-ink); outline-offset:3px; }
-.container{ max-width:1180px; margin-inline:auto; }
+---
+import Base from "../layouts/Base.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
-/* ---------- En-tête ---------- */
-.top{
-  position:fixed; top:0; left:0; right:0; z-index:30;
-  padding-top:env(safe-area-inset-top, 0px);
-  padding-left:max(16px, env(safe-area-inset-left, 0px));
-  padding-right:max(16px, env(safe-area-inset-right, 0px));
-  color:var(--hfg, #FFFFFF);
-  border-bottom:1px solid transparent;
-  transition:color .4s ease, background-color .3s ease, border-color .3s ease;
-}
-.top.solid{ background:var(--paper); border-bottom-color:var(--rule); color:var(--ink); }
-.top .container{ height:64px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.brand{ font-family:var(--display); font-variation-settings:"wdth" 80, "wght" 820; font-size:21px; text-decoration:none; white-space:nowrap; background:none; border:0; color:inherit; cursor:pointer; padding:10px 0; }
-.top nav{ display:flex; gap:clamp(14px, 3vw, 28px); }
-.top nav button, .top nav a{ appearance:none; background:none; border:0; color:inherit; font:inherit; font-size:15px; font-weight:650; text-decoration:none; padding:10px 0; cursor:pointer; }
-.top nav button:hover, .top nav a:hover{ text-decoration:underline; text-underline-offset:5px; text-decoration-thickness:2px; }
-
+const description = "Développeur full-stack basé dans la Loire, disponible immédiatement. Videntis, Deal Hunter et recon : trois projets conçus et codés seul, de l’interface à la mise en production.";
+---
+<Base title="Etienne Monat, développeur full-stack" description={description}>
+<style is:inline slot="head">
 /* ---------- La scène ---------- */
 .story{
   position:relative;
@@ -124,6 +52,18 @@ a{ color:inherit; }
 .cap p{ margin:0; font-size:clamp(16px, 1.4vw, 18.5px); line-height:1.5; max-width:30em; }
 .cap p + p{ margin-top:10px; }
 .cap .meta{ margin-top:16px; font-size:14px; opacity:.85; }
+/* Lien vers la page du projet : pastille à côté du titre, pour ne rien ajouter à la hauteur du texte */
+.plink{
+  display:inline-flex; align-items:center; gap:6px; margin:-10px 0 -10px 12px; vertical-align:.32em; /* marges négatives : la pastille ne grandit pas la ligne */
+  font-family:var(--font); font-variation-settings:normal; font-size:14px; font-weight:750; line-height:1; letter-spacing:0; white-space:nowrap;
+  padding:7px 12px 8px; border:2px solid var(--fg); border-radius:999px; color:var(--fg); text-decoration:none;
+  transition:transform .2s var(--ease), box-shadow .2s var(--ease), background-color .2s ease, color .2s ease;
+}
+.plink span{ display:inline-block; transition:transform .2s var(--ease); }
+/* « Deal Hunter » est plus long que « Videntis » : pastille un peu plus serrée pour rester sur la ligne du titre à 1440 px */
+.plink.tight{ gap:3px; margin-left:6px; padding-inline:8px; font-size:12.5px; }
+.plink:hover, .plink:focus-visible{ background:var(--fg); color:var(--bgc); transform:translateY(-2px); box-shadow:0 4px 0 var(--fg); }
+.plink:hover span, .plink:focus-visible span{ transform:translateX(3px); }
 .hero-name{
   margin:0 0 18px; width:max-content; max-width:none;
   font-family:var(--display); font-weight:inherit;
@@ -194,9 +134,9 @@ a{ color:inherit; }
   will-change:transform, opacity; opacity:0;
 }
 .chip .src, .tip .src{ grid-column:1 / -1; display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600; line-height:1.25; color:var(--ink-2); }
-.chip .src b, .tip .src b{ font-size:11px; font-weight:800; letter-spacing:.01em; border-radius:3px; padding:1px 6px; color:#fff; background:var(--ink); }
-.chip .src b.s1, .tip .src b.s1{ background:var(--blue); }
-.chip .src b.s2, .tip .src b.s2{ background:var(--pink-ink); }
+.chip .src b, .tip .src b{ font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-size:11px; font-weight:700; letter-spacing:.01em; border-radius:4px; padding:1px 6px; color:#fff; background:#EC5A13; }
+.chip .src b.s1, .tip .src b.s1{ background:#007782; }
+.chip .src b.s2, .tip .src b.s2{ background:#3665F3; }
 .chip .ttl{ display:grid; position:relative; }
 .chip .msg, .chip .cln{ grid-area:1 / 1; }
 .chip .msg{ opacity:calc(1 - var(--sw)); }
@@ -341,27 +281,42 @@ a{ color:inherit; }
 .dh-diff.good{ font-weight:800; }
 .dh-disc{ display:flex; flex-direction:column; min-height:0; contain:size; }
 .dh-disc.on{ box-shadow:-5px 5px 0 var(--ink); }
-.dc{ flex:1; min-height:0; display:flex; flex-direction:column; background:var(--ink); color:#fff; border-radius:7px; overflow:hidden; }
-.dc-head{ display:flex; align-items:center; gap:6px; padding:9px 12px; font-size:13.5px; font-weight:750; border-bottom:1px solid rgba(255,255,255,.14); }
-.dc-head b{ font-size:17px; font-weight:600; opacity:.6; }
-.dc-head span{ margin-left:auto; font-size:11px; font-weight:700; opacity:.6; }
+.dc{ flex:1; min-height:0; display:flex; flex-direction:column; background:#313338; color:#dbdee1; border-radius:7px; overflow:hidden; font-family:"gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.dc-head{ display:flex; align-items:center; gap:6px; padding:9px 12px; font-size:14px; font-weight:600; color:#f2f3f5; box-shadow:0 1px 0 rgba(0,0,0,.3); }
+.dc-head b{ font-size:19px; font-weight:400; color:#80848e; }
 .dc-feed{
   flex:1; min-height:0; display:flex; flex-direction:column; justify-content:flex-end; gap:14px; padding:10px 10px 12px; overflow:hidden;
   -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 36px); mask-image:linear-gradient(to bottom, transparent 0, #000 36px);
 }
-.dc-empty{ margin:auto; font-size:13px; opacity:.6; text-align:center; }
-.dm{ display:grid; grid-template-columns:30px minmax(0, 1fr); gap:9px; flex:none; }
+.dc-empty{ margin:auto; font-size:13px; color:#949ba4; text-align:center; }
+.dm{ display:grid; grid-template-columns:30px minmax(0, 1fr); gap:9px; flex:none; margin:0 -10px; padding:4px 10px 6px; background:rgba(240, 178, 50, .1); box-shadow:inset 2px 0 0 #f0b232; }
 .dm .av{ width:30px; height:30px; border-radius:50%; background:var(--yellow); color:var(--ink); display:grid; place-items:center; font-size:11px; font-weight:900; }
 .dm .db{ min-width:0; }
-.dm .dn{ margin:3px 0 5px; display:flex; align-items:center; gap:6px; font-size:13px; line-height:1.2; }
-.dm .dn b{ font-weight:800; }
-.dm .tag{ font-size:9.5px; font-weight:800; background:var(--blue); color:#fff; border-radius:3px; padding:1px 4px; }
-.emb{ border-left:4px solid var(--green); background:rgba(255,255,255,.08); border-radius:4px; padding:8px 10px 9px; font-size:12.5px; line-height:1.4; }
-.emb .et{ margin:0 0 6px; font-weight:800; font-size:13.5px; line-height:1.3; }
-.emb .ef{ margin:0; }
-.emb .ef + .ef{ margin-top:5px; }
-.emb .ef span{ display:block; font-size:11px; font-weight:800; opacity:.65; }
-.emb .ef.ia span{ color:var(--pink); opacity:1; }
+.dm .dn{ margin:3px 0 3px; display:flex; align-items:center; gap:5px; font-size:13.5px; line-height:1.2; }
+.dm .dn b{ font-weight:500; color:#f2f3f5; }
+.dm .dn time{ font-size:10.5px; color:#949ba4; }
+.dm .dct{ margin:0 0 5px; font-size:12.5px; line-height:1.3; }
+.dm .tag{ font-size:9px; font-weight:600; background:#5865f2; color:#fff; border-radius:3px; padding:1px 4px; }
+.emb{ border-left:4px solid #27AE60; background:#2b2d31; border-radius:4px; padding:7px 10px 8px; font-size:12px; line-height:1.35; }
+.emb .et{ margin:0 0 6px; font-weight:600; font-size:12.5px; line-height:1.3; color:#00a8fc; }
+.emb .efs{ margin:0; display:grid; grid-template-columns:auto minmax(0, 1fr); gap:4px 12px; }
+.emb .efo, .dm .efo{ margin:6px 0 0; font-size:10.5px; color:#949ba4; }
+.emb .ef{ display:flex; flex-direction:column; min-width:0; }
+.emb .ef b{ font-size:11px; font-weight:600; color:#f2f3f5; }
+.dm .at{ background:rgba(88, 101, 242, .3); color:#c9cdfb; border-radius:3px; padding:0 2px; font-weight:500; }
+.dm .btns{ margin:6px 0 0; display:flex; flex-wrap:wrap; gap:4px; }
+.dm .bt{ font-size:10.5px; font-weight:500; color:#fff; background:#4e5058; border-radius:3px; padding:2px 6px; white-space:nowrap; transition:transform .15s ease, box-shadow .15s ease; }
+.dm .bt.ai{ background:#5865f2; }
+.dm .bt.rd{ background:#da373c; }
+.dm .bt.ai.press{ transform:scale(.92); box-shadow:0 0 0 3px #f0b232; }
+.dm .rp{ display:none; margin-top:8px; font-size:12px; line-height:1.35; }
+.dm .rp-re{ margin:0 0 4px; padding-left:16px; position:relative; font-size:10.5px; color:#949ba4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dm .rp-re::before{ content:""; position:absolute; left:2px; top:6px; width:10px; height:8px; border-left:2px solid #4e5058; border-top:2px solid #4e5058; border-top-left-radius:5px; }
+.dm .rp-re b{ color:#c9cdfb; font-weight:500; }
+.dm .rp-e{ border-left:4px solid #3498DB; background:#2b2d31; border-radius:4px; padding:6px 9px 7px; }
+.dm .rp.on{ display:block; }
+.dm .rp-h{ margin:0 0 3px; font-size:12px; font-weight:600; color:#f2f3f5; }
+.dm .rp-t{ margin:0; min-height:1.4em; }
 .dm.new{ animation:dmIn .55s var(--ease) both; }
 @keyframes dmIn{ from{ opacity:0; transform:translateY(18px); } }
 @media (max-height: 680px){
@@ -398,7 +353,12 @@ a{ color:inherit; }
 .viz.small .dc-feed{ flex:none; -webkit-mask-image:none; mask-image:none; padding:8px 8px 10px; }
 .viz.small .dc-head{ padding:7px 10px; font-size:13px; }
 .viz.small .emb{ padding:6px 9px 7px; font-size:12px; }
-.viz.small .emb .et{ font-size:13px; margin-bottom:4px; }
+.viz.small .emb .et{ font-size:12px; margin-bottom:4px; }
+.viz.small .dm .efo, .viz.small .dm .rp-re, .viz.small .emb .efs{ display:none; }
+.viz.small .emb .et{ margin-bottom:0; }
+.viz.small .dm .rp{ margin-top:6px; }
+.viz.small .dm .dn{ margin-bottom:1px; }
+.viz.small .dm .dct{ margin-bottom:4px; }
 .viz.small .dm.new{ animation-delay:.25s; }
 .dh-fly{
   position:absolute; left:0; top:0; z-index:3; white-space:nowrap; opacity:0;
@@ -494,93 +454,7 @@ a{ color:inherit; }
 /* ---------- Après le récit ---------- */
 main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px); padding-block:clamp(80px, 10vw, 140px) 40px; }
 .sec{ margin:0 0 clamp(24px, 3.5vw, 40px); font-family:var(--display); font-weight:inherit; font-size:clamp(40px, 6.2vw, 88px); line-height:.95; font-variation-settings:"wdth" 72, "wght" 820; }
-.lede{ margin:0 0 clamp(28px, 4vw, 44px); font-size:clamp(18px, 2vw, 21px); line-height:1.5; max-width:34em; }
-/* Ma méthode : une fonctionnalité traverse les cinq étapes ; chaque vignette joue son étape au passage */
-.pipe-box{ position:relative; }
-.pipe{ list-style:none; margin:0; padding:0; position:relative; display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:28px; }
-.rail{ position:absolute; background:var(--rule); border-radius:2px; pointer-events:none; }
-.rail-fill{ position:absolute; inset:0; border-radius:2px; background:var(--blue); transform-origin:0 50%; transform:scaleX(var(--f, 0)); }
-.rail.v .rail-fill{ transform-origin:50% 0; transform:scaleY(var(--f, 0)); }
-.token{
-  position:absolute; left:0; top:0; z-index:3; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%;
-  background:var(--blue); border:2.5px solid #fff; box-shadow:0 0 0 1.5px var(--blue), 0 0 0 7px rgba(43,69,255,.16);
-  opacity:0; pointer-events:none;
-}
-.pipe li{
-  position:relative; padding-top:46px; display:flex; flex-direction:column; gap:6px; min-width:0;
-  opacity:0; transform:translateY(18px); transition:opacity .5s ease, transform .7s var(--ease); transition-delay:calc(var(--i) * 90ms);
-}
-.pipe-box.seen .pipe li{ opacity:1; transform:none; }
-.pn{
-  position:absolute; left:0; top:0; z-index:2; width:30px; height:30px; border-radius:50%; display:grid; place-items:center;
-  background:var(--paper); border:2px solid var(--ink-2); font-size:13px; font-weight:800; color:var(--ink-2); font-variant-numeric:tabular-nums;
-  transition:background-color .3s ease, color .3s ease, border-color .3s ease, transform .35s var(--ease);
-}
-.pipe li.cur .pn{ background:var(--blue); border-color:var(--blue); color:#fff; transform:scale(1.15); }
-.pn::after{ content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid var(--blue); opacity:0; pointer-events:none; }
-.pipe li.cur .pn::after{ animation:arrive .7s ease-out; }
-@keyframes arrive{ from{ opacity:.9; transform:scale(1); } to{ opacity:0; transform:scale(2.1); } }
-.pipe li.done .pn{ background:var(--ink); border-color:var(--ink); color:#fff; }
-.pipe strong{ font-size:17px; font-weight:750; transition:color .3s ease; }
-.pipe li.cur strong{ color:var(--blue); }
-.vg{
-  position:relative; height:118px; margin-bottom:10px; padding:9px 11px 10px; overflow:hidden; cursor:default;
-  background:#fff; color:var(--ink); border:1.5px solid var(--ink); border-radius:10px; box-shadow:0 3px 0 rgba(17,18,22,.16);
-  font-size:11.5px; line-height:1.3; transition:box-shadow .3s ease, transform .35s var(--ease);
-}
-.vg > *{ transition:opacity .35s ease; }
-.pipe-box.rst .vg > *{ opacity:0 !important; }
-.pipe li.cur .vg{ box-shadow:-5px 5px 0 var(--ink); transform:translate(3px, -3px); }
-.vg p{ margin:0; }
-.vh{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding-bottom:6px; margin-bottom:7px !important; border-bottom:1px solid var(--rule); font-family:var(--mono); font-size:10.5px; color:var(--ink-2); }
-.vh em{ font-style:normal; font-family:var(--font); font-size:10.5px; font-weight:800; border-radius:999px; padding:1px 7px; }
-/* 1. Spécifications */
-.sr{ display:flex; align-items:center; gap:7px; font-weight:650; white-space:nowrap; }
-.sr + .sr{ margin-top:7px; }
-.ck{ flex:none; width:14px; height:14px; border-radius:4px; border:1.5px solid var(--rule); display:grid; place-items:center; font-size:9px; transition:background-color .2s ease, border-color .2s ease; }
-.ck.on{ background:var(--green); border-color:var(--ink); }
-.ck.on::after{ content:"✓"; font-weight:900; }
-.sb{ flex:1; min-width:16px; height:6px; border-radius:3px; background:#EEF0F3; overflow:hidden; }
-.sb i{ display:block; height:100%; width:0; border-radius:3px; background:var(--ink-2); }
-/* 2. Agents */
-.ag + .ag{ margin-top:10px; }
-.ag p{ display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
-.ag b{ font-weight:800; }
-.ag p span{ color:var(--ink-2); }
-.st{ margin-left:auto; align-self:center; width:8px; height:8px; border-radius:50%; background:var(--rule); }
-.st.run{ background:var(--yellow); box-shadow:0 0 0 2px rgba(255,217,59,.4); animation:blinkSoft .8s ease-in-out infinite; }
-.st.ok{ background:var(--green); box-shadow:0 0 0 1.5px var(--ink); }
-@keyframes blinkSoft{ 50%{ opacity:.35; } }
-.cl{ display:block; height:5px; margin-top:5px; border-radius:3px; background:#EEF0F3; overflow:hidden; }
-.cl i{ display:block; height:100%; width:0; border-radius:3px; }
-.cl.c1 i{ background:var(--pink-ink); }
-.cl.c2 i{ background:var(--blue); }
-/* 3. Relecture */
-.dl{ position:relative; display:flex; align-items:center; gap:6px; height:15px; padding:0 5px; border-radius:3px; font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--ink-2); }
-.dl + .dl{ margin-top:3px; }
-.dl i{ display:block; height:5px; border-radius:3px; background:rgba(17,18,22,.22); }
-.dl.a{ background:#DDF8EB; color:#11834F; }
-.dl.d{ background:#FFE3EF; color:var(--pink-ink); }
-.dl.seen::after{ content:"✓"; position:absolute; right:5px; top:0; font-size:10px; font-weight:900; color:var(--ink); }
-.scan{ position:absolute; left:8px; right:8px; top:0; height:19px; border:1.5px solid var(--ink); border-radius:4px; opacity:0; pointer-events:none; }
-.rv{ background:var(--green); color:var(--ink); opacity:0; transform:scale(.7); transition:opacity .2s ease, transform .3s var(--ease); }
-.rv.on{ opacity:1; transform:none; }
-/* 4. Tests */
-.tr{ display:flex; align-items:center; gap:8px; }
-.tr + .tr{ margin-top:8px; }
-.tr i{ display:block; height:5px; border-radius:3px; background:#EEF0F3; }
-.td{ flex:none; width:15px; height:15px; border-radius:50%; border:1.5px solid var(--rule); display:grid; place-items:center; font-size:9px; transition:background-color .2s ease, border-color .2s ease, transform .3s var(--ease); }
-.td.on{ background:var(--green); border-color:var(--ink); transform:scale(1.1); }
-.td.on::after{ content:"✓"; font-weight:900; }
-.cnt{ background:#EEF0F3; color:var(--ink-2); font-variant-numeric:tabular-nums; }
-.cnt.ok{ background:var(--green); color:var(--ink); }
-/* 5. Déploiement */
-.vg-dep{ background:#0A0B0E; color:#E6F6EE; font-family:var(--mono); font-size:11px; }
-.tl{ line-height:1.55; white-space:nowrap; opacity:0; }
-.tl.t2{ color:var(--green); }
-.tl.t3{ color:rgba(230,246,238,.7); }
-.pb{ display:block; height:6px; margin-top:6px; border-radius:3px; background:rgba(255,255,255,.12); overflow:hidden; }
-.pb i{ display:block; height:100%; width:0; border-radius:3px; background:var(--green); }
+/* Vestige de l’ancienne section « Ma méthode » : ces règles s’appliquent aussi aux points .dot.live de Videntis ; les garder telles quelles. */
 .live{
   position:absolute; right:10px; bottom:9px; font-style:normal; font-family:var(--font); font-size:11px; font-weight:800;
   color:var(--ink); background:var(--green); border-radius:999px; padding:2px 9px; opacity:0; transform:scale(.6);
@@ -588,7 +462,6 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
 }
 .live.on{ opacity:1; transform:none; }
 .live.on::before{ content:""; display:inline-block; width:6px; height:6px; margin-right:5px; border-radius:50%; background:var(--ink); vertical-align:1px; }
-.pd{ font-size:15px; line-height:1.5; color:var(--ink-2); }
 /* Parcours : une ligne qui se trace au défilement ; chaque logo prend ses couleurs quand elle l'atteint */
 .path-box{ position:relative; max-width:860px; --lgw:88px; --lgh:66px; }
 .path{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:22px; }
@@ -629,7 +502,6 @@ main.container{ display:flex; flex-direction:column; gap:clamp(96px, 12vw, 160px
   .path li:hover .lg{ transform:rotate(-5deg) scale(1.06); }
   .path li:hover .yr{ color:var(--blue); }
 }
-footer{ font-size:13px; color:var(--ink-2); }
 
 @media (max-width: 860px){
   .stage-in{ grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr) auto; }
@@ -650,9 +522,6 @@ footer{ font-size:13px; color:var(--ink-2); }
   .seg.on .lab{ display:block; }
   .seg.on{ grid-column:span 2; }
   .bar{ grid-template-columns:repeat(6, minmax(0, 1fr)); }
-  .pipe{ grid-template-columns:minmax(0, 1fr); gap:26px; }
-  .pipe li{ padding-top:0; padding-left:46px; }
-  .vg{ height:108px; max-width:360px; }
 }
 @media (max-width: 860px) and (max-height: 720px){
   .cap .meta{ display:none; }
@@ -665,26 +534,12 @@ footer{ font-size:13px; color:var(--ink-2); }
   .pc{ padding:11px 13px 12px; }
   .pc strong{ font-size:16px; }
   .pw{ font-size:14px; }
-  .top nav .opt{ display:none; }
 }
 @media (prefers-reduced-motion: reduce){
-  .pipe li{ opacity:1; transform:none; }
   .path li{ opacity:1; transform:none; }
-  *,*::before,*::after{ animation:none !important; transition-duration:.01ms !important; }
 }
 </style>
-</head>
-<body>
-<header class="top" id="top">
-  <div class="container">
-    <button class="brand" type="button" data-goto="0">Etienne Monat</button>
-    <nav aria-label="Navigation principale">
-      <button type="button" data-goto="1">Projets</button>
-      <a class="opt" href="#parcours">Parcours</a>
-      <button type="button" data-goto="4">Contact</button>
-    </nav>
-  </div>
-</header>
+<SiteHeader home />
 
 <section class="story" id="story" aria-label="Présentation et projets">
   <div class="stage" id="stage" data-s="0">
@@ -706,8 +561,8 @@ footer{ font-size:13px; color:var(--ink-2); }
         </div>
 
         <div class="cap">
-          <p class="k">Projet 1, SaaS B2B en production</p>
-          <h2>Videntis</h2>
+          <p class="k">Projet 1, SaaS B2B prêt au lancement</p>
+          <h2>Videntis <a class="plink" href="/projets/videntis/">Voir le projet <span aria-hidden="true">→</span></a></h2>
           <p>Sur Leboncoin, Vinted ou eBay, une même carte graphique d’occasion s’écrit de dizaines de façons. Videntis ramène chaque annonce au bon modèle et en tire un prix de référence fiable pour les revendeurs.</p>
           <ol class="phases" id="phases">
             <li class="on">Des annonces de plusieurs sites</li>
@@ -719,8 +574,8 @@ footer{ font-size:13px; color:var(--ink-2); }
 
         <div class="cap">
           <p class="k">Projet 2, module de Videntis</p>
-          <h2>Deal Hunter</h2>
-          <p>Il surveille les nouvelles annonces en continu. Des filtres écartent les lots pour pièces, puis Claude Haiku lit chaque annonce restante et rend son diagnostic. Si le prix passe nettement sous la référence, l’alerte part sur Discord avec ce diagnostic.</p>
+          <h2>Deal Hunter <a class="plink tight" href="/projets/deal-hunter/">Voir le projet <span aria-hidden="true">→</span></a></h2>
+          <p>Il lisait les nouvelles annonces de matériel PC sur Leboncoin et Vinted, reconnaissait le modèle, calculait le profit net à la revente et rangeait l’annonce dans l’un de ses six salons Discord. Un clic sur « Analyser », et Claude Haiku donnait son diagnostic.</p>
           <p class="meta">Python, PostgreSQL, Claude Haiku, Discord. Annonces, diagnostics et prix inventés pour la démonstration.</p>
         </div>
 
@@ -755,46 +610,6 @@ footer{ font-size:13px; color:var(--ink-2); }
 </section>
 
 <main class="container">
-  <section aria-labelledby="h-method">
-    <h2 class="sec" id="h-method">Ma méthode</h2>
-    <p class="lede">Je développe avec des agents IA, et je garde la main sur chaque étape.</p>
-    <div class="pipe-box" id="pipe">
-      <div class="rail" aria-hidden="true"><i class="rail-fill"></i></div>
-      <span class="token" aria-hidden="true"></span>
-      <ol class="pipe">
-        <li style="--i:0"><span class="pn">1</span>
-          <div class="vg vg-spec" aria-hidden="true"><p class="vh"><span>spec.md</span></p>
-            <p class="sr"><b class="ck"></b>Besoin<i class="sb"><i></i></i></p>
-            <p class="sr"><b class="ck"></b>Contraintes<i class="sb"><i></i></i></p>
-            <p class="sr"><b class="ck"></b>Cas limites<i class="sb"><i></i></i></p></div>
-          <strong>Spécifications</strong><span class="pd">J’écris le besoin, les contraintes et les cas limites avant toute ligne de code.</span></li>
-        <li style="--i:1"><span class="pn">2</span>
-          <div class="vg vg-ag" aria-hidden="true">
-            <div class="ag"><p><b>Claude Code</b><span>serveur</span><em class="st"></em></p><i class="cl c1"><i></i></i><i class="cl c1"><i></i></i></div>
-            <div class="ag"><p><b>Lovable</b><span>interface</span><em class="st"></em></p><i class="cl c2"><i></i></i><i class="cl c2"><i></i></i></div></div>
-          <strong>Agents</strong><span class="pd">Claude Code exécute côté serveur, Lovable côté interface.</span></li>
-        <li style="--i:2"><span class="pn">3</span>
-          <div class="vg vg-diff" aria-hidden="true"><p class="vh"><span>diff</span><em class="rv">Relu</em></p>
-            <p class="dl a"><span>+</span><i style="width:72%"></i></p>
-            <p class="dl d"><span>−</span><i style="width:50%"></i></p>
-            <p class="dl a"><span>+</span><i style="width:84%"></i></p>
-            <p class="dl"><span></span><i style="width:60%"></i></p>
-            <b class="scan"></b></div>
-          <strong>Relecture</strong><span class="pd">Je relis chaque diff, jamais le seul résumé de l’agent.</span></li>
-        <li style="--i:3"><span class="pn">4</span>
-          <div class="vg vg-test" aria-hidden="true"><p class="vh"><span>golden master</span><em class="cnt">0/3</em></p>
-            <p class="tr"><b class="td"></b><i style="width:78%"></i></p>
-            <p class="tr"><b class="td"></b><i style="width:60%"></i></p>
-            <p class="tr"><b class="td"></b><i style="width:70%"></i></p></div>
-          <strong>Tests</strong><span class="pd">Une suite golden master fige le comportement de l’estimation de prix.</span></li>
-        <li style="--i:4"><span class="pn">5</span>
-          <div class="vg vg-dep" aria-hidden="true"><p class="tl">$ ./deploy</p><p class="tl t2">dépôt propre ✓</p><p class="tl t3">mise en ligne</p>
-            <i class="pb"><i></i></i><em class="live">En ligne</em></div>
-          <strong>Déploiement</strong><span class="pd">Un seul chemin, qui refuse de partir si le dépôt n’est pas propre.</span></li>
-      </ol>
-    </div>
-  </section>
-
   <section id="parcours" aria-labelledby="h-path">
     <h2 class="sec" id="h-path">Parcours</h2>
     <div class="path-box" id="path">
@@ -836,10 +651,10 @@ footer{ font-size:13px; color:var(--ink-2); }
     </div>
   </section>
 
-  <footer>Etienne Monat, 2026. etiennemonat@outlook.fr. Les annonces, prix et identités montrés dans les animations sont inventés pour la démonstration.</footer>
+  <SiteFooter />
 </main>
 
-<script>
+<script is:inline>
 (function () {
   "use strict";
   var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -869,7 +684,7 @@ footer{ font-size:13px; color:var(--ink-2); }
   /* ---------------- Diapositives ---------------- */
   var WEIGHT = [1, 1, 1, 1, 1];
   // Durée de chaque animation (ms). Deal Hunter : deux annonces complètes, puis la boucle continue
-  var DUR = [1800, 7600, 11900, 7300, 4200];
+  var DUR = [1800, 7600, 12350, 7300, 4200];
   var NS = WEIGHT.length;
   var CUM = [0];
   WEIGHT.forEach(function (w, i) { CUM.push(CUM[i] + w); });
@@ -883,7 +698,7 @@ footer{ font-size:13px; color:var(--ink-2); }
     ["Interface", "React, TypeScript", "#FFD93B"],
     ["Extension navigateur", "Collecte des annonces", "#FFFFFF"],
     ["API", "Python, FastAPI, Pydantic", "#3DDC97"],
-    ["IA", "Claude Haiku en production", "#FF4F9A"],
+    ["IA", "Claude Haiku côté serveur", "#FF4F9A"],
     ["Paiement", "Stripe, webhooks idempotents", "#FFFFFF"],
     ["Données", "PostgreSQL", "#FFD93B"],
     ["Infra et sécurité", "Docker, VPS, Linux", "#3DDC97"]
@@ -938,7 +753,7 @@ footer{ font-size:13px; color:var(--ink-2); }
     var si = SITES.indexOf(site);
     return "<span class=\"src\"><b class=\"s" + si + "\">" + esc(site) + "</b>" + esc(city) + "</span>" +
       "<span class=\"ttl\"><span class=\"msg\">" + parse(title) + "</span>" + (clean ? "<span class=\"cln\">" + esc(clean) + "</span>" : "") + "</span>" +
-      "<span class=\"pz\">" + price + " €</span>" +
+      "<span class=\"pz\">" + (si === 1 ? price.toFixed(2).replace(".", ",") + " €" : si === 2 ? price.toFixed(2).replace(".", ",") + " EUR" : price + " €") + "</span>" +
       (why ? "<span class=\"why\">" + esc(why) + "</span>" : "");
   }
   var REJ_AT = [7, 15, 23, 30];
@@ -1020,7 +835,7 @@ footer{ font-size:13px; color:var(--ink-2); }
   var cKo = traylab.querySelector("#cKo");
 
   // Fin de Videntis : ce que voit un revendeur
-  var SITE_COL = ["#111216", "#2B45FF", "#D81B6A"];
+  var SITE_COL = ["#EC5A13", "#007782", "#3665F3"];
   var SORTED = PRICES.slice().sort(function (a, b) { return a - b; });
   function quant(q) { var i = (SORTED.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return SORTED[lo] + (SORTED[hi] - SORTED[lo]) * (i - lo); }
   var Q1 = Math.round(quant(.25) / 5) * 5, Q3 = Math.round(quant(.75) / 5) * 5;
@@ -1070,37 +885,40 @@ footer{ font-size:13px; color:var(--ink-2); }
     });
   });
 
-  // Deal Hunter : chaque annonce traverse filtres, diagnostic IA et comparaison, puis l'alerte part sur Discord
+  // Deal Hunter : les filtres, le profit net à la revente, le salon ; puis un clic sur « Analyser » et Claude Haiku répond dans le salon
+  var RES = Math.round(REF * .85), SEUIL = 50, QMIN = -20, QMAX = 120;
   var DHL = [
     { site: "Vinted", city: "Lyon", title: "{m:rtx 3080ti} {g:12go} {n:urgent} {n:facture}", p: 390, checks: [1, 1, 1],
-      ai: ["Modèle confirmé : RTX 3080 Ti 12 Go.", "Facture fournie, aucun usage en minage.", "Prix bas dû à une vente urgente."],
-      verdict: "Bonne affaire probable, risque faible", aiShort: "Facture fournie, aucun usage en minage. Prix bas dû à une vente urgente : risque faible." },
-    { site: "Leboncoin", city: "Grenoble", title: "{m:3080 ti} {n:pour pièces}", p: 120, checks: [1, 1, 0] },
-    { site: "eBay", city: "Paris", title: "{b:msi} {m:rtx 3080 ti} {g:12go}", p: 535, checks: [1, 1, 1],
-      ai: ["Modèle confirmé : RTX 3080 Ti 12 Go, MSI.", "Bon état annoncé, vendue sans facture.", "Prix conforme au marché."], verdict: "Prix normal, rien à signaler" },
-    { site: "Leboncoin", city: "Nantes", title: "{b:RTX} {m:3080 Ti} {b:FE} {g:12Go} {n:TBE}", p: 430, checks: [1, 1, 1],
-      ai: ["Modèle confirmé : 3080 Ti Founders Edition.", "Très bon état, boîte d’origine.", "Description détaillée et cohérente."],
-      verdict: "Bonne affaire probable, risque faible", aiShort: "Founders Edition en très bon état, boîte d’origine, description cohérente : risque faible." }
+      ai: "Ratio 0,88 : bon deal, à négocier." },
+    { site: "Leboncoin", city: "Grenoble", title: "{n:PC portable} {b:Legion} {m:RTX 3080 Ti}", p: 480, checks: [0, 1, 1] },
+    { site: "Vinted", city: "Paris", title: "{b:msi} {m:rtx 3080 ti} {g:12go}", p: 410, checks: [1, 1, 1] },
+    { site: "Leboncoin", city: "Nantes", title: "{b:RTX} {m:3080 Ti} {b:FE} {g:12Go} {n:TBE}", p: 360, checks: [1, 1, 1],
+      ai: "Ratio 0,81 : à acheter vite." }
   ];
-  var CK = [700, 1000, 1300], AI_HEAD = 1650, AI_L0 = 2000, AI_LSTEP = 700, AI_LDUR = 600;
-  var VERD = AI_L0 + 3 * AI_LSTEP, G0 = 4400, G1 = 5100, ALERT = 5600, SEUIL = Math.round(REF * .85);
+  function sgn(v) { return (v >= 0 ? "+" : "−") + Math.abs(v) + " €"; }
+  function verdictOf(v) { return v >= 100 ? "ÉNORME DEAL" : v >= 80 ? "TRÈS BON DEAL" : v >= 50 ? "BON PRIX" : v >= 20 ? "PRIX CORRECT" : "PAS RENTABLE"; }
+  var CK = [700, 1000, 1300], P_HEAD = 1650, P_L0 = 2000, P_LSTEP = 700, P_LDUR = 600;
+  var VERD = P_L0 + 3 * P_LSTEP, G0 = 4400, G1 = 5100, ALERT = 5600, CLICK = 6700, REP0 = 7000, REPDUR = 1100;
   DHL.forEach(function (x) {
     x.fail = x.checks.indexOf(0);
-    x.alert = x.fail < 0 && x.p <= SEUIL;
-    x.len = x.fail >= 0 ? CK[x.fail] + 2250 : (x.alert ? 8000 : 6800);
+    x.lbc = RES - x.p; x.vin = Math.round(RES * .95 - 8 - x.p);
+    x.alert = x.fail < 0 && x.lbc >= SEUIL;
+    x.verdict = verdictOf(x.lbc);
+    x.lines = ["Revente estimée : " + RES + " € (" + REF + " € − 15 %)", "Leboncoin, main propre : " + sgn(x.lbc), "Vinted, 5 % et 8 € de port : " + sgn(x.vin)];
+    x.len = x.fail >= 0 ? CK[x.fail] + 2250 : (x.alert ? 9400 : 6800);
   });
-  function pct(p) { return (clamp(p, PMIN, PMAX) - PMIN) / (PMAX - PMIN) * 100; }
+  function qpos(v) { return (clamp(v, QMIN, QMAX) - QMIN) / (QMAX - QMIN) * 100; }
   var dh = make("dh",
     "<div class=\"dh-work\">" +
       "<section class=\"dh-p dh-in\"><h4><i>1</i>Nouvelle annonce</h4><div class=\"dh-card chip\"></div></section>" +
       "<section class=\"dh-p\"><h4><i>2</i>Filtres automatiques</h4><div class=\"bd\"><div><ul class=\"dh-checks\">" +
-        "<li>Modèle reconnu : RTX 3080 Ti</li><li>Variante complète : Ti, 12 Go</li><li>Ni lot pour pièces, ni carte HS</li></ul><p class=\"dh-out\"></p></div></div></section>" +
-      "<section class=\"dh-p\"><h4><i>3</i>Diagnostic IA<span>Claude Haiku</span></h4><div class=\"bd\"><div><div class=\"dh-ai\"><p></p><p></p><p></p><span class=\"dh-verdict\"></span></div></div></div></section>" +
-      "<section class=\"dh-p\"><h4><i>4</i>Comparaison au prix de référence</h4><div class=\"bd\"><div><div class=\"dh-gauge\"><div class=\"gt\"></div><div class=\"gfill\"></div>" +
-        "<div class=\"gth\" style=\"left:" + pct(SEUIL).toFixed(2) + "%\"><span>Seuil d’alerte : −15 %</span></div>" +
-        "<div class=\"gref\" style=\"left:" + pct(REF).toFixed(2) + "%\"><span>Référence " + REF + " €</span></div><div class=\"gm\"></div></div><p class=\"dh-diff\"></p></div></div></section>" +
+        "<li>Ni lot, ni portable, ni boîte vide</li><li>Modèle reconnu : RTX 3080 Ti</li><li>Annonce nouvelle, pas déjà vue</li></ul><p class=\"dh-out\"></p></div></div></section>" +
+      "<section class=\"dh-p\"><h4><i>3</i>Profit net à la revente<span>Référence " + REF + " €</span></h4><div class=\"bd\"><div><div class=\"dh-ai\"><p></p><p></p><p></p><span class=\"dh-verdict\"></span></div></div></div></section>" +
+      "<section class=\"dh-p\"><h4><i>4</i>Quel salon ?</h4><div class=\"bd\"><div><div class=\"dh-gauge\"><div class=\"gt\"></div><div class=\"gfill\"></div>" +
+        "<div class=\"gth\" style=\"left:" + qpos(SEUIL).toFixed(2) + "%\"><span>Seuil : 50 € de profit</span></div>" +
+        "<div class=\"gref\" style=\"left:" + qpos(0).toFixed(2) + "%\"><span>0 €</span></div><div class=\"gm\"></div></div><p class=\"dh-diff\"></p></div></div></section>" +
     "</div>" +
-    "<section class=\"dh-p dh-disc\"><h4><i>5</i>Alerte envoyée sur Discord</h4><div class=\"dc\"><div class=\"dc-head\"><b>#</b> bonnes-affaires<span>Discord</span></div><div class=\"dc-feed\"></div></div></section>" +
+    "<section class=\"dh-p dh-disc\"><h4><i>5</i>Salon Discord</h4><div class=\"dc\"><div class=\"dc-head\"><b>#</b> deals-fire</div><div class=\"dc-feed\"></div></div></section>" +
     "<div class=\"dh-fly\"></div>");
   var dhWork = dh.querySelector(".dh-work");
   var dhPanels = Array.prototype.slice.call(dh.querySelectorAll(".dh-p"));
@@ -1114,14 +932,22 @@ footer{ font-size:13px; color:var(--ink-2); }
   var dhCur = -1, dhFeedKey = null, dhMem = {};
   function memo(key, val, fn) { if (dhMem[key] !== val) { dhMem[key] = val; fn(val); } }
 
-  function dhMsg(x, isNew) {
-    var diff = Math.round((1 - x.p / REF) * 100);
-    return "<div class=\"dm" + (isNew ? " new" : "") + "\"><span class=\"av\">DH</span><div class=\"db\">" +
-      "<p class=\"dn\"><b>Deal Hunter</b><span class=\"tag\">BOT</span></p>" +
-      "<div class=\"emb\"><p class=\"et\">Bonne affaire : RTX 3080 Ti 12 Go à " + x.p + " €</p>" +
-      "<p class=\"ef\"><span>Écart</span>" + diff + " % sous la référence (" + REF + " €)</p>" +
-      "<p class=\"ef\"><span>Annonce</span>" + esc(x.site) + ", " + esc(x.city) + "</p>" +
-      "<p class=\"ef ia\"><span>Diagnostic IA (Claude Haiku)</span>" + esc(x.aiShort) + "</p></div></div></div>";
+  // Message du bot ; done : déjà analysé (réponse de Haiku complète)
+  // Message au format réel du bot (titre, emojis, champs, couleur, boutons), dans le thème sombre de Discord
+  var VEMO = { "ÉNORME DEAL": "🔥", "TRÈS BON DEAL": "💰", "BON PRIX": "👍", "PRIX CORRECT": "ℹ️", "PAS RENTABLE": "⚠️" };
+  var VCOL = { "ÉNORME DEAL": "#2ECC71", "TRÈS BON DEAL": "#27AE60", "BON PRIX": "#F1C40F", "PRIX CORRECT": "#F39C12", "PAS RENTABLE": "#E74C3C" };
+  function dhMsg(x, n, isNew, done) {
+    return "<div class=\"dm" + (isNew ? " new" : "") + "\" data-n=\"" + n + "\"><span class=\"av\">DH</span><div class=\"db\">" +
+      "<p class=\"dn\"><b>Deal Hunter</b><span class=\"tag\">APP</span><time>Aujourd’hui</time></p>" +
+      "<p class=\"dct\"><span class=\"at\">@Etienne</span></p>" +
+      "<div class=\"emb\" style=\"border-left-color:" + VCOL[x.verdict] + "\"><p class=\"et\">🆕 " + VEMO[x.verdict] + " " + x.verdict + "  RTX 3080 Ti</p>" +
+      "<p class=\"efs\"><span class=\"ef\"><b>💰 Prix</b>" + x.p + "€</span><span class=\"ef\"><b>💵 Profit net</b>" + (x.lbc >= 0 ? "+" : "") + x.lbc + "€ via LBC</span>" +
+      "</p>" +
+      "<p class=\"efo\">Deal Hunter • " + (x.site === "Vinted" ? "VINTED" : "LBC") + "</p></div>" +
+      "<p class=\"btns\"><span class=\"bt\">🛒 Acheter</span><span class=\"bt ai" + (done ? " press" : "") + "\">🔍 Analyser</span><span class=\"bt rd\">🚩 Signaler</span></p>" +
+      "<div class=\"rp" + (done ? " on" : "") + "\"><p class=\"rp-re\"><b>@Deal Hunter</b> " + VEMO[x.verdict] + " " + x.verdict + "  RTX 3080 Ti</p>" +
+      "<div class=\"rp-e\"><p class=\"rp-h\">🔍 Analyse du deal</p><p class=\"rp-t\">" + (done ? esc(x.ai) : "") + "</p><p class=\"efo\">Analyse par Claude Haiku (texte + image) • usage personnel</p></div></div>" +
+      "</div></div>";
   }
 
   function dhFrame(el) {
@@ -1156,61 +982,58 @@ footer{ font-size:13px; color:var(--ink-2); }
     });
     var failed = x.fail >= 0 && lt >= CK[x.fail] + 350;
     memo("st", failed ? clamp((lt - CK[x.fail] - 350) / 300, 0, 1).toFixed(2) : "0", function (v) { dhCard.style.setProperty("--st", v); });
-    memo("out", failed ? 1 : 0, function (v) { dhOut.textContent = v ? "Écartée par les filtres, sans appeler l’IA." : ""; });
+    memo("out", failed ? 1 : 0, function (v) { dhOut.textContent = v ? "Écartée : PC portable. Rien n’est posté." : ""; });
 
-    // Diagnostic IA, écrit au fil de l'eau
+    // Profit net, écrit ligne à ligne
     dhLines.forEach(function (p, i) {
       var html = "";
       if (x.fail >= 0) {
-        if (i === 0 && failed) html = "<span class=\"dh-wait\">Non sollicitée : l’annonce a été écartée avant.</span>";
-      } else if (lt >= AI_HEAD) {
-        if (lt < AI_L0) { if (i === 0) html = "<span class=\"dh-wait\">Lecture de l’annonce<span class=\"dots\"></span></span>"; }
+        if (i === 0 && failed) html = "<span class=\"dh-wait\">Pas de calcul : l’annonce a été écartée avant.</span>";
+      } else if (lt >= P_HEAD) {
+        if (lt < P_L0) { if (i === 0) html = "<span class=\"dh-wait\">Calcul<span class=\"dots\"></span></span>"; }
         else {
-          var f = clamp((lt - (AI_L0 + i * AI_LSTEP)) / AI_LDUR, 0, 1);
-          var txt = x.ai[i];
+          var f = clamp((lt - (P_L0 + i * P_LSTEP)) / P_LDUR, 0, 1);
+          var txt = x.lines[i];
           html = esc(txt.slice(0, Math.round(txt.length * f))) + (f > 0 && f < 1 ? "<span class=\"car\"></span>" : "");
         }
       }
       memo("l" + i, html, function (v) { p.innerHTML = v; });
     });
-    memo("vt", x.verdict || "", function (v) { dhVerd.textContent = v; });
+    memo("vt", x.fail < 0 ? x.verdict + " · " + sgn(x.lbc) : "", function (v) { dhVerd.textContent = v; });
     var vd = x.fail < 0 && lt >= VERD ? 1 : 0;
     memo("vd", vd, function (v) { dhVerd.className = "dh-verdict" + (v ? " show" : "") + (x.alert ? "" : " neutral"); });
 
-    // Comparaison au prix de référence
+    // Le profit face au seuil des bonnes affaires
     var g = x.fail < 0 ? ease(clamp((lt - G0) / (G1 - G0), 0, 1)) : 0;
     var showG = x.fail < 0 && lt >= G0 - 200;
-    var mp = lerp(pct(REF), pct(x.p), g);
+    var mp = lerp(qpos(0), qpos(x.lbc), g);
     memo("gm", showG ? mp.toFixed(2) : "off", function () {
       dhMark.style.opacity = showG ? 1 : 0;
       dhMark.style.left = mp.toFixed(2) + "%";
-      var lo = Math.min(mp, pct(REF)), hi = Math.max(mp, pct(REF));
+      var lo = Math.min(mp, qpos(0)), hi = Math.max(mp, qpos(0));
       dhFill.style.left = lo.toFixed(2) + "%"; dhFill.style.width = (hi - lo).toFixed(2) + "%";
       dhFill.className = "gfill" + (x.alert ? " good" : "");
       dhMark.className = "gm" + (x.alert ? " good" : "");
     });
     var dtxt = "";
-    if (x.fail < 0 && lt >= G1) {
-      var d = Math.round(Math.abs(1 - x.p / REF) * 100);
-      dtxt = x.p + " € : " + d + " % " + (x.p < REF ? "sous" : "au-dessus de") + " la référence. " + (x.alert ? "Alerte envoyée." : "Pas d’alerte.");
-    }
+    if (x.fail < 0 && lt >= G1) dtxt = x.alert ? sgn(x.lbc) + " ≥ 50 € : #deals-fire, @Etienne mentionné." : sgn(x.lbc) + " < 50 € : #deals-other, sans mention.";
     memo("dt", dtxt, function (v) { dhDiff.textContent = v; dhDiff.className = "dh-diff" + (x.alert ? " good" : ""); });
 
     // Étape en cours
-    var act = lt < CK[0] ? 0 : (x.fail >= 0 || lt < AI_HEAD ? 1 : (lt < G0 ? 2 : (!x.alert || lt < ALERT ? 3 : 4)));
+    var act = lt < CK[0] ? 0 : (x.fail >= 0 || lt < P_HEAD ? 1 : (lt < G0 ? 2 : (!x.alert || lt < ALERT ? 3 : 4)));
     dhPanels.forEach(function (p, k) {
       var c = k === 4 ? (act === 4 ? "on" : "") : (k === act ? "on" : (k < act ? "done" : (x.fail >= 0 && k > 1 ? "skip" : "pending")));
       memo("p" + k, c, function (v) { p.classList.remove("on", "done", "skip", "pending"); if (v) p.classList.add(v); });
     });
 
-    // L'alerte quitte la jauge et part vers le salon Discord
+    // La mention quitte la jauge et part vers le salon Discord
     var FLY = 650, fly = !small && x.alert && lt >= ALERT - FLY && lt < ALERT + 60;
     if (fly) {
       if (!dhMem.fr) {
         var r0 = dh.getBoundingClientRect(), rg = dhGauge.getBoundingClientRect(), rf = dhFeed.getBoundingClientRect();
-        dhMem.fr = { x0: rg.left + rg.width * pct(x.p) / 100 - r0.left, y0: rg.top + rg.height / 2 - r0.top,
+        dhMem.fr = { x0: rg.left + rg.width * qpos(x.lbc) / 100 - r0.left, y0: rg.top + rg.height / 2 - r0.top,
           x1: rf.left + rf.width / 2 - r0.left, y1: rf.bottom - 50 - r0.top };
-        dhFly.textContent = "Alerte : " + x.p + " €";
+        dhFly.textContent = "@Etienne · " + sgn(x.lbc);
       }
       var fr = dhMem.fr, fk = ease(clamp((lt - (ALERT - FLY)) / FLY, 0, 1));
       var fx = lerp(fr.x0, fr.x1, fk), fy = lerp(fr.y0, fr.y1, fk) - Math.sin(fk * Math.PI) * (small ? 30 : 70);
@@ -1219,16 +1042,23 @@ footer{ font-size:13px; color:var(--ink-2); }
     }
     memo("fly", fly ? 1 : 0, function (v) { if (!v) dhFly.style.opacity = 0; });
 
-    // Sur mobile, le salon Discord remonte par-dessus la chaîne au moment de l'alerte
+    // Sur mobile, le salon Discord remonte par-dessus la chaîne au moment du message
     memo("up", small && x.alert && lt >= ALERT - 350 && lt < x.len - 350 ? 1 : 0, function (v) { dhPanels[4].classList.toggle("up", !!v); dh.classList.toggle("sent", !!v); });
 
-    // Fil Discord : les deux dernières alertes (la dernière seule sur mobile)
+    // Fil Discord : les deux derniers messages (le dernier seul sur mobile)
     var last = fired.slice(small ? -1 : -2), key = last.join(",");
     if (key !== dhFeedKey) {
       var prev = dhFeedKey === null ? [] : dhFeedKey.split(",");
-      dhFeed.innerHTML = last.length ? last.map(function (m) { return dhMsg(DHL[m % DHL.length], prev.indexOf(String(m)) < 0 && dhFeedKey !== null); }).join("")
+      dhFeed.innerHTML = last.length ? last.map(function (m) { return dhMsg(DHL[m % DHL.length], m, prev.indexOf(String(m)) < 0 && dhFeedKey !== null, m !== n); }).join("")
         : "<p class=\"dc-empty\">En attente d’une bonne affaire…</p>";
-      dhFeedKey = key;
+      dhFeedKey = key; delete dhMem.press; delete dhMem.rp;
+    }
+    // Le clic sur « Analyser », puis la réponse de Haiku sous le message
+    var dm = x.alert ? dhFeed.querySelector(".dm[data-n=\"" + n + "\"]") : null;
+    if (dm) {
+      memo("press", lt >= CLICK ? 1 : 0, function (v) { dm.querySelector(".bt.ai").classList.toggle("press", !!v); });
+      var rk = lt >= REP0 ? Math.round(clamp((lt - REP0) / REPDUR, 0, 1) * x.ai.length) : -1;
+      memo("rp", rk, function (v) { var rp = dm.querySelector(".rp"); rp.classList.toggle("on", v >= 0); rp.querySelector(".rp-t").textContent = v > 0 ? x.ai.slice(0, v) : ""; });
     }
   }
 
@@ -1869,127 +1699,6 @@ footer{ font-size:13px; color:var(--ink-2); }
     });
   }
 
-  /* ---------------- Méthode ---------------- */
-  // Une fonctionnalité traverse les cinq étapes ; chaque vignette joue son étape quand elle y arrive.
-  // Au survol, l'étape survolée se rejoue et la boucle attend.
-  var pipe = document.getElementById("pipe");
-  var pipeList = pipe.querySelector(".pipe");
-  var pItems = Array.prototype.slice.call(pipe.querySelectorAll(".pipe > li"));
-  var pBadges = pItems.map(function (li) { return li.querySelector(".pn"); });
-  var pVg = pItems.map(function (li) { return li.querySelector(".vg"); });
-  var rail = pipe.querySelector(".rail"), railFill = pipe.querySelector(".rail-fill"), token = pipe.querySelector(".token");
-  var P_STEP = 1750, P_TRAVEL = 480, P_PLAY = 1250, P_T0 = 900, P_HOLD = 1600;
-  var P_LOOP = 4 * P_STEP + P_PLAY + P_HOLD;
-  var pIn = false, pClock = 0, pLast = 0, pVert = false, pPos = [], pFocus = -1, pFocusT0 = 0, pMem = {};
-  function pm(key, val, fn) { if (pMem[key] !== val) { pMem[key] = val; fn(val); } }
-  function sg(p, a, b) { return clamp((p - a) / (b - a), 0, 1); }
-  function q(el, sel) { return Array.prototype.slice.call(el.querySelectorAll(sel)); }
-  var VGF = [
-    (function (el) { // Spécifications : le besoin, les contraintes et les cas limites s'écrivent puis se cochent
-      var bars = q(el, ".sb i"), cks = q(el, ".ck"), W = [92, 74, 86];
-      return function (p) { bars.forEach(function (b, k) { var f = sg(p, .05 + k * .29, .27 + k * .29); b.style.width = (f * W[k]).toFixed(1) + "%"; cks[k].classList.toggle("on", f >= 1); }); };
-    })(pVg[0]),
-    (function (el) { // Agents : Claude Code et Lovable travaillent en parallèle
-      var ls = q(el, ".cl i"), st = q(el, ".st"), W = [88, 62, 76, 92];
-      var R = [[.04, .4], [.4, .78], [.16, .52], [.52, .86]];
-      return function (p) {
-        ls.forEach(function (l, k) { l.style.width = (sg(p, R[k][0], R[k][1]) * W[k]).toFixed(1) + "%"; });
-        st.forEach(function (d, k) { var done = p >= R[k * 2 + 1][1], run = p > 0 && !done; d.className = "st" + (done ? " ok" : (run ? " run" : "")); });
-      };
-    })(pVg[1]),
-    (function (el) { // Relecture : chaque ligne du diff est relue, puis « Relu »
-      var dl = q(el, ".dl"), scan = el.querySelector(".scan"), rv = el.querySelector(".rv");
-      return function (p) {
-        var f = sg(p, .02, .8), pos = f * (dl.length - 1);
-        var top = dl[0].offsetTop - 2 + pos * (dl[1].offsetTop - dl[0].offsetTop);
-        scan.style.transform = "translateY(" + top.toFixed(1) + "px)";
-        scan.style.opacity = p > 0 && p < .92 ? 1 : 0;
-        dl.forEach(function (d, k) { d.classList.toggle("seen", p > 0 && pos >= k + .55 || p >= .8); });
-        rv.classList.toggle("on", p >= .86);
-      };
-    })(pVg[2]),
-    (function (el) { // Tests : la suite passe, test par test
-      var td = q(el, ".td"), cnt = el.querySelector(".cnt");
-      return function (p) {
-        var n = 0;
-        td.forEach(function (d, k) { var on = p >= .22 + k * .25; d.classList.toggle("on", on); if (on) n++; });
-        cnt.textContent = n + "/3"; cnt.classList.toggle("ok", n === 3);
-      };
-    })(pVg[3]),
-    (function (el) { // Déploiement : dépôt vérifié, mise en ligne
-      var tl = q(el, ".tl"), pb = el.querySelector(".pb i"), live = el.querySelector(".live");
-      return function (p) {
-        tl.forEach(function (l, k) { l.style.opacity = p > 0 && p >= k * .2 ? 1 : 0; });
-        pb.style.width = (sg(p, .42, .84) * 100).toFixed(1) + "%";
-        live.classList.toggle("on", p >= .88);
-      };
-    })(pVg[4])
-  ];
-  function pipeMeasure() {
-    var ol = pipeList;
-    pVert = getComputedStyle(ol).gridTemplateColumns.split(" ").length === 1;
-    pPos = pBadges.map(function (b, i) {
-      var li = pItems[i];
-      return { x: ol.offsetLeft + li.offsetLeft + b.offsetLeft + b.offsetWidth / 2, y: ol.offsetTop + li.offsetTop + b.offsetTop + b.offsetHeight / 2 };
-    });
-    var a = pPos[0], z = pPos[4];
-    rail.classList.toggle("v", pVert);
-    rail.style.cssText = pVert ? "left:" + (a.x - 1) + "px;top:" + a.y + "px;width:2px;height:" + (z.y - a.y) + "px"
-      : "left:" + a.x + "px;top:" + (a.y - 1) + "px;height:2px;width:" + (z.x - a.x) + "px";
-    pMem = {};
-  }
-  function pipeState(lt, now) {
-    // lt : temps dans la boucle (négatif avant le premier départ)
-    var tokI = 0, tokF = 0, tokO = 0;
-    for (var i = 0; i < 5; i++) {
-      var arr = i * P_STEP;
-      if (lt >= arr - P_TRAVEL) {
-        tokI = i; tokF = i === 0 ? 1 : ease(clamp((lt - (arr - P_TRAVEL)) / P_TRAVEL, 0, 1));
-        var u = (lt - (arr - P_TRAVEL)) / P_TRAVEL;
-        tokO = i === 0 ? 0 : clamp(Math.min(u * 6, (1 - u) * 6), 0, 1);
-      }
-    }
-    var rst = lt > P_LOOP - 420;
-    pm("rst", rst, function (v) { pipe.classList.toggle("rst", v); });
-    var A = pPos[Math.max(0, tokI - 1)], B = pPos[tokI];
-    var tx = lerp(A.x, B.x, tokF), ty = lerp(A.y, B.y, tokF);
-    token.style.transform = "translate(" + tx.toFixed(1) + "px," + ty.toFixed(1) + "px)";
-    token.style.opacity = tokO.toFixed(3);
-    var a = pPos[0], z = pPos[4];
-    var fr = pVert ? (ty - a.y) / (z.y - a.y) : (tx - a.x) / (z.x - a.x);
-    rail.style.setProperty("--f", (rst ? 0 : clamp(fr, 0, 1)).toFixed(4));
-    for (var k = 0; k < 5; k++) {
-      var p = pFocus === k ? clamp((now - pFocusT0) / P_PLAY, 0, 1) : clamp((lt - k * P_STEP) / P_PLAY, 0, 1);
-      if (pFocus === k && p >= 1 && lt < k * P_STEP) p = 1;
-      var cls = pFocus === k ? (p < 1 ? "cur" : "cur done") : (p >= 1 ? "done" : (lt >= k * P_STEP && p > 0 ? "cur" : ""));
-      if (pFocus >= 0 && pFocus !== k && cls === "cur") cls = "";
-      pm("c" + k, cls, (function (li) { return function (v) { li.classList.remove("cur", "done"); if (v) v.split(" ").forEach(function (c) { li.classList.add(c); }); }; })(pItems[k]));
-      pm("p" + k, Math.round(p * 400), (function (f) { return function () { f(p); }; })(VGF[k]));
-    }
-  }
-  function pipeFrame(now) {
-    var dt = pLast ? Math.min(100, now - pLast) : 0; pLast = now;
-    if (pFocus < 0) pClock += dt;
-    var lt = pClock < P_T0 ? pClock - P_T0 : (pClock - P_T0) % P_LOOP;
-    pipeState(lt, now);
-  }
-  pItems.forEach(function (li, k) {
-    li.addEventListener("pointerenter", function (e) { if (e.pointerType !== "mouse" || reduce) return; pFocus = k; pFocusT0 = performance.now(); });
-    li.addEventListener("pointerleave", function () { if (pFocus === k) pFocus = -1; });
-  });
-  function pipeShowAll() {
-    pipe.classList.add("seen");
-    pItems.forEach(function (li) { li.classList.add("done"); });
-    VGF.forEach(function (f) { f(1); });
-    rail.style.setProperty("--f", 1);
-  }
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(function (es) {
-      pIn = es[0].isIntersecting;
-      if (pIn) { pipe.classList.add("seen"); pLast = 0; if (reduce) pipeShowAll(); }
-    }, { threshold: .25 }).observe(pipe);
-  } else { pIn = true; pipeShowAll(); }
-
   /* ---------------- Parcours ---------------- */
   // La ligne suit le défilement (lissée) ; une étape s'allume quand la ligne atteint son logo
   var pathBox = document.getElementById("path");
@@ -2032,7 +1741,6 @@ footer{ font-size:13px; color:var(--ink-2); }
     }
     layout();
     fitName();
-    pipeMeasure();
     pathMeasure();
   }
   window.addEventListener("resize", onResize);
@@ -2050,7 +1758,6 @@ footer{ font-size:13px; color:var(--ink-2); }
     if (document.hidden) return;
     render(false, now);
     if (cur === 0 && !reduce) updateName(now);
-    if (pIn && !reduce) pipeFrame(now);
     pathFrame();
   }
   requestAnimationFrame(frame);
@@ -2080,5 +1787,4 @@ footer{ font-size:13px; color:var(--ink-2); }
   });
 })();
 </script>
-</body>
-</html>
+</Base>
