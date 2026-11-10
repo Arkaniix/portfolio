@@ -116,6 +116,11 @@ Décisions déjà prises :
   panneaux #bot-settings (killswitch, prix max, seuil fire : `DHDiscord.adminPanel`, d'après settings.py) et #settings-etienne
   (`DHDiscord.panel`). Boutons : Analyser (limite 5 par heure), Signaler (fenêtre, signalement par annonce, liste `DHDiscord.reports`
   d'après report_view.py, résolution), Acheter (lien désactivé, simple bulle). Le panneau admin ne nomme pas le second chasseur.
+- Panneau de chasse (`DHDiscord.panel`, d'après user_panel.py) : rangée Présence / Modifier seuils (fenêtre « Seuils — nom », mêmes
+  contrôles et messages que ThresholdsModal) / Ping si OFF / Auto-OFF, puis trois menus multi-choix repliés, validés à la fermeture.
+  `DHDiscord.bindPanel` gère ces commandes, `DHDiscord.patch` met le panneau à jour sur place (transitions, pas de remplacement).
+  Étape 7 : variante `compact` (embed réduit au statut et aux seuils), un seul panneau affiché ; les deux résultats servent d'onglets.
+  Les quatre annonces y sont empilées et passent en fondu : hauteur constante (vérifiée) quel que soit l'onglet.
 - Chaque page raconte son projet avec sa propre structure : ne pas recopier l'enchaînement de Videntis (refus d'Etienne sur la
   première version de Deal Hunter, trop proche). Deal Hunter suit le trajet d'une annonce en huit étapes, avec une annonce
   collante qui change d'état ; choix en bifurcations, incidents en « signalements » placés à l'étape concernée.

@@ -420,23 +420,31 @@ const STEPS = [
             <p class="stn-p">La mention, elle, dépend du panneau de chaque chasseur. Changez les réglages&nbsp;: elles se recalculent.</p>
             <div class="who" id="who">
               <div class="who-deals">
-                <div class="who-tabs" role="tablist">
+                <div class="who-tabs" role="tablist" aria-label="Annonce">
                   {WHO_DEALS.map((sid, i) => (
-                    <button type="button" role="tab" class={"wtab" + (i === 0 ? " on" : "")} data-sid={sid}><span>{bySid[sid].title}</span></button>
+                    <button type="button" role="tab" class={"wtab" + (i === 0 ? " on" : "")} aria-selected={i === 0 ? "true" : "false"} data-sid={sid}><span>{bySid[sid].title}</span></button>
                   ))}
                 </div>
-                <div class="who-deal" id="who-deal"></div>
                 <p class="who-bot" id="who-bot"></p>
+                <div class="who-deal" id="who-deal"></div>
               </div>
-              {[["me", ME], ["other", OTHER]].map(([key, u]: any) => (
-                <div class="hunt" data-u={key}>
-                  <div class="hunt-res" data-res={key}></div>
-                  <div class="dsc hunt-d" set:html={D.panel(u)} />
-                  <button type="button" class="hunt-off" data-f="disconnect">Fermer Discord ({u.username})</button>
-                </div>
-              ))}
+              <div class="who-res" role="tablist" aria-label="Panneau affiché">
+                {[["me", ME], ["other", OTHER]].map(([key, u]: any, i) => (
+                  <button type="button" role="tab" class="hunt-res" data-res={key} aria-selected={i === 0 ? "true" : "false"} aria-controls={"hunt-" + key}>
+                    <span class="hunt-tag">{u.username}</span><span class="hunt-t"></span>
+                  </button>
+                ))}
+              </div>
+              <div class="hunts">
+                {[["me", ME], ["other", OTHER]].map(([key, u]: any, i) => (
+                  <div class={"hunt" + (i === 0 ? " on" : "")} data-u={key} id={"hunt-" + key} role="tabpanel" aria-hidden={i === 0 ? "false" : "true"}>
+                    <div class="dsc hunt-d" set:html={D.panel(u, { compact: true })} />
+                    <p class="hunt-x"><button type="button" class="hunt-off">Fermer Discord ({u.username})</button><span class="hunt-n" aria-live="polite"></span></p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p class="who-note">Réglages de départ&nbsp;: les miens, relevés dans mon panneau (présence mise à ON pour la démo), et pour le second chasseur les valeurs par défaut du code. Fermer Discord fait passer sa présence à OFF, jamais l’inverse.</p>
+            <p class="who-note">Réglages de départ&nbsp;: les miens, relevés dans mon panneau (présence mise à ON pour la démo), et pour le second chasseur les valeurs par défaut du code. Panneaux réduits au statut et aux seuils&nbsp;: le panneau complet est dans #settings-etienne, en haut de page. Fermer Discord ne coupe la présence que si Auto-OFF est actif, et ne la rallume jamais.</p>
             <div class="forks">
               <div class="fork" tabindex="0">
                 <p class="fk-q">Tout poster, ou trier avant&nbsp;?</p>
@@ -649,10 +657,6 @@ const STEPS = [
         if (resend) { box.remove(); append("bot-settings", "<div class=\"lv-adm\">" + html + "</div>", true); unread("bot-settings", false); }
         else box.innerHTML = html;
       }
-      function drawMe() {
-        var box = feeds["settings-etienne"].querySelector(".lv-me"), t = box.querySelector(".msg-h time").textContent;
-        box.innerHTML = D.panel(me, { time: t });
-      }
       // Réponses visibles par vous seul (messages éphémères de Discord)
       function eph(inner, cls) {
         return append(cur, "<div class=\"msg eph" + (cls ? " " + cls : "") + "\">" + D.head({}) + "<div class=\"msg-b\">" + inner +
@@ -675,15 +679,6 @@ const STEPS = [
         if (t.closest(".dsc-menu")) return op.classList.toggle("drawer");
         if (op.classList.contains("drawer") && !t.closest(".dsc-side")) { op.classList.remove("drawer"); return; }
         if ((b = t.closest(".eph-x"))) return b.closest(".eph").remove();
-        // Panneau perso : présence, ping si OFF, seuil, salons pingés
-        if ((b = t.closest(".lv-me [data-f]"))) {
-          var fl = b.getAttribute("data-f");
-          if (fl === "presence") me.presence = me.presence === "ON" ? "OFF" : "ON";
-          else if (fl === "notify_when_offline") me.notify_when_offline = !me.notify_when_offline;
-          else if (fl === "min_profit_to_ping") me.min_profit_to_ping = +b.getAttribute("data-v");
-          else if (fl === "ch") { var c = b.getAttribute("data-v"); me.channels_to_ping[c] = !me.channels_to_ping[c]; }
-          return drawMe();
-        }
         // Panneau de #bot-settings
         if ((b = t.closest(".lv-adm button[data-a]"))) {
           var k = b.getAttribute("data-a");
@@ -754,6 +749,9 @@ const STEPS = [
         if (reduce) { while (idx < L.ads.length) post(false); status(); return; }
         schedule();
       });
+      // Panneau perso de #settings-etienne : mêmes commandes que dans Discord ; les annonces suivantes en tiennent compte
+      D.bindPanel(feeds["settings-etienne"].querySelector(".lv-me"), { host: op, user: function () { return me; },
+        maxGlobal: function () { return admin.max_price; }, change: function () {}, say: function (t) { say(t); } });
       start(); stamp(feeds.deals_fire); toBottom(feeds.deals_fire, false);
       if (reduce || !("IntersectionObserver" in window)) {
         op.classList.add("in");
@@ -821,8 +819,9 @@ const STEPS = [
     });
 
     // ---------- Deux chasseurs : les mentions se recalculent ----------
+    // Les quatre annonces sont posées l'une sur l'autre et passent en fondu ; les panneaux sont mis à jour sur place.
     (function () {
-      var E = window.DealHunterEngine, W = JSON.parse(document.getElementById("who-data").textContent);
+      var E = window.DealHunterEngine, D = window.DHDiscord, W = JSON.parse(document.getElementById("who-data").textContent);
       if (!E) return;
       var raw = JSON.parse(document.getElementById("dhd-data").textContent);
       var data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
@@ -830,50 +829,76 @@ const STEPS = [
       var R = W.deals.map(function (s) {
         return { s: s, r: E.processAd({ ad_id: s.id, title: s.title, price_eur: s.price, platform: s.platform, description: s.description || "", condition: s.condition || null }, data, { seen: {}, sent: {} }, W.pipeline, [users.me]) };
       });
-      var cur = 0, auto = null, who = document.getElementById("who"), note = {};
-      function eur(x) { var r = Math.round(x); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + " €"; }
-      function render() {
-        var d = R[cur], ev = d.r.ev, ch = W.channels[d.r.channel];
+      var cur = 0, who = document.getElementById("who"), tabs = who.querySelectorAll(".wtab"), timer = null, steps = 0, touched = false, AUTO = 3600;
+      function eur(x) { var r = Math.round(x); return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r) + " €"; }
+      document.getElementById("who-deal").innerHTML = R.map(function (d, j) {
+        var ev = d.r.ev, ch = W.channels[d.r.channel];
         var art = document.querySelector("#dhd-lot .pv[data-k=\"" + d.s.pic + "\"]");
-        document.getElementById("who-deal").innerHTML = "<div class=\"wd\">" + window.Annonce.html({ pl: d.s.platform, bg: W.pics[d.s.pic], pics: art ? art.outerHTML.replace(" pv on\"", "\"").replace(" pv\"", "\"") : "",
+        return "<div class=\"wd" + (j === 0 ? " on" : "") + "\"" + (j ? " aria-hidden=\"true\"" : "") + ">" + window.Annonce.html({ pl: d.s.platform, bg: W.pics[d.s.pic], pics: art ? art.outerHTML.replace(" pv on\"", "\"").replace(" pv\"", "\"") : "",
             title: esc(d.s.title), price: d.s.price, city: d.s.city, zip: d.s.zip, ago: d.s.ago, brand: d.s.brand, cond: d.s.cond, likes: d.s.likes, ship: d.s.ship, row: true }) +
           "<p class=\"wd-r\"><span class=\"salpill c-" + ch.c + "\"># " + ch.name + "</span><b>" + eur(ev.best_profit) + "</b> de profit net</p></div>";
+      }).join("");
+      var cards = who.querySelectorAll(".wd");
+      function set(el, html) {                          // change le texte et rejoue un petit fondu, seulement s'il a changé
+        if (el.innerHTML === html) return;
+        el.innerHTML = html; el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip");
+      }
+      function render() {
+        var d = R[cur], ev = d.r.ev;
         var off = users.me.presence === "OFF" && users.other.presence === "OFF";
         var res = E.mentions([users.me, users.other], ev, d.r.channel);
-        document.getElementById("who-bot").innerHTML = off ? "<b>Bot en pause</b>&nbsp;: plus personne ne chasse, les annonces ne sont même plus lues." : "<b>Bot en chasse</b>&nbsp;: au moins un chasseur est ON.";
+        set(document.getElementById("who-bot"), off ? "<b>Bot en pause</b>&nbsp;: plus personne ne chasse, les annonces ne sont même plus lues." : "<b>Bot en chasse</b>&nbsp;: au moins un chasseur est ON.");
         who.classList.toggle("paused", off);
         ["me", "other"].forEach(function (k, j) {
           var box = who.querySelector("[data-res=\"" + k + "\"]"), r = res[j];
-          box.className = "hunt-res " + (off ? "zz" : r.pinged ? "yes" : "no");
-          box.innerHTML = off ? "Bot en pause&nbsp;: annonce jamais lue" : r.pinged ? "<b>@" + esc(r.name) + "</b> mentionné" : "Silencieux&nbsp;: " + esc(r.why) + (note[k] ? "<em>" + note[k] + "</em>" : "");
-          if (!off && r.pinged && note[k]) box.innerHTML += "<em>" + note[k] + "</em>";
-          who.querySelector("[data-u=\"" + k + "\"] .hunt-d").innerHTML = window.DHDiscord.panel(users[k]);
+          ["zz", "yes", "no"].forEach(function (c) { box.classList.toggle(c, c === (off ? "zz" : r.pinged ? "yes" : "no")); });
+          set(box.querySelector(".hunt-t"), off ? "Bot en pause&nbsp;: annonce jamais lue" : r.pinged ? "<b>@" + esc(r.name) + "</b> mentionné" : "Silencieux&nbsp;: " + esc(r.why));
         });
-        each(who.querySelectorAll(".wtab"), function (t, j) { t.classList.toggle("on", j === cur); t.setAttribute("aria-selected", String(j === cur)); });
+        each(cards, function (c, j) { c.classList.toggle("on", j === cur); if (j === cur) c.removeAttribute("aria-hidden"); else c.setAttribute("aria-hidden", "true"); });
+        each(tabs, function (t, j) { t.classList.toggle("on", j === cur); t.setAttribute("aria-selected", String(j === cur)); });
       }
-      function stopAuto() { clearInterval(auto); auto = false; }
-      each(who.querySelectorAll(".wtab"), function (t, j) { t.addEventListener("click", function () { stopAuto(); cur = j; render(); }); });
-      each(who.querySelectorAll(".hunt"), function (p) {
-        var k = p.getAttribute("data-u"), u = users[k];
-        p.addEventListener("click", function (e) {               // délégation : le panneau est régénéré à chaque réglage
-          var b = e.target.closest("[data-f]"); if (!b || !p.contains(b)) return;
-          (function () {
-            stopAuto(); note[k] = "";
-            var fl = b.getAttribute("data-f");
-            if (fl === "presence") u.presence = u.presence === "ON" ? "OFF" : "ON";
-            else if (fl === "notify_when_offline") u.notify_when_offline = !u.notify_when_offline;
-            else if (fl === "min_profit_to_ping") u.min_profit_to_ping = +b.getAttribute("data-v");
-            else if (fl === "ch") { var c = b.getAttribute("data-v"); u.channels_to_ping[c] = !u.channels_to_ping[c]; }
-            else if (fl === "disconnect") { if (u.presence === "ON") { u.presence = "OFF"; note[k] = "Discord fermé : présence passée à OFF."; } else note[k] = "Déjà OFF."; }
-            render();
-          })();
+      // Défilement automatique : un seul tour des quatre annonces à chaque arrivée, barre de progression sur l'onglet actif
+      function stop() { clearTimeout(timer); timer = null; who.classList.remove("auto"); }
+      function tick() {
+        who.classList.remove("auto"); void who.offsetWidth;
+        if (steps >= R.length) return stop();
+        who.classList.add("auto");
+        timer = setTimeout(function () { steps++; cur = (cur + 1) % R.length; render(); tick(); }, AUTO);
+      }
+      function interact() { touched = true; stop(); }
+      each(tabs, function (t, j) { t.addEventListener("click", function () { interact(); cur = j; render(); }); });
+      // Un panneau à la fois : les deux résultats restent côte à côte et servent d'onglets
+      each(who.querySelectorAll(".hunt-res"), function (b) {
+        b.addEventListener("click", function () {
+          var k = b.getAttribute("data-res");
+          each(who.querySelectorAll(".hunt-res"), function (x) { x.setAttribute("aria-selected", String(x === b)); });
+          each(who.querySelectorAll(".hunt"), function (h) { var on = h.getAttribute("data-u") === k; h.classList.toggle("on", on); h.setAttribute("aria-hidden", String(!on)); });
+        });
+      });
+      ["me", "other"].forEach(function (k) {
+        var col = who.querySelector(".hunt[data-u=\"" + k + "\"]"), box = col.querySelector(".hunt-d"), note = col.querySelector(".hunt-n");
+        function say(text) {
+          var old = box.querySelector(".eph"); if (old) old.remove();
+          box.insertAdjacentHTML("beforeend", "<div class=\"msg eph flip\">" + D.head({}) + "<div class=\"msg-b\"><p class=\"msg-c\">" + text +
+            "</p><p class=\"eph-n\"><span aria-hidden=\"true\">👁</span> Vous seul·e pouvez voir ceci · <button type=\"button\" class=\"eph-x\">Ignorer ce message</button></p></div></div>");
+          box.querySelector(".eph .msg-h time").textContent = "Aujourd’hui à " + new Date().getHours() + ":" + String(new Date().getMinutes()).padStart(2, "0");
+        }
+        box.addEventListener("click", function (e) { var x = e.target.closest(".eph-x"); if (x) x.closest(".eph").remove(); });
+        var ctl = D.bindPanel(box, { compact: true, host: col, user: function () { return users[k]; }, maxGlobal: function () { return W.pipeline.max_price; },
+          say: say, change: function () { interact(); set(note, ""); render(); } });
+        col.querySelector(".hunt-off").addEventListener("click", function () {
+          var u = users[k]; interact();
+          if (u.presence === "OFF") set(note, "Déjà OFF.");
+          else if (u.auto_off === false) set(note, "Auto-OFF désactivé&nbsp;: présence inchangée.");
+          else { u.presence = "OFF"; set(note, "Discord fermé&nbsp;: présence passée à OFF."); }
+          ctl.draw(); render();
         });
       });
       render();
       if (!reduce && "IntersectionObserver" in window) {
         new IntersectionObserver(function (es) {
-          if (es[0].isIntersecting) { if (auto === null) auto = setInterval(function () { cur = (cur + 1) % R.length; render(); }, 3200); }
-          else if (auto) { clearInterval(auto); auto = null; }
+          if (es[0].isIntersecting) { if (!touched && !timer) { steps = 0; tick(); } }
+          else stop();
         }, { threshold: .3 }).observe(who);
       }
     })();

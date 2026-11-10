@@ -81,26 +81,127 @@
   var CH_ORDER = ["deals_fire", "deals_price_drop", "deals_other", "deals_not_rentable", "deals_suspect", "deals_hs"];
   var CH_OPT = { deals_fire: "🔥 Fire", deals_price_drop: "📉 Baisses prix", deals_other: "📋 Other", deals_not_rentable: "💸 Pas rentables", deals_suspect: "⛔ Suspects", deals_hs: "🔧 HS" };
   function yes(v) { return v ? "✅" : "❌"; }
+  // Panneau de chasse (user_panel.py) : embed, puis rangée 0 (Présence, Modifier seuils, Ping si OFF, Auto-OFF)
+  // et trois menus multi-choix repliés (plateformes, catégories, salons pingés), comme dans Discord.
+  // o.compact : embed réduit au titre, au statut et aux seuils (les autres champs sont dans les menus).
+  var DD = {
+    platforms: { ph: "🏪 Plateformes activées", lab: { lbc: "Leboncoin", vinted: "Vinted" } },
+    categories: { ph: "📦 Catégories à recevoir", lab: { gpu: "GPU", cpu: "CPU", ram: "RAM", ssd: "SSD", psu: "Alim.", mobo: "Carte mère", pc: "PC complet" } },
+    channels_to_ping: { ph: "🔔 Channels où je veux être pingé", lab: CH_OPT },
+  };
+  function ddHtml(key, vals) {
+    var d = DD[key], ks = Object.keys(vals), on = ks.filter(function (k) { return vals[k]; });
+    return "<div class=\"dsc-dd\" data-dd=\"" + key + "\"><button type=\"button\" class=\"dsc-dd-b\" aria-haspopup=\"listbox\" aria-expanded=\"false\">" +
+      "<span class=\"dsc-dd-v" + (on.length ? "" : " ph") + "\">" + esc(on.length ? on.map(function (k) { return d.lab[k]; }).join(", ") : d.ph) + "</span></button>" +
+      "<div class=\"dsc-dd-l\" role=\"listbox\" aria-multiselectable=\"true\" aria-label=\"" + esc(d.ph) + "\">" + ks.map(function (k) {
+        return "<button type=\"button\" class=\"dsc-opt\" role=\"option\" data-v=\"" + k + "\" aria-selected=\"" + !!vals[k] + "\">" + esc(d.lab[k]) + "<i aria-hidden=\"true\"></i></button>";
+      }).join("") + "</div></div>";
+  }
   function panel(u, o) {
     o = o || {};
-    var on = u.presence === "ON";
-    var f = [
-      ["🔧 Options", yes(u.notify_when_offline) + " Ping même quand je suis OFF (l’autre est ON)<br>" + yes(u.auto_off !== false) + " Auto-OFF si je me déconnecte de Discord"],
+    var on = u.presence === "ON", auto = u.auto_off !== false;
+    var seuils = ["💰 Seuils perso", "Profit min pour être pingé : <b>" + u.min_profit_to_ping + "€</b><br>Prix max d’annonce pour être pingé : <b>" + u.max_price_perso + "€</b>"];
+    var f = o.compact ? [seuils] : [
+      ["🔧 Options", yes(u.notify_when_offline) + " Ping même quand je suis OFF (l’autre est ON)<br>" + yes(auto) + " Auto-OFF si je me déconnecte de Discord"],
       ["🏪 Plateformes", Object.keys(u.platforms).map(function (k) { return yes(u.platforms[k]) + " " + k.toUpperCase(); }).join("  ")],
       ["📦 Catégories", Object.keys(u.categories).map(function (k) { return yes(u.categories[k]) + " " + k.toUpperCase(); }).join("  ")],
       ["🔔 Channels pingés", CH_ORDER.map(function (k) { return yes(u.channels_to_ping[k]) + " " + k.replace("deals_", ""); }).join("  ")],
-      ["💰 Seuils perso", "Profit min pour être pingé : <b>" + u.min_profit_to_ping + "€</b><br>Prix max d’annonce pour être pingé : <b>" + u.max_price_perso + "€</b>"],
+      seuils,
     ];
     var desc = on ? "🟢 <b>Présence : ON</b> — tu es sur le terrain" : "🔴 <b>Présence : OFF</b> — aucun ping n’arrive";
-    var btn = function (cls, f, v, label, pressed) { return "<button type=\"button\" class=\"mb " + cls + "\" data-f=\"" + f + "\"" + (v != null ? " data-v=\"" + v + "\"" : "") + " aria-pressed=\"" + pressed + "\">" + label + "</button>"; };
+    var btn = function (cls, f, label, pressed) { return "<button type=\"button\" class=\"mb " + cls + "\" data-f=\"" + f + "\"" + (pressed == null ? "" : " aria-pressed=\"" + pressed + "\"") + ">" + label + "</button>"; };
+    var ch = {}; CH_ORDER.forEach(function (k) { ch[k] = !!u.channels_to_ping[k]; });
     return "<div class=\"msg\">" + head({ time: o.time || "Aujourd’hui à 09:12" }) + "<div class=\"msg-b\">" +
       embed(on ? "#2ECC71" : "#95A5A6", "⚙️ Panneau de chasse — " + u.username, desc, f, null, null, false) +
-      "<div class=\"msg-btns\">" + btn(on ? "mb-ok" : "mb-dan", "presence", null, on ? "🟢 Présence ON" : "🔴 Présence OFF", on) +
-        btn(u.notify_when_offline ? "mb-ok" : "mb-sec", "notify_when_offline", null, (u.notify_when_offline ? "✅" : "❌") + " Ping si OFF", !!u.notify_when_offline) + "</div>" +
-      "<div class=\"msg-btns sm\"><span class=\"mb-k\">💰 Profit min</span>" + [25, 50, 80].map(function (v) { return btn(u.min_profit_to_ping === v ? "mb-pri" : "mb-sec", "min_profit_to_ping", v, v + "€", u.min_profit_to_ping === v); }).join("") + "</div>" +
-      "<div class=\"dsc-sel\"><p class=\"dsc-sel-h\">🔔 Channels où je veux être pingé</p>" + CH_ORDER.map(function (k) {
-        return "<button type=\"button\" class=\"dsc-opt\" data-f=\"ch\" data-v=\"" + k + "\" aria-pressed=\"" + !!u.channels_to_ping[k] + "\">" + CH_OPT[k] + "<i aria-hidden=\"true\"></i></button>";
-      }).join("") + "</div></div></div>";
+      "<div class=\"msg-btns\">" + btn(on ? "mb-ok" : "mb-dan", "presence", on ? "🟢 Présence ON" : "🔴 Présence OFF", on) +
+        btn("mb-pri", "thresholds", "💰 Modifier seuils") +
+        btn(u.notify_when_offline ? "mb-ok" : "mb-sec", "notify_when_offline", (u.notify_when_offline ? "✅" : "❌") + " Ping si OFF", !!u.notify_when_offline) +
+        btn(auto ? "mb-ok" : "mb-sec", "auto_off", (auto ? "✅" : "❌") + " Auto-OFF", auto) + "</div>" +
+      ddHtml("platforms", u.platforms) + ddHtml("categories", u.categories) + ddHtml("channels_to_ping", ch) + "</div></div>";
+  }
+
+  // Mise à jour sur place (même structure) : les couleurs passent en transition au lieu d'un remplacement brutal.
+  var PATCH = [".emb", ".emb-d", ".emb-f", ".mb", ".dsc-dd-v", ".dsc-opt"];
+  function patch(el, html) {
+    var tmp = document.createElement("div"); tmp.innerHTML = html;
+    var ok = PATCH.every(function (q) { return el.querySelectorAll(q).length === tmp.querySelectorAll(q).length; });
+    if (!ok) { el.innerHTML = html; return; }
+    PATCH.forEach(function (q) {
+      var A = el.querySelectorAll(q), B = tmp.querySelectorAll(q);
+      for (var i = 0; i < A.length; i++) {
+        ["class", "style", "aria-pressed", "aria-selected"].forEach(function (at) {
+          var v = B[i].getAttribute(at);
+          if (v === null) A[i].removeAttribute(at); else if (A[i].getAttribute(at) !== v) A[i].setAttribute(at, v);
+        });
+        if (q !== ".emb" && q !== ".dsc-opt" && A[i].innerHTML !== B[i].innerHTML) A[i].innerHTML = B[i].innerHTML;
+      }
+    });
+  }
+
+  // Comportement du panneau dans la page : boutons, menus (validés à la fermeture, comme Discord), fenêtre des seuils.
+  // o : { user(), host (élément où poser la fenêtre), maxGlobal(), change(), say(texte) }
+  function bindPanel(box, o) {
+    var open = null;
+    function draw() { patch(box, panel(o.user(), { compact: o.compact, time: (box.querySelector(".msg-h time") || {}).textContent })); }
+    function close(apply) {
+      if (!open) return;
+      var dd = open, key = dd.getAttribute("data-dd"), u = o.user(), changed = false;
+      open = null; dd.classList.remove("open"); dd.querySelector(".dsc-dd-b").setAttribute("aria-expanded", "false");
+      if (apply) dd.querySelectorAll(".dsc-opt").forEach(function (b) {
+        var v = b.getAttribute("data-v"), sel = b.getAttribute("aria-selected") === "true";
+        if (!!u[key][v] !== sel) { u[key][v] = sel; changed = true; }
+      });
+      draw();
+      if (changed) o.change();
+    }
+    document.addEventListener("click", function (e) { if (open && !open.contains(e.target)) close(true); });
+    box.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) { close(true); } });
+    box.addEventListener("click", function (e) {
+      var t = e.target, b, u = o.user();
+      if ((b = t.closest(".dsc-dd-b"))) {
+        var dd = b.parentNode;
+        if (open === dd) return close(true);
+        close(true); open = dd; dd.classList.remove("up"); dd.classList.add("open"); b.setAttribute("aria-expanded", "true");
+        var l = dd.querySelector(".dsc-dd-l"), r = dd.getBoundingClientRect(), sc = dd.closest(".dsc-feed"), lo = sc ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+        dd.classList.toggle("up", r.bottom + l.offsetHeight + 8 > lo.bottom && r.top - l.offsetHeight - 8 > lo.top);   // vers le haut s'il manque de place
+        return;
+      }
+      if ((b = t.closest(".dsc-dd .dsc-opt"))) { b.setAttribute("aria-selected", String(b.getAttribute("aria-selected") !== "true")); return; }
+      if (!(b = t.closest("[data-f]"))) return;
+      var fl = b.getAttribute("data-f");
+      if (fl === "thresholds") return modal(u);
+      if (fl === "presence") u.presence = u.presence === "ON" ? "OFF" : "ON";
+      else if (fl === "notify_when_offline") u.notify_when_offline = !u.notify_when_offline;
+      else if (fl === "auto_off") u.auto_off = u.auto_off === false;
+      draw(); o.change(fl);
+    });
+    // Fenêtre « Seuils — {nom} » : mêmes contrôles et mêmes réponses que ThresholdsModal
+    function modal(u) {
+      var m = document.createElement("div");
+      m.className = "dsc dsc-modal";
+      m.innerHTML = "<form class=\"dsc-mod\"><p class=\"dsc-mod-t\">" + esc("Seuils — " + u.username) + "</p>" +
+        "<label>Profit min pour être pingé (€)<input name=\"p\" maxlength=\"5\" required inputmode=\"numeric\" autocomplete=\"off\" value=\"" + u.min_profit_to_ping + "\"></label>" +
+        "<label>Prix max d’annonce pour être pingé (€)<input name=\"x\" maxlength=\"5\" required inputmode=\"numeric\" autocomplete=\"off\" value=\"" + u.max_price_perso + "\"></label>" +
+        "<p class=\"dsc-mod-b\"><button type=\"button\" class=\"dsc-cancel\">Annuler</button><button type=\"submit\" class=\"mb mb-pri\">Envoyer</button></p></form>";
+      o.host.appendChild(m);
+      var f = m.querySelector("form"), done = function () { m.remove(); };
+      f.p.focus({ preventScroll: true }); f.p.select();
+      m.addEventListener("click", function (e) { if (e.target === m || e.target.closest(".dsc-cancel")) done(); });
+      m.addEventListener("keydown", function (e) { if (e.key === "Escape") done(); });
+      f.addEventListener("submit", function (e) {
+        e.preventDefault(); done();
+        var P = f.p.value.trim(), X = f.x.value.trim();
+        if (!/^[+-]?\d+$/.test(P) || !/^[+-]?\d+$/.test(X)) return o.say("⚠️ Valeurs invalides : profit et prix doivent être des nombres entiers.");
+        var profit = parseInt(P, 10), price = parseInt(X, 10);
+        if (profit < 0 || price <= 0 || profit > 99999 || price > 99999) return o.say("⚠️ Valeurs invalides : profit ≥ 0, prix > 0, max 99999€.");
+        var g = o.maxGlobal(), clamped = price > g;
+        if (clamped) price = g;
+        u.min_profit_to_ping = profit; u.max_price_perso = price;
+        draw(); o.change("thresholds");
+        o.say("✅ Seuils mis à jour : profit min " + profit + "€, prix max " + price + "€" + (clamped ? " (plafonné par max global " + g + "€)" : ""));
+      });
+    }
+    return { draw: draw };
   }
 
   // Panneau de #bot-settings (settings.py) : killswitch des plateformes, prix max absolu, seuil fire, signalements.
@@ -146,5 +247,5 @@
       "</select></label><div class=\"msg-btns\"><button type=\"button\" class=\"mb mb-ok\" data-a=\"resolve\"" + (sel == null ? " disabled" : "") + ">✅ Résoudre la sélection</button></div>";
   }
 
-  root.DHDiscord = { deal: deal, analysis: analysis, panel: panel, adminPanel: adminPanel, reports: reports, head: head, VERDICT: VERDICT, COLOR: COLOR, esc: esc };
+  root.DHDiscord = { deal: deal, analysis: analysis, panel: panel, adminPanel: adminPanel, reports: reports, head: head, patch: patch, bindPanel: bindPanel, VERDICT: VERDICT, COLOR: COLOR, esc: esc };
 })(typeof globalThis !== "undefined" ? globalThis : this);
