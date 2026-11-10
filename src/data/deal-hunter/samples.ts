@@ -69,6 +69,63 @@ export const SAMPLES: Sample[] = [
   { id: "s8", pic: "laptop", title: "PC portable Legion 5 RTX 3070", price: 450, platform: "leboncoin", city: "Paris", zip: "75011", ago: "il y a 5 min" },
 ];
 
+// Annonces supplémentaires du salon « en direct » de l'en-tête (inventées, réponses de Haiku écrites pour la démo).
+// Ordre de passage : LIVE_ORDER ; « s1@189 » est la RTX 3080 revue à la baisse.
+export const LIVE_EXTRA: Sample[] = [
+  {
+    id: "x1", pic: "gpu-amd", title: "Radeon RX 6800 XT Red Devil 16 Go", price: 190, platform: "leboncoin", city: "Marseille", zip: "13005", ship: true, ago: "il y a 2 min",
+    description: "Testée sur 3DMark, aucun souci. Remise en main propre.",
+    ai: [
+      { h: "PLAUSIBILITÉ", l: ["Ratio prix/revente : 0.66", "Drapeaux : aucun", "Conclusion : PLAUSIBLE"] },
+      { h: "VERDICT", l: ["ACHETER IMMÉDIATEMENT"] },
+      { h: "RENTABILITÉ", l: ["Prix annonce 190 € vs revente 289 €. Profit net +99 € en main propre sur LBC, +77 € via Vinted. Demander la capture du test 3DMark."] },
+      { h: "IMAGE", l: ["Carte complète, trois ventilateurs propres. Rien d'anormal sur la photo."] },
+    ],
+  },
+  { id: "x5", pic: "gpu-dusty", title: "GTX 1070 8 Go", price: 80, platform: "leboncoin", city: "Lille", zip: "59000", ago: "il y a 1 min" },
+  {
+    id: "x3", pic: "cpu", title: "Ryzen 7 5800X3D, très bon état", price: 150, platform: "vinted", brand: "AMD", cond: "Très bon état", likes: 6, ago: "il y a 4 min",
+    ai: [
+      { h: "PLAUSIBILITÉ", l: ["Ratio prix/revente : 0.82", "Drapeaux : aucun", "Conclusion : PLAUSIBLE"] },
+      { h: "VERDICT", l: ["BON DEAL"] },
+      { h: "RENTABILITÉ", l: ["Prix annonce 150 € vs revente 184 €. Profit net +34 € en main propre sur LBC, +17 € via Vinted. Processeur recherché, se revend vite."] },
+      { h: "IMAGE", l: ["Processeur seul, sans boîte. Aucun problème visible."] },
+    ],
+  },
+  { id: "x7", pic: "gpu-mid", title: "RTX 4060 Ti 8 Go, ventilateur bruyant", price: 150, platform: "leboncoin", city: "Toulouse", zip: "31000", ago: "il y a 3 min" },
+  {
+    id: "x2", pic: "gpu-fe", title: "RTX 4070 Super Founders Edition sous garantie", price: 340, platform: "vinted", brand: "Nvidia", cond: "Très bon état", likes: 21, ago: "à l’instant",
+    description: "Facture Boulanger de mars 2025.",
+    ai: [
+      { h: "PLAUSIBILITÉ", l: ["Ratio prix/revente : 0.83", "Drapeaux : aucun", "Conclusion : PLAUSIBLE"] },
+      { h: "VERDICT", l: ["ACHETER IMMÉDIATEMENT"] },
+      { h: "RENTABILITÉ", l: ["Prix annonce 340 € vs revente 408 €. Profit net +68 € en main propre sur LBC, +40 € via Vinted. Facture et garantie : revente facile."] },
+      { h: "IMAGE", l: ["Founders Edition complète, aucun défaut visible."] },
+    ],
+  },
+  { id: "x6", pic: "unknown", title: "Lot 4 cartes graphiques minage", price: 350, platform: "leboncoin", city: "Lyon", zip: "69007", ago: "il y a 6 min" },
+  {
+    id: "x4", pic: "gpu-huge", title: "RTX 3090 Gaming X Trio 24 Go", price: 420, platform: "leboncoin", city: "Bordeaux", zip: "33000", ago: "il y a 2 min",
+    description: "Utilisée pour du rendu 3D, jamais overclockée.",
+    ai: [
+      { h: "PLAUSIBILITÉ", l: ["Ratio prix/revente : 0.82", "Drapeaux : aucun", "Conclusion : PLAUSIBLE"] },
+      { h: "VERDICT", l: ["ACHETER IMMÉDIATEMENT"] },
+      { h: "RENTABILITÉ", l: ["Prix annonce 420 € vs revente 510 €. Profit net +90 € en main propre sur LBC, +57 € via Vinted. 24 Go recherchés pour l'IA locale, demande solide."] },
+      { h: "IMAGE", l: ["Carte massive, backplate intacte. Vérifier la température mémoire à l'essai."] },
+    ],
+  },
+  {
+    id: "x8", pic: "cpu", title: "Intel Core i5-12400F", price: 60, platform: "vinted", brand: "Intel", cond: "Bon état", likes: 1, ago: "il y a 5 min",
+    ai: [
+      { h: "PLAUSIBILITÉ", l: ["Ratio prix/revente : 0.84", "Drapeaux : aucun", "Conclusion : PLAUSIBLE"] },
+      { h: "VERDICT", l: ["Marge trop mince une fois les frais payés : à prendre seulement pour un montage perso."] },
+      { h: "RENTABILITÉ", l: ["Prix annonce 60 € vs revente 71 €. Profit net +11 € en main propre sur LBC, 0 € via Vinted."] },
+      { h: "IMAGE", l: ["Processeur seul. Aucun problème visible."] },
+    ],
+  },
+];
+export const LIVE_ORDER = ["s4", "x5", "x1", "s7", "s2", "x3", "s6", "s3", "x7", "s1@189", "x2", "s8", "s5", "x6", "x4", "x8"];
+
 // Réglages réels relevés dans les panneaux du bot (#bot-settings et panneau de chasse d'Etienne).
 export const PIPELINE = { max_price: 500, min_profit_fire: 50 };
 export const ME = {

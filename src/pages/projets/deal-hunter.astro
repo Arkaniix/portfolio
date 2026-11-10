@@ -6,7 +6,7 @@ import SiteHeader from "../../components/SiteHeader.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import DealHunterDemo from "../../components/DealHunterDemo.astro";
 import { PIC, SALON_ART, OUT_ART, triple } from "../../lib/dh-art";
-import { SAMPLES, PIPELINE, ME, OTHER, CHANNEL_INFO } from "../../data/deal-hunter/samples";
+import { SAMPLES, PIPELINE, ME, OTHER, CHANNEL_INFO, LIVE_EXTRA, LIVE_ORDER } from "../../data/deal-hunter/samples";
 import market from "../../data/deal-hunter/demo-market.json";
 import catalog from "../../data/videntis/gpu-catalog.json";
 import "../../scripts/deal-hunter-engine.js";
@@ -38,7 +38,27 @@ const bySid = Object.fromEntries(SAMPLES.map((s) => [s.id, s]));
 const S1 = SAMPLES[0];
 const R1 = E.processAd({ ad_id: "s1", title: S1.title, price_eur: S1.price, platform: "leboncoin", description: S1.description }, data, { seen: {}, sent: {} }, PIPELINE, [ME]);
 const ev1 = R1.ev;
-const HERO_MSG = D.deal({ ev: ev1, ad: R1.ad, city: S1.city, ago: S1.ago, who: [ME.username], mine: true, thumb: { bg: PIC["gpu-fe"].bg, svg: svgOf("gpu-fe") } });
+const HERO_MSG = `<div class="lv" data-i="0">` + D.deal({ ev: ev1, ad: R1.ad, city: S1.city, ago: S1.ago, who: [ME.username], mine: true, thumb: { bg: PIC["gpu-fe"].bg, svg: svgOf("gpu-fe") } }) + `</div>`;
+
+// ---------- Le salon en direct de l'en-tête : chaque annonce passe par le vrai code, dans l'ordre LIVE_ORDER ----------
+// Les annonces partent brutes dans la page : le navigateur les passe au vrai code (deal-hunter-engine.js), avec les réglages
+// des panneaux #bot-settings et #settings-etienne tels que le visiteur les a laissés. La RTX 3080 revient à 189 € (baisse de prix).
+const LIVE_SRC: Record<string, any> = Object.fromEntries([...SAMPLES, ...LIVE_EXTRA].map((x) => [x.id, x]));
+const quoteOf = (ev: any) => (ev.price_drop ? "📉 BAISSE DE PRIX" : D.VERDICT[ev.verdict.k]) + "  " + (ev.matched_model ? ev.matched_model.name : "");
+const LIVE_ADS = LIVE_ORDER.map((key) => {
+  const [sid, drop] = key.split("@"), x = LIVE_SRC[sid];
+  return { id: x.id, title: x.title, price: drop ? +drop : x.price, platform: x.platform, description: x.description || "", condition: x.condition || null,
+    city: x.city, ago: drop ? "il y a 1 min" : x.ago, pic: x.pic, hs: !!x.aiHs, ai: drop ? x.aiDrop : x.ai };
+});
+const LIVE = {
+  first: { id: "s1", title: S1.title, price: S1.price, platform: S1.platform, description: S1.description, ch: "deals_fire", ai: S1.ai, hs: false, quote: quoteOf(ev1) },
+  ads: LIVE_ADS,
+  pics: Object.fromEntries([...new Set(LIVE_ADS.map((x) => x.pic))].map((k) => [k, { bg: PIC[k].bg, svg: svgOf(k) }])),
+  pipe: { lbc_enabled: true, vinted_enabled: true, max_price: PIPELINE.max_price, min_profit_fire: PIPELINE.min_profit_fire },
+  me: ME,
+};
+const ADMIN_MSG = `<div class="lv-adm">` + D.adminPanel(LIVE.pipe, { reports: 0 }) + `</div>`;
+const ME_MSG = `<div class="lv-me">` + D.panel(ME, { time: "Aujourd’hui à 09:12" }) + `</div>`;
 const annOf = (s: any, title: string, extra: Record<string, any> = {}) => A.html({ pl: s.platform, bg: PIC[s.pic].bg, art: svgOf(s.pic), title, price: s.price, city: s.city, zip: s.zip, ago: s.ago, brand: s.brand, cond: s.cond, likes: s.likes, ship: s.ship, ...extra });
 
 // Mots du titre : m = modèle lu, x = cause de l'exclusion, r = signal de panne, n = le reste
@@ -114,6 +134,7 @@ const SALONS = [
   { k: "deals_other", art: "other", rule: "Tout le reste" },
 ];
 const SLOTS = SALONS.map((x) => x.k);
+const LIVE_CH = [...SLOTS, "bot-settings", "settings-etienne", "deals-forge", "bot-logs"];
 const WHO_DEALS = ["s1", "s2", "s4", "s5"];
 
 const STEPS = [
@@ -135,14 +156,14 @@ const STEPS = [
   <!-- ========== En-tête : le salon Discord, au moment où le message arrive ========== -->
   <section class="band b-pink dh-open" aria-labelledby="dh-title">
     <div class="wrap">
-      <noscript><style>.op.wait .dsc-feed .msg, .op.wait .op-badge{ opacity:1 !important; }</style></noscript>
+      <noscript><style>.op.wait .lv .msg{ opacity:1 !important; }</style></noscript>
       <div class="op-top">
         <div class="op-ttl">
           <p class="op-k">Projet 2 · Module de Videntis · Bot Discord, à l’arrêt aujourd’hui</p>
           <h1 id="dh-title" class="op-name">Deal Hunter</h1>
         </div>
         <div class="op-side">
-          <p class="op-lead">Ce message, Deal Hunter le postait dans un salon Discord quelques instants après une annonce de matériel PC sur Leboncoin ou Vinted. <b>Voici tout ce qui se passe entre les deux.</b></p>
+          <p class="op-lead">Ces messages, Deal Hunter les postait dans ses salons Discord quelques instants après une annonce de matériel PC sur Leboncoin ou Vinted. <b>Voici tout ce qui se passe entre les deux.</b></p>
           <div class="op-go">
             <a class="vbtn primary" href="#trajet">Suivre une annonce ↓</a>
             <a class="vbtn" href="#a-vous">Essayer avec la vôtre</a>
@@ -155,27 +176,45 @@ const STEPS = [
           <p class="dsc-sname">Deal Hunter<span aria-hidden="true">⌄</span></p>
           <ul class="dsc-chs">
             <li class="dsc-cat">Deals</li>
-            {SLOTS.map((k) => <li class={"dsc-ch" + (k === "deals_fire" ? " on" : "")}><i>#</i><span>{CHANNEL_INFO[k].name}</span>{k === "deals_fire" && <span class="dsc-badge op-badge">1</span>}</li>)}
+            {SLOTS.map((k) => <li><button type="button" class={"dsc-ch" + (k === "deals_fire" ? " on" : "")} data-ch={k}><i>#</i><span>{CHANNEL_INFO[k].name}</span><b class="dsc-badge" hidden>0</b></button></li>)}
             <li class="dsc-cat">Bot</li>
-            {["bot-settings", "settings-etienne", "deals-forge", "bot-logs"].map((c) => <li class="dsc-ch"><i>#</i><span>{c}</span></li>)}
+            {LIVE_CH.slice(6).map((c) => <li><button type="button" class="dsc-ch" data-ch={c}><i>#</i><span>{c}</span><b class="dsc-badge" hidden>0</b></button></li>)}
           </ul>
           <div class="dsc-me"><span class="msg-av">E</span><p>{ME.username}<span>En ligne</span></p></div>
         </aside>
         <div class="dsc-main">
-          <p class="dsc-bar"><i>#</i><b>deals-fire</b></p>
-          <div class="dsc-feed">
-            <p class="dsc-day">Aujourd’hui</p>
-            <Fragment set:html={HERO_MSG} />
+          <p class="dsc-bar"><button type="button" class="dsc-menu" aria-label="Afficher les salons"><span aria-hidden="true">☰</span><b class="dsc-badge" hidden>0</b></button><i>#</i><b id="op-chn">deals-fire</b></p>
+          <div class="dsc-feeds">
+            {LIVE_CH.map((c) => (
+              <div class={"dsc-feed" + (c === "deals_fire" ? " on" : "")} data-ch={c}>
+                <div class="dsc-hello"><span aria-hidden="true">#</span><p class="dh1">Bienvenue dans #{CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c} !</p><p>C’est le début du salon #{CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c}.</p></div>
+                {c === "deals_fire" && <Fragment><p class="dsc-day">Aujourd’hui</p><Fragment set:html={HERO_MSG} /></Fragment>}
+                {c === "bot-settings" && <Fragment><p class="dsc-day">Aujourd’hui</p><Fragment set:html={ADMIN_MSG} /></Fragment>}
+                {c === "settings-etienne" && <Fragment><p class="dsc-day">Aujourd’hui</p><Fragment set:html={ME_MSG} /></Fragment>}
+              </div>
+            ))}
           </div>
-          <p class="dsc-input"><i>+</i>Envoyer un message dans #deals-fire</p>
+          <p class="dsc-input"><i>+</i><span class="dsc-in-t">Envoyer un message dans #<span id="op-in">deals-fire</span></span></p>
         </div>
         <aside class="dsc-mem" aria-label="Membres">
           <p class="dsc-cat">En ligne — 2</p>
           <p class="dsc-mbr"><span class="msg-av">DH</span>Deal Hunter<span class="botp">APP</span></p>
           <p class="dsc-mbr"><span class="msg-av me">E</span>{ME.username}</p>
         </aside>
+        <p class="op-toast" id="op-toast" role="status" hidden></p>
+        <div class="dsc-modal" id="op-modal" hidden>
+          <form class="dsc-mod" id="op-form">
+            <p class="dsc-mod-t">Signaler cette annonce</p>
+            <label><span>Raison (facultatif)</span><textarea id="op-why" maxlength="500" rows="3" placeholder="Photo trompeuse, modèle incorrect, prix incohérent, scam..."></textarea></label>
+            <p class="dsc-mod-b"><button type="button" class="dsc-cancel" id="op-cancel">Annuler</button><button type="submit" class="mb mb-pri">Envoyer</button></p>
+          </form>
+        </div>
       </div>
-      <p class="op-note">Salon redessiné d’après mes captures, aux couleurs de Discord mais sans son logo. Annonce et prix inventés. Le code et ses 901 tests restent&nbsp;; le bot, lui, ne tourne plus.</p>
+      <div class="op-live" id="op-live">
+        <p><span class="lv-dot" aria-hidden="true"></span><b id="lv-st">Bot en chasse</b> · <span id="lv-read">1</span> annonces lues · <span id="lv-post">1</span> postées · <span id="lv-out">0</span> écartées</p>
+        <button type="button" class="lv-btn" id="lv-pause">Pause</button>
+      </div>
+      <p class="op-note">Salon redessiné d’après mes captures, aux couleurs de Discord mais sans son logo. Les annonces arrivent à intervalles aléatoires et passent, dans votre navigateur, par le vrai code du bot&nbsp;; elles, leurs prix et les réponses de Haiku sont inventés. Cliquez sur les salons, les boutons, et changez les réglages de #bot-settings ou #settings-etienne&nbsp;: les annonces suivantes en tiennent compte. Le code et ses 901 tests restent&nbsp;; le bot, lui, ne tourne plus.</p>
     </div>
   </section>
 
@@ -498,6 +537,8 @@ const STEPS = [
   </section>
 </main>
 
+<script type="application/json" id="live-data" set:html={JSON.stringify(LIVE)}></script>
+<script type="application/json" id="live-names" set:html={JSON.stringify(Object.fromEntries(LIVE_CH.map((c) => [c, CHANNEL_INFO[c] ? CHANNEL_INFO[c].name : c])))}></script>
 <script type="application/json" id="who-data" set:html={JSON.stringify({ me: ME, other: OTHER, deals: WHO_DEALS.map((sid) => bySid[sid]), pipeline: PIPELINE, channels: CHANNEL_INFO, pics: Object.fromEntries(Object.keys(PIC).map((k) => [k, PIC[k].bg])) })}></script>
 <script is:inline>
   (function () {
@@ -505,16 +546,227 @@ const STEPS = [
     function each(l, f) { Array.prototype.forEach.call(l, f); }
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-    // ---------- En-tête : le message arrive, à chaque retour sur l'en-tête ----------
+    // ---------- En-tête : le salon en direct ----------
+    // Les annonces arrivent à intervalles aléatoires. Chacune passe dans le navigateur par le vrai code du bot
+    // (filtres, modèle, profit, mémoire, salon, mentions), avec les réglages laissés dans #bot-settings et #settings-etienne.
+    // « Analyser », « Signaler », la liste des signalements et les panneaux répondent comme le bot (bot.py, report_view.py, settings.py, user_panel.py).
     (function () {
-      var op = document.getElementById("op");
-      if (reduce || !("IntersectionObserver" in window)) { op.classList.add("in"); return; }
-      var armed = true;
+      var $ = function (id) { return document.getElementById(id); };
+      var op = $("op"), E = window.DealHunterEngine, D = window.DHDiscord;
+      var L = JSON.parse($("live-data").textContent), NAMES = JSON.parse($("live-names").textContent);
+      var raw = JSON.parse($("dhd-data").textContent);                 // catalogue et marché de la démo, déjà dans la page
+      var data = { index: E.buildModelIndex(raw.catalog), market: raw.market.gpu, cpu: raw.market.cpu };
+      var feeds = {}, chs = {}, cur = "deals_fire", timer = null, paused = false, seen = false, visible = false;
+      var admin = JSON.parse(JSON.stringify(L.pipe)), me = JSON.parse(JSON.stringify(L.me));
+      var state, idx, counts, posts, analyses = 0, reports = [], reportSeq = 0, pending = null, toastT = null;
+      each(op.querySelectorAll(".dsc-feed"), function (f) { feeds[f.getAttribute("data-ch")] = f; });
+      each(op.querySelectorAll(".dsc-side .dsc-ch"), function (b) { chs[b.getAttribute("data-ch")] = b; });
+      function pad(n) { return String(n).padStart(2, "0"); }
+      function now() { var d = new Date(); return "Aujourd’hui à " + d.getHours() + ":" + pad(d.getMinutes()); }
+      function sqlNow() { var d = new Date(); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) + " " + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds()); }
+      function stamp(root) { each(root.querySelectorAll(".msg-h time"), function (t) { t.textContent = now(); }); }
+      function quote(ev) { return (ev.price_drop ? "📉 BAISSE DE PRIX" : D.VERDICT[ev.verdict.k]) + "  " + (ev.matched_model ? ev.matched_model.name : ""); }
+      function atBottom(f) { return f.scrollHeight - f.scrollTop - f.clientHeight < 60; }
+      function toBottom(f, smooth) { f.scrollTo({ top: f.scrollHeight, behavior: smooth && !reduce ? "smooth" : "auto" }); }
+      function frag(html) { var b = document.createElement("div"); b.innerHTML = html; return b.firstElementChild; }
+      function append(ch, html, isNew) {
+        var f = feeds[ch], stick = atBottom(f), el = frag(html);
+        stamp(el);
+        if (isNew && !reduce) el.classList.add("new");
+        f.appendChild(el);
+        if (ch === cur && (stick || isNew)) toBottom(f, true);
+        return el;
+      }
+      function unread(ch, mention) {
+        if (ch === cur) return;
+        chs[ch].classList.add("unr");
+        if (mention) chs[ch].setAttribute("data-m", +(chs[ch].getAttribute("data-m") || 0) + 1);
+        badges();
+      }
+      function badges() {
+        var other = 0;
+        Object.keys(chs).forEach(function (k) {
+          var b = chs[k].querySelector(".dsc-badge"), n = +(chs[k].getAttribute("data-m") || 0);
+          b.hidden = !n; b.textContent = n; if (k !== cur) other += n;
+        });
+        var mb = op.querySelector(".dsc-menu .dsc-badge"); mb.hidden = !other; mb.textContent = other;
+      }
+      function show(ch) {
+        cur = ch;
+        Object.keys(chs).forEach(function (k) { chs[k].classList.toggle("on", k === ch); });
+        Object.keys(feeds).forEach(function (k) { feeds[k].classList.toggle("on", k === ch); });
+        chs[ch].classList.remove("unr"); chs[ch].setAttribute("data-m", "0");
+        $("op-chn").textContent = NAMES[ch]; $("op-in").textContent = NAMES[ch];
+        op.classList.remove("drawer"); badges(); toBottom(feeds[ch], false);
+      }
+      function status() {
+        $("lv-read").textContent = counts.read; $("lv-post").textContent = counts.post; $("lv-out").textContent = counts.out;
+        var done = idx >= L.ads.length;
+        $("lv-st").textContent = done ? "Plus de nouvelles annonces pour l’instant" : paused ? "Bot en pause" : "Bot en chasse";
+        $("op-live").classList.toggle("off", done || paused);
+        $("lv-pause").textContent = done ? "Rejouer" : paused ? "Reprendre" : "Pause";
+      }
+      // Une annonce de plus : le killswitch d'une plateforme la fait sauter avant toute lecture
+      function post(isNew) {
+        while (idx < L.ads.length) {
+          var a = L.ads[idx++];
+          if (!admin[a.platform === "vinted" ? "vinted_enabled" : "lbc_enabled"]) continue;
+          counts.read++;
+          var r = E.processAd({ ad_id: a.id, title: a.title, price_eur: a.price, platform: a.platform, description: a.description, condition: a.condition }, data, state, admin, [me]);
+          if (r.stop) { counts.out++; return; }
+          counts.post++;
+          var who = r.who.filter(function (w) { return w.pinged; }).map(function (w) { return w.name; });
+          var n = posts.length;
+          posts.push({ id: a.id, title: a.title, price: a.price, ch: r.channel, ai: a.ai, hs: a.hs, quote: quote(r.ev) });
+          append(r.channel, "<div class=\"lv\" data-i=\"" + n + "\">" + D.deal({ ev: r.ev, ad: r.ad, token: r.steps[1] && r.steps[1].token, city: a.city, ago: a.ago,
+            who: who, mine: who.length > 0, thumb: L.pics[a.pic] }) + "</div>", isNew);
+          unread(r.channel, who.length > 0);
+          return;
+        }
+      }
+      function schedule() {
+        clearTimeout(timer); timer = null;
+        if (paused || !visible || idx >= L.ads.length) { status(); return; }
+        timer = setTimeout(function () { post(true); status(); schedule(); }, 1800 + Math.random() * 3400);
+        status();
+      }
+      // Mémoire neuve : la première annonce (celle de l'en-tête) est déjà passée
+      function start() {
+        state = { seen: {}, sent: {} }; idx = 0; counts = { read: 1, post: 1, out: 0 }; posts = [L.first];
+        var f = L.first;
+        E.processAd({ ad_id: f.id, title: f.title, price_eur: f.price, platform: f.platform, description: f.description }, data, state, admin, [me]);
+      }
+      function reset() {
+        clearTimeout(timer);
+        Object.keys(feeds).forEach(function (k) { each(feeds[k].querySelectorAll(".lv:not([data-i=\"0\"]), .eph, .lv-rp"), function (n) { n.remove(); }); });
+        Object.keys(chs).forEach(function (k) { chs[k].classList.remove("unr"); chs[k].setAttribute("data-m", "0"); });
+        reports = []; drawAdmin(false); start(); show("deals_fire");
+      }
+      // Panneaux : #bot-settings est renvoyé (nouveau message) après un signalement, édité sur place après un réglage
+      function drawAdmin(resend) {
+        var box = feeds["bot-settings"].querySelector(".lv-adm"), t = box.querySelector(".msg-h time").textContent;
+        var html = D.adminPanel(admin, { reports: reports.length, time: resend ? now() : t });
+        if (resend) { box.remove(); append("bot-settings", "<div class=\"lv-adm\">" + html + "</div>", true); unread("bot-settings", false); }
+        else box.innerHTML = html;
+      }
+      function drawMe() {
+        var box = feeds["settings-etienne"].querySelector(".lv-me"), t = box.querySelector(".msg-h time").textContent;
+        box.innerHTML = D.panel(me, { time: t });
+      }
+      // Réponses visibles par vous seul (messages éphémères de Discord)
+      function eph(inner, cls) {
+        return append(cur, "<div class=\"msg eph" + (cls ? " " + cls : "") + "\">" + D.head({}) + "<div class=\"msg-b\">" + inner +
+          "<p class=\"eph-n\"><span aria-hidden=\"true\">👁</span> Vous seul·e pouvez voir ceci · <button type=\"button\" class=\"eph-x\">Ignorer ce message</button></p></div></div>", true);
+      }
+      function say(text) { toBottom(feeds[cur], true); return eph("<p class=\"msg-c\">" + text + "</p>"); }
+      function toast(text) {
+        var t = $("op-toast"); t.textContent = text; t.hidden = false;
+        clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600);
+      }
+      function reportItems() {
+        return reports.map(function (r) { return { id: r.id, title: r.title, price: r.price, ch: NAMES[r.ch], by: me.username, reason: r.reason, ts: r.ts, i: r.i }; });
+      }
+      function drawList(el, sel) { el.querySelector(".lv-list").innerHTML = D.reports(reportItems(), sel); el.setAttribute("data-sel", sel == null ? "" : sel); }
+      function activeFor(id) { for (var k = 0; k < reports.length; k++) if (reports[k].adId === id) return reports[k]; return null; }
+
+      op.addEventListener("click", function (e) {
+        var t = e.target, b;
+        if ((b = t.closest(".dsc-side .dsc-ch"))) return show(b.getAttribute("data-ch"));
+        if (t.closest(".dsc-menu")) return op.classList.toggle("drawer");
+        if (op.classList.contains("drawer") && !t.closest(".dsc-side")) { op.classList.remove("drawer"); return; }
+        if ((b = t.closest(".eph-x"))) return b.closest(".eph").remove();
+        // Panneau perso : présence, ping si OFF, seuil, salons pingés
+        if ((b = t.closest(".lv-me [data-f]"))) {
+          var fl = b.getAttribute("data-f");
+          if (fl === "presence") me.presence = me.presence === "ON" ? "OFF" : "ON";
+          else if (fl === "notify_when_offline") me.notify_when_offline = !me.notify_when_offline;
+          else if (fl === "min_profit_to_ping") me.min_profit_to_ping = +b.getAttribute("data-v");
+          else if (fl === "ch") { var c = b.getAttribute("data-v"); me.channels_to_ping[c] = !me.channels_to_ping[c]; }
+          return drawMe();
+        }
+        // Panneau de #bot-settings
+        if ((b = t.closest(".lv-adm button[data-a]"))) {
+          var k = b.getAttribute("data-a");
+          if (k === "reports") {
+            var el = eph("<div class=\"lv-list\"></div>", "lv-rl"); drawList(el, null); toBottom(feeds[cur], true); return;
+          }
+          admin[k] = !admin[k]; return drawAdmin(false);
+        }
+        // Liste des signalements
+        if ((b = t.closest(".lv-rl [data-a]")) && b.tagName === "BUTTON") {
+          var box = b.closest(".lv-rl"), a = b.getAttribute("data-a");
+          if (a === "close") { box.querySelector(".lv-list").innerHTML = "<p class=\"msg-c\">Fermé.</p>"; return; }
+          if (a === "goto") {
+            var target = op.querySelector(".lv[data-i=\"" + b.getAttribute("data-v") + "\"]");
+            if (!target) return say("Message introuvable.");
+            show(target.parentNode.getAttribute("data-ch"));
+            target.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+            target.classList.remove("hl"); void target.offsetWidth; target.classList.add("hl"); return;
+          }
+          if (a === "resolve") {
+            var sel = +box.getAttribute("data-sel");
+            reports = reports.filter(function (r) { return r.id !== sel; });
+            drawAdmin(true); drawList(box, null); return;
+          }
+        }
+        var lv = t.closest(".lv"); if (!lv) return;
+        var ev = posts[+lv.getAttribute("data-i")];
+        if (t.closest(".mb-link")) return toast("Lien désactivé : l’annonce est inventée.");
+        if (t.closest(".mb-pri")) {
+          if (analyses >= 5) return say("⚠️ Limite personnelle atteinte (" + analyses + "/5 analyses cette heure). Réessaie plus tard.");
+          analyses++;
+          var think = append(cur, "<div class=\"msg lv-rp\">" + D.head({}) + "<div class=\"msg-b\"><p class=\"think\">Deal Hunter réfléchit<span class=\"dots\"><i></i><i></i><i></i></span></p></div></div>", true);
+          setTimeout(function () {
+            var box = document.createElement("div"), f = think.parentNode, stick = atBottom(f);
+            box.innerHTML = D.analysis({ sections: ev.ai, quote: ev.quote, cls: "lv-rp" }) + "<p class=\"ai-tag lv-rp\">Réponse écrite pour la démo, au format exact du bot" + (ev.hs ? ", consigne réparateur" : "") + ".</p>";
+            think.replaceWith.apply(think, Array.prototype.slice.call(box.childNodes)); stamp(f);
+            if (stick) toBottom(f, true);
+          }, reduce ? 0 : 1100 + Math.random() * 900);
+          return;
+        }
+        if (t.closest(".mb-dan")) {
+          var ex = activeFor(ev.id);
+          if (ex) return say("⚠️ Cette annonce a déjà un signalement actif (par <span class=\"ment\">@" + me.username + "</span> le " + ex.ts + ").<br>Le signalement sera réactivable une fois résolu.");
+          pending = +lv.getAttribute("data-i"); $("op-why").value = ""; $("op-modal").hidden = false; $("op-why").focus({ preventScroll: true });
+        }
+      });
+      op.addEventListener("change", function (e) {
+        var s = e.target; if (s.tagName !== "SELECT") return;
+        var a = s.getAttribute("data-a");
+        if (a === "pick") return drawList(s.closest(".lv-rl"), s.value === "" ? null : +s.value);
+        admin[a] = +s.value; drawAdmin(false);
+      });
+      function closeModal() { $("op-modal").hidden = true; pending = null; }
+      $("op-cancel").addEventListener("click", closeModal);
+      $("op-modal").addEventListener("click", function (e) { if (e.target.id === "op-modal") closeModal(); });
+      op.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("op-modal").hidden) closeModal(); });
+      $("op-form").addEventListener("submit", function (e) {
+        e.preventDefault(); if (pending === null) return;
+        var p = posts[pending];
+        reports.push({ id: ++reportSeq, adId: p.id, title: p.title, price: p.price, ch: p.ch, reason: $("op-why").value.trim(), ts: sqlNow(), i: pending });
+        closeModal();
+        say("🚩 Signalement enregistré (#" + reportSeq + ").<br>Visible dans <code>#bot-settings</code> → <b>🚩 Voir détails</b>.");
+        drawAdmin(true);
+      });
+      $("lv-pause").addEventListener("click", function () {
+        if (idx >= L.ads.length) { reset(); paused = false; }
+        else paused = !paused;
+        if (reduce) { while (idx < L.ads.length) post(false); status(); return; }
+        schedule();
+      });
+      start(); stamp(feeds.deals_fire); toBottom(feeds.deals_fire, false);
+      if (reduce || !("IntersectionObserver" in window)) {
+        op.classList.add("in");
+        while (idx < L.ads.length) post(false);
+        status(); return;
+      }
       new IntersectionObserver(function (es) {
         var e = es[0];
-        if (!e.isIntersecting) { if (!armed) { op.classList.remove("in"); armed = true; } return; }
-        if (armed && e.intersectionRatio >= .3) { armed = false; void op.offsetWidth; op.classList.add("in"); }
+        visible = e.isIntersecting;
+        if (visible && !seen && e.intersectionRatio >= .3) { seen = true; void op.offsetWidth; op.classList.add("in"); }
+        schedule();
       }, { threshold: [0, .3] }).observe(op);
+      status();
     })();
 
     // ---------- Le trajet : l'étape lue fixe l'état de l'annonce suivie ----------

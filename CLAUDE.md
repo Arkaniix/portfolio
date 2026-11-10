@@ -111,6 +111,11 @@ Décisions déjà prises :
 ## Pages projet (`src/pages/projets/<slug>.astro`, adresse `/projets/<slug>/`)
 
 - Gabarit commun dans `src/styles/projet.css` (bandes, titres, boutons, fin de page), importé avant la feuille de la page.
+- En-tête de Deal Hunter : salon Discord « en direct ». Les annonces (`LIVE_EXTRA`, `LIVE_ORDER` dans `samples.ts`) arrivent toutes les
+  1,8 à 5,2 s (seulement quand la fenêtre est visible) et passent dans le navigateur par `deal-hunter-engine.js`, avec les réglages des
+  panneaux #bot-settings (killswitch, prix max, seuil fire : `DHDiscord.adminPanel`, d'après settings.py) et #settings-etienne
+  (`DHDiscord.panel`). Boutons : Analyser (limite 5 par heure), Signaler (fenêtre, signalement par annonce, liste `DHDiscord.reports`
+  d'après report_view.py, résolution), Acheter (lien désactivé, simple bulle). Le panneau admin ne nomme pas le second chasseur.
 - Chaque page raconte son projet avec sa propre structure : ne pas recopier l'enchaînement de Videntis (refus d'Etienne sur la
   première version de Deal Hunter, trop proche). Deal Hunter suit le trajet d'une annonce en huit étapes, avec une annonce
   collante qui change d'état ; choix en bifurcations, incidents en « signalements » placés à l'étape concernée.

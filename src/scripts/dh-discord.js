@@ -103,5 +103,48 @@
       }).join("") + "</div></div></div>";
   }
 
-  root.DHDiscord = { deal: deal, analysis: analysis, panel: panel, VERDICT: VERDICT, COLOR: COLOR, esc: esc };
+  // Panneau de #bot-settings (settings.py) : killswitch des plateformes, prix max absolu, seuil fire, signalements.
+  // data-a : réglage modifié (démo). Le second panneau perso n'est pas nommé.
+  function select(a, values, cur, label) {
+    return "<label class=\"dsc-pick\"><select data-a=\"" + a + "\">" + values.map(function (v) {
+      return "<option value=\"" + v + "\"" + (v === cur ? " selected" : "") + ">" + label(v) + "</option>";
+    }).join("") + "</select></label>";
+  }
+  function adminPanel(s, o) {
+    o = o || {};
+    var n = o.reports || 0;
+    var tog = function (k, label) { return "<button type=\"button\" class=\"mb " + (s[k] ? "mb-ok" : "mb-dan") + "\" data-a=\"" + k + "\" aria-pressed=\"" + !!s[k] + "\">" + yes(s[k]) + " " + label + "</button>"; };
+    var f = [
+      ["🚦 Plateformes (killswitch)", yes(s.lbc_enabled) + " Leboncoin" + NB + NB + NB + yes(s.vinted_enabled) + " Vinted"],
+      ["🚧 Sécurité", "Prix max absolu : <b>" + s.max_price + "€</b><br><i>Les panneaux perso sont plafonnés par cette valeur.</i>"],
+      ["🔥 Routage", "Seuil fire profit : <b>" + s.min_profit_fire + "€</b><br><i>Les annonces avec best_profit ≥ " + s.min_profit_fire + "€ sont routées vers <code>#deals-fire</code>.</i>"],
+      ["🚩 Signalements en cours", "<b>" + n + "</b> signalement(s) actif(s).<br>" + (n > 0 ? "Clique <b>Voir détails</b> ci-dessous pour la liste." : "Aucun signalement à examiner.")],
+    ];
+    var desc = "Filtres globaux du pipeline. Pour le routage des <b>mentions</b> (qui se fait pinger pour quoi), voir les panneaux perso, dont <code>#settings-etienne</code>.<br><br>Le bot tourne tant qu’au moins un chasseur est ON.";
+    return "<div class=\"msg\">" + head({ time: o.time || "Aujourd’hui à 09:10" }) + "<div class=\"msg-b\">" +
+      embed("#5865F2", "⚙️ Pipeline Deal Hunter — Killswitch & Routage", desc, f, "Les changements sont appliqués immédiatement", null, false) +
+      "<div class=\"msg-btns\">" + tog("lbc_enabled", "Leboncoin") + tog("vinted_enabled", "Vinted") + "</div>" +
+      select("max_price", [300, 500, 800, 1000, 1500], s.max_price, function (v) { return v + "€"; }) +
+      select("min_profit_fire", [10, 25, 50, 75, 100], s.min_profit_fire, function (v) { return v + "€ profit"; }) +
+      "<div class=\"msg-btns\"><button type=\"button\" class=\"mb mb-sec\" data-a=\"reports\">🚩 Voir détails</button></div></div></div>";
+  }
+  // Liste des signalements actifs (report_view.py, ReportsListView), affichée en message éphémère.
+  // items : { id, title, price, ch, by, reason, ts, i } ; sel : id sélectionné.
+  function reports(items, sel) {
+    var f = items.map(function (r) {
+      return ["#" + r.id + " · " + r.title.slice(0, 60),
+        "💰 " + (r.price ? Math.round(r.price) + "€" : "—") + " · 📌 #" + esc(r.ch) + " · <span class=\"ment\">@" + esc(r.by) + "</span><br>" +
+        "💬 " + (r.reason ? esc(r.reason) : "<i>aucune raison</i>") + "<br>🕑 <code>" + esc(r.ts) + "</code><br>" +
+        "<button type=\"button\" class=\"dsc-lk\" data-a=\"goto\" data-v=\"" + r.i + "\">→ message</button>"];
+    });
+    var e = embed("#E74C3C", "🚩 Signalements actifs (" + items.length + ")", items.length ? "" : "Aucun signalement actif. 🎉", f, "Page 1/1", null, false);
+    var nav = "<div class=\"msg-btns\"><button type=\"button\" class=\"mb mb-sec\" disabled>◀</button><button type=\"button\" class=\"mb mb-sec\" disabled>▶</button>" +
+      "<button type=\"button\" class=\"mb mb-sec\" data-a=\"close\">↩ Retour</button></div>";
+    if (!items.length) return e + nav;
+    return e + nav + "<label class=\"dsc-pick\"><select data-a=\"pick\"><option value=\"\"" + (sel == null ? " selected" : "") + ">Sélectionner un signalement à résoudre</option>" +
+      items.map(function (r) { return "<option value=\"" + r.id + "\"" + (r.id === sel ? " selected" : "") + ">#" + r.id + " " + esc(r.title.slice(0, 80)) + " — " + (r.price ? Math.round(r.price) + "€ · " : "") + "#" + esc(r.ch) + "</option>"; }).join("") +
+      "</select></label><div class=\"msg-btns\"><button type=\"button\" class=\"mb mb-ok\" data-a=\"resolve\"" + (sel == null ? " disabled" : "") + ">✅ Résoudre la sélection</button></div>";
+  }
+
+  root.DHDiscord = { deal: deal, analysis: analysis, panel: panel, adminPanel: adminPanel, reports: reports, head: head, VERDICT: VERDICT, COLOR: COLOR, esc: esc };
 })(typeof globalThis !== "undefined" ? globalThis : this);
